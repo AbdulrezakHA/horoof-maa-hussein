@@ -1,0 +1,54 @@
+{
+  "rows": 5,
+  "cols": 5,
+  "title": "حروف مع حسين",
+  "teams": {
+    "a": {
+      "name": "الفريق الأول",
+      "color": "#6965ae",
+      "goals": [["top"], ["bottom"]]
+    },
+    "b": {
+      "name": "الفريق الثاني",
+      "color": "#4b9cbf",
+      "goals": [["left"], ["right"]]
+    }
+  },
+  "edges": {
+    "top": ["r0c0", "r0c1", "r0c2", "r0c3", "r0c4"],
+    "bottom": ["r4c0", "r4c1", "r4c2", "r4c3", "r4c4"],
+    "left": ["r0c0", "r1c0", "r2c0", "r3c0", "r4c0"],
+    "right": ["r0c4", "r1c4", "r2c4", "r3c4", "r4c4"]
+  },
+  "cells": [
+    { "id": "r0c0", "r": 0, "c": 0, "letter": "و" },
+    { "id": "r0c1", "r": 0, "c": 1, "letter": "غ" },
+    { "id": "r0c2", "r": 0, "c": 2, "letter": "ت" },
+    { "id": "r0c3", "r": 0, "c": 3, "letter": "ر" },
+    { "id": "r0c4", "r": 0, "c": 4, "letter": "ا" },
+
+    { "id": "r1c0", "r": 1, "c": 0, "letter": "ب" },
+    { "id": "r1c1", "r": 1, "c": 1, "letter": "ض" },
+    { "id": "r1c2", "r": 1, "c": 2, "letter": "ص" },
+    { "id": "r1c3", "r": 1, "c": 3, "letter": "ي" },
+    { "id": "r1c4", "r": 1, "c": 4, "letter": "ش" },
+
+    { "id": "r2c0", "r": 2, "c": 0, "letter": "ق" },
+    { "id": "r2c1", "r": 2, "c": 1, "letter": "ج" },
+    { "id": "r2c2", "r": 2, "c": 2, "letter": "ح" },
+    { "id": "r2c3", "r": 2, "c": 3, "letter": "خ" },
+    { "id": "r2c4", "r": 2, "c": 4, "letter": "د" },
+
+    { "id": "r3c0", "r": 3, "c": 0, "letter": "ل" },
+    { "id": "r3c1", "r": 3, "c": 1, "letter": "ه" },
+    { "id": "r3c2", "r": 3, "c": 2, "letter": "ن" },
+    { "id": "r3c3", "r": 3, "c": 3, "letter": "ث" },
+    { "id": "r3c4", "r": 3, "c": 4, "letter": "ذ" },
+
+    { "id": "r4c0", "r": 4, "c": 0, "letter": "ز" },
+    { "id": "r4c1", "r": 4, "c": 1, "letter": "س" },
+    { "id": "r4c2", "r": 4, "c": 2, "letter": "ط" },
+    { "id": "r4c3", "r": 4, "c": 3, "letter": "م" },
+    { "id": "r4c4", "r": 4, "c": 4, "letter": "ظ" }
+  ]
+}

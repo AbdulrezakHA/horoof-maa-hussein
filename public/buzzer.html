@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"
+    />
+    <meta name="theme-color" content="#1b1633" />
+    <title>حروف مع حسين — جرس اللاعب</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Cairo:wght@700;800;900&family=Tajawal:wght@700;800;900&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/css/base.css" />
+    <link rel="stylesheet" href="/css/buzzer.css" />
+  </head>
+  <body class="bz-body" data-view="off">
+    <header class="bz-top">
+      <div class="bz-chip" id="teamChip">
+        <span class="bz-chip-dot" id="teamColorDot"></span>
+        <span id="teamName">الفريق</span>
+      </div>
+      <div class="bz-top-right">
+        <button class="bz-icon-btn" id="sfxBtn" type="button" data-sfx-toggle aria-label="كتم الأصوات">🔊</button>
+        <div class="bz-conn" id="connState" data-status="connecting">
+          <i class="bz-conn-dot" id="connDot"></i>
+          <span id="connText">جارٍ الاتصال...</span>
+        </div>
+      </div>
+    </header>
+
+    <main class="bz-stage">
+      <!-- بطاقة السؤال (تظهر بعد كشف الحكم فقط) -->
+      <section class="bz-question" id="bzQuestion" hidden>
+        <span class="bz-letter" id="qLetter">أ</span>
+        <p class="bz-qtext" id="qText"></p>
+      </section>
+
+      <!-- العنصر المركزي: الزر أو العدّاد أو النتيجة -->
+      <section class="bz-center" id="bzCenter" data-state="idle">
+        <div class="bz-ring" id="bzRing" hidden>
+          <span class="bz-ring-num" id="ringNum">15</span>
+          <span class="bz-ring-sub" id="ringSub">ثانية</span>
+        </div>
+        <div class="bz-center-body">
+          <span class="bz-center-icon" id="centerIcon">🔔</span>
+          <span class="bz-center-title" id="centerTitle">الأجراس متوقفة</span>
+          <span class="bz-center-sub" id="centerSub">سيُفتح الضغط من الحكم</span>
+        </div>
+        <button class="bz-hit" id="buzzPad" type="button" hidden>
+          <span class="bz-hit-icon" id="hitIcon">🔔</span>
+          <span class="bz-hit-label" id="hitLabel">اضغط الآن!</span>
+        </button>
+      </section>
+
+      <p class="bz-note" id="buzzNote">أول ضغطة فقط تُحتسب</p>
+    </main>
+
+    <!-- طبقة الاحتفال -->
+    <div class="bz-confetti" id="confetti" aria-hidden="true"></div>
+    <div class="bz-flash" id="bzFlash" aria-hidden="true"></div>
+
+    <script type="module" src="/js/buzzer.js"></script>
+  </body>
+</html>

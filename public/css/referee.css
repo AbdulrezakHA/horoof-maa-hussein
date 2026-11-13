@@ -1,0 +1,677 @@
+/* ==================================================================
+   واجهة الحكم (الهاتف) — متناسقة مع هوية «حروف مع حسين»
+   ================================================================== */
+
+.ref-body {
+  background: radial-gradient(900px 600px at 50% -10%, color-mix(in srgb, var(--bg-color, #73c4ee) 50%, #1a1630), #0f0c1c);
+  background-attachment: fixed;
+  padding-bottom: env(safe-area-inset-bottom);
+  color: #ffffff;
+}
+
+.pairing-gate {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: none;
+  place-items: center;
+  padding: 1rem;
+  background: rgba(15, 12, 28, 0.96);
+  backdrop-filter: blur(8px);
+}
+
+.pairing-gate.show { display: grid; }
+
+.pairing-card {
+  width: min(390px, 100%);
+  text-align: center;
+  padding: 2rem 1.6rem;
+  border-radius: 28px;
+  border: 3px solid #070808;
+  background: #251e3e;
+  box-shadow: 0 8px 0 #070808, var(--shadow-lg);
+}
+
+.pairing-icon { font-size: 3rem; }
+.pairing-card h1 { margin: 0.35rem 0; font-size: 1.5rem; font-weight: 900; }
+.pairing-card p { color: var(--ink-dim); line-height: 1.65; font-weight: 700; }
+
+.pairing-card input {
+  width: 100%;
+  direction: ltr;
+  text-align: center;
+  letter-spacing: 0.28em;
+  font-size: 2.2rem;
+  font-weight: 900;
+  padding: 0.5rem;
+  border-radius: 16px;
+  border: 3px solid #070808;
+  background: #151124;
+  color: var(--selected-color, #fcb017);
+  box-shadow: 0 4px 0 #070808;
+}
+
+.pairing-card .pairing-note { min-height: 1.7em; font-size: 0.88rem; font-weight: 700; }
+.pairing-card .btn { width: 100%; }
+
+/* ---------------- الترويسة ---------------- */
+.ref-header {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.8rem;
+  padding: 0.75rem 1rem calc(0.75rem + env(safe-area-inset-top));
+  padding-top: calc(0.75rem + env(safe-area-inset-top));
+  background: rgba(18, 14, 34, 0.94);
+  backdrop-filter: blur(14px);
+  border-bottom: 2px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+}
+
+.ref-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.ref-logo {
+  font-size: 1.8rem;
+  line-height: 1;
+}
+
+.ref-title {
+  font-weight: 900;
+  font-size: 1.2rem;
+  line-height: 1.15;
+}
+
+.ref-sub {
+  font-size: 0.78rem;
+  color: var(--ink-dim);
+  font-weight: 700;
+}
+
+.ref-header .conn {
+  font-size: 0.78rem;
+}
+
+.ref-main {
+  max-width: 620px;
+  margin: 0 auto;
+  padding: 0.85rem 0.85rem 3.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+
+.card {
+  background: rgba(255, 255, 255, 0.08);
+  border: 2px solid rgba(255, 255, 255, 0.14);
+  border-radius: 24px;
+  padding: 1rem;
+  box-shadow: 0 6px 0 rgba(7, 8, 8, 0.35), 0 10px 25px rgba(0, 0, 0, 0.2);
+}
+
+.section-title {
+  margin: 0 0 0.75rem;
+  cursor: default;
+  user-select: none;
+  font-weight: 900;
+  font-size: 0.9rem;
+  color: #ffd93d;
+}
+
+details.card > .section-title {
+  cursor: pointer;
+  list-style: none;
+  margin-bottom: 0.75rem;
+}
+
+details.card > .section-title::-webkit-details-marker {
+  display: none;
+}
+
+details.card > .section-title::after {
+  content: " ▾";
+  opacity: 0.7;
+}
+
+details.card[open] > .section-title::after {
+  content: " ▴";
+}
+
+.section-hint {
+  font-weight: 600;
+  font-size: 0.72rem;
+  color: var(--ink-dim);
+  margin-inline-start: auto;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+/* ---------------- اللوحة المصغّرة ---------------- */
+.mini-board {
+  position: relative;
+  width: 100%;
+  height: 215px;
+  touch-action: manipulation;
+}
+
+.mini-board .hex {
+  cursor: pointer;
+}
+
+.mini-board .hex:active {
+  transform: scale(0.92);
+}
+
+.score-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.65rem;
+  margin-top: 0.85rem;
+}
+
+.score-chip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.55rem 0.95rem;
+  border-radius: 14px;
+  font-weight: 900;
+  font-size: 0.92rem;
+  background: rgba(7, 8, 8, 0.45);
+  border: 2px solid #070808;
+  box-shadow: 0 3px 0 #070808;
+}
+
+.chip-a { border-color: var(--team-a-color, #6965ae); color: #ffffff; background: color-mix(in srgb, var(--team-a-color, #6965ae) 35%, rgba(7,8,8,.6)); }
+.chip-b { border-color: var(--team-b-color, #4b9cbf); color: #ffffff; background: color-mix(in srgb, var(--team-b-color, #4b9cbf) 35%, rgba(7,8,8,.6)); }
+
+.chip-score {
+  font-size: 1.4rem;
+  font-variant-numeric: tabular-nums;
+  font-weight: 900;
+}
+
+/* ---------------- بطاقة السؤال ---------------- */
+.q-card {
+  border-color: rgba(252, 176, 23, 0.45);
+}
+
+.q-head {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  margin-bottom: 0.85rem;
+}
+
+.q-letter-big {
+  flex: 0 0 auto;
+  width: 66px;
+  height: 66px;
+  display: grid;
+  place-items: center;
+  clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+  font-size: 2.2rem;
+  font-weight: 900;
+  background: linear-gradient(180deg, var(--selected-color, #fcb017), color-mix(in srgb, var(--selected-color, #fcb017) 80%, #e9965e));
+  color: #ffffff;
+  border: 2px solid #070808;
+  filter: drop-shadow(0 3px 0 #070808);
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.6);
+}
+
+.q-letter-big.idle {
+  background: rgba(255, 255, 255, 0.15);
+  color: var(--ink-dim);
+  text-shadow: none;
+}
+
+.q-head-text {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.q-status {
+  font-weight: 900;
+  font-size: 1rem;
+}
+
+.q-owner {
+  font-size: 0.82rem;
+  color: var(--ink-dim);
+  font-weight: 700;
+  margin-top: 0.2rem;
+}
+
+.q-text {
+  font-size: 1.15rem;
+  font-weight: 800;
+  line-height: 1.55;
+  padding: 0.8rem 0.95rem;
+  border-radius: 16px;
+  background: rgba(7, 8, 8, 0.5);
+  border: 2px solid #070808;
+  border-right: 5px solid var(--selected-color, #fcb017);
+  box-shadow: 0 3px 0 #070808;
+  margin-bottom: 0.8rem;
+  min-height: 3.2em;
+}
+
+.answer-box {
+  padding: 0.75rem 0.95rem;
+  border-radius: 16px;
+  background: rgba(16, 185, 129, 0.2);
+  border: 2px solid #10b981;
+  box-shadow: 0 3px 0 #070808;
+  margin-bottom: 0.8rem;
+}
+
+.answer-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.answer-label {
+  font-size: 0.78rem;
+  font-weight: 900;
+  color: #6ee7b7;
+  letter-spacing: 0.05em;
+}
+
+.answer-text {
+  font-size: 1.35rem;
+  font-weight: 900;
+  color: #ffffff;
+  margin-top: 0.2rem;
+}
+
+.answer-box.hidden-answer .answer-text {
+  filter: blur(9px);
+  user-select: none;
+}
+
+/* ---------------- صفوف الأزرار ---------------- */
+.btn-row {
+  display: flex;
+  gap: 0.55rem;
+  margin-bottom: 0.55rem;
+}
+
+.btn-row:last-child {
+  margin-bottom: 0;
+}
+
+.btn-row .btn {
+  flex: 1 1 0;
+  min-width: 0;
+  border: 2px solid #070808;
+  box-shadow: 0 3px 0 #070808;
+  font-weight: 800;
+}
+
+.btn-row .btn:active:not(:disabled) {
+  transform: translateY(2px);
+  box-shadow: 0 1px 0 #070808;
+}
+
+.btn-lg {
+  font-size: 1rem;
+  padding: 0.95rem 0.65rem;
+}
+
+/* تمييز حالة الزر عندما يكون السؤال أو الجواب معروضاً على الشاشة الكبيرة */
+.btn.active-screen {
+  background: #10b981 !important;
+  color: #ffffff !important;
+  border-color: #070808 !important;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.6), 0 3px 0 #070808 !important;
+}
+
+/* ---------------- المؤقّت ---------------- */
+.timer-readout {
+  margin-top: 0.7rem;
+  text-align: center;
+  font-weight: 900;
+  font-size: 1.05rem;
+  padding: 0.6rem;
+  border-radius: 14px;
+  background: rgba(7, 8, 8, 0.5);
+  border: 2px solid #070808;
+  box-shadow: 0 3px 0 #070808;
+  font-variant-numeric: tabular-nums;
+}
+
+.timer-readout.running {
+  color: var(--selected-color, #fcb017);
+}
+
+/* ---------------- الإعدادات ---------------- */
+.setting-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.8rem;
+  margin-bottom: 0.65rem;
+}
+
+.setting-row label {
+  font-size: 0.9rem;
+  font-weight: 800;
+  flex: 0 0 auto;
+}
+
+.setting-row input[type="text"] {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 0.6rem 0.8rem;
+  border-radius: 12px;
+  border: 2px solid #070808;
+  background: rgba(7, 8, 8, 0.45);
+  color: #ffffff;
+  font-weight: 700;
+}
+
+.setting-row input[type="color"] {
+  width: 58px;
+  height: 38px;
+  padding: 0;
+  border: 2px solid #070808;
+  border-radius: 12px;
+  background: transparent;
+  cursor: pointer;
+}
+
+.setting-select {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 0.6rem 0.8rem;
+  border-radius: 12px;
+  border: 2px solid #070808;
+  background: #251e3e;
+  color: #ffffff;
+  font-weight: 800;
+  font-size: 0.95rem;
+  cursor: pointer;
+}
+
+/* ---------------- أجراس اللاعبين ---------------- */
+.setting-toggle {
+  width: 30px;
+  height: 30px;
+  flex: 0 0 auto;
+  cursor: pointer;
+  accent-color: #34d399;
+}
+
+.setting-number {
+  width: 96px;
+  padding: 0.55rem 0.7rem;
+  border-radius: 12px;
+  border: 2px solid #070808;
+  background: rgba(7, 8, 8, 0.45);
+  color: #ffffff;
+  font-weight: 800;
+  font-size: 1rem;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.buzz-qr-row {
+  display: flex;
+  gap: 0.6rem;
+  justify-content: center;
+  margin-top: 0.7rem;
+}
+
+.buzz-qr-item {
+  flex: 1 1 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.55rem;
+  border-radius: 14px;
+  background: rgba(7, 8, 8, 0.35);
+  border: 2px solid #070808;
+}
+
+.buzz-qr-label {
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: #d1d5db;
+}
+
+/* خلفية بيضاء حتى يُقرأ الرمز على البطاقة الداكنة */
+.buzz-qr-canvas {
+  width: 130px;
+  height: 130px;
+  background: #ffffff;
+  border-radius: 8px;
+}
+
+.tiny {
+  margin: 0.6rem 0 0;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-align: center;
+  color: #cbd5e1;
+  opacity: 0.85;
+}
+
+.board-editor {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(48px, 1fr));
+  gap: 0.4rem;
+}
+
+.board-editor button {
+  aspect-ratio: 1;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 2px solid #070808;
+  box-shadow: 0 2px 0 #070808;
+  font-size: 1.25rem;
+  font-weight: 900;
+  color: #ffffff;
+  transition: transform 0.12s ease, background 0.18s ease;
+}
+
+.board-editor button:active {
+  transform: scale(0.9);
+}
+
+.board-editor button.owned-a { background: var(--team-a-color, #6965ae); }
+.board-editor button.owned-b { background: var(--team-b-color, #4b9cbf); }
+.board-editor button.selected { outline: 3px solid var(--selected-color, #fcb017); outline-offset: 1px; }
+
+/* ---------------- السجل ---------------- */
+.log-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  max-height: 220px;
+  overflow-y: auto;
+  font-size: 0.84rem;
+}
+
+.log-list li {
+  padding: 0.45rem 0.65rem;
+  border-radius: 10px;
+  background: rgba(7, 8, 8, 0.35);
+  border-right: 4px solid rgba(255, 255, 255, 0.25);
+  font-weight: 700;
+}
+
+.log-list li.tone-a { border-right-color: var(--team-a-color, #6965ae); }
+.log-list li.tone-b { border-right-color: var(--team-b-color, #4b9cbf); }
+.log-list li.tone-warn { border-right-color: #f87171; }
+.log-list li.tone-win { border-right-color: var(--selected-color, #fcb017); font-weight: 900; }
+
+/* ---------------- المساعدة ---------------- */
+.help-list {
+  margin: 0;
+  padding-inline-start: 1.2rem;
+  font-size: 0.88rem;
+  line-height: 1.85;
+  color: var(--ink-dim);
+  font-weight: 700;
+}
+
+.help-list strong {
+  color: #ffffff;
+}
+
+.tiny {
+  font-size: 0.78rem;
+  color: var(--ink-dim);
+  margin: 0.5rem 0 0;
+  line-height: 1.6;
+}
+
+/* ---------------- النافذة المنبثقة ---------------- */
+.modal {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  background: rgba(7, 8, 8, 0.8);
+  backdrop-filter: blur(6px);
+}
+
+.modal.show {
+  display: flex;
+}
+
+.modal-box {
+  width: min(460px, 100%);
+  max-height: 85vh;
+  overflow-y: auto;
+  background: #1c1630;
+  border: 3px solid #070808;
+  border-radius: 26px;
+  padding: 1.2rem 1.3rem 1.4rem;
+  box-shadow: 0 8px 0 #070808, var(--shadow-lg);
+  animation: pop 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.modal-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.9rem;
+}
+
+.modal-head h3 {
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: 900;
+}
+
+.letter-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(56px, 1fr));
+  gap: 0.45rem;
+}
+
+.letter-grid button {
+  aspect-ratio: 1;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 2px solid #070808;
+  font-size: 1.35rem;
+  font-weight: 900;
+  color: #ffffff;
+  box-shadow: 0 2px 0 #070808;
+  transition: transform 0.12s ease, background 0.18s ease;
+}
+
+.letter-grid button:active {
+  transform: scale(0.9);
+  background: var(--selected-color, #fcb017);
+  color: #070808;
+}
+
+.letter-grid button.current {
+  border-color: #070808;
+  background: var(--selected-color, #fcb017);
+  color: #070808;
+}
+
+.letter-grid button.empty {
+  opacity: 0.35;
+  text-decoration: line-through;
+}
+
+/* حرف مستخدم في خلية أخرى — معطّل لأن الحروف لا تتكرّر في الشبكة */
+.letter-grid button.used {
+  opacity: 0.3;
+  cursor: not-allowed;
+  background: repeating-linear-gradient(
+    45deg,
+    rgba(255, 255, 255, 0.06),
+    rgba(255, 255, 255, 0.06) 6px,
+    rgba(0, 0, 0, 0.18) 6px,
+    rgba(0, 0, 0, 0.18) 12px
+  );
+}
+
+.letter-grid button.used:active {
+  transform: none;
+  background: repeating-linear-gradient(
+    45deg,
+    rgba(255, 255, 255, 0.06),
+    rgba(255, 255, 255, 0.06) 6px,
+    rgba(0, 0, 0, 0.18) 6px,
+    rgba(0, 0, 0, 0.18) 12px
+  );
+  color: #ffffff;
+}
+
+/* ---------------- التنبيه (Toast) ---------------- */
+.toast {
+  position: fixed;
+  bottom: calc(1rem + env(safe-area-inset-bottom));
+  left: 50%;
+  transform: translate(-50%, 140%);
+  background: #070808;
+  border: 2px solid var(--selected-color, #fcb017);
+  color: #ffffff;
+  padding: 0.7rem 1.4rem;
+  border-radius: 999px;
+  font-weight: 900;
+  font-size: 0.95rem;
+  z-index: 90;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5);
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  max-width: 90vw;
+  text-align: center;
+}
+
+.toast.show {
+  transform: translate(-50%, 0);
+}
+
+@media (max-width: 380px) {
+  .btn-row {
+    flex-wrap: wrap;
+  }
+  .btn-row .btn {
+    flex: 1 1 100%;
+  }
+  .mini-board {
+    height: 180px;
+  }
+}

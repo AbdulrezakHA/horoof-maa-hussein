@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>حروف مع حسين</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/css/base.css" />
+    <script src="/js/vendor/qrcode.js"></script>
+    <style>
+      .qr {
+        display: block;
+        width: 170px;
+        height: 170px;
+        margin: 0.8rem auto 0;
+        border-radius: 12px;
+        background: #fff;
+        padding: 8px;
+        image-rendering: pixelated;
+      }
+      .qr-fallback {
+        display: none;
+        text-align: center;
+        font-size: 0.85rem;
+        color: var(--ink-dim);
+        margin-top: 0.8rem;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="landing">
+      <div class="landing-card">
+        <h1>🔤 حروف مع حسين</h1>
+        <p class="sub">لعبة حروف تنافسية — فريقان، حَكَم، وشاشة كبيرة</p>
+
+        <div class="role-grid">
+          <a class="role-link" href="/screen" id="linkScreen">
+            <span class="ico">📺</span>
+            <span>
+              <strong>الشاشة الكبيرة</strong>
+              <span>افتحها على جهاز العرض أو التلفاز — تعرض اللوحة والسؤال والمؤقّت</span>
+            </span>
+          </a>
+
+          <a class="role-link" href="/referee" id="linkReferee">
+            <span class="ico">📱</span>
+            <span>
+              <strong>لوحة الحكم</strong>
+              <span>افتحها على جوالك — تتحكم بالجولة وتكشف الجواب (لا يظهر للاعبين)</span>
+            </span>
+          </a>
+        </div>
+
+        <div class="lan-box">
+          <strong>📡 افتح «لوحة الحكم» على جوالك</strong>
+          <span>تأكد أن الجوال والكمبيوتر على نفس شبكة الواي-فاي، ثم افتح:</span>
+          <code id="lanUrl">http://localhost:3000/referee</code>
+          <canvas class="qr" id="qrCanvas" width="180" height="180"></canvas>
+          <div class="qr-fallback" id="qrFallback">امسح الرمز بكاميرا الجوال، أو انسخ الرابط أعلاه</div>
+        </div>
+
+        <p class="tiny" style="text-align: center; margin-top: 1rem">
+          كل سؤالات اللعبة مخزّنة محلياً — لا يحتاج إنترنت أثناء التشغيل.
+        </p>
+      </div>
+    </div>
+
+    <script type="module">
+      import { setupRefereeQR } from "/js/qr.js";
+
+      const canvas = document.getElementById("qrCanvas");
+      const url = await setupRefereeQR(canvas, "main");
+      document.getElementById("lanUrl").textContent = url;
+      document.getElementById("qrFallback").style.display = "block";
+    </script>
+  </body>
+</html>

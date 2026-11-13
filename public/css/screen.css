@@ -1,0 +1,637 @@
+/* ==================================================================
+   شاشة العرض الكبيرة — مطابقة بالكامل لملف حروف مع حسين layout.svg
+   بمقاس 1920x1080 وتتمدد مع الحجم تلقائياً
+   ================================================================== */
+
+html, body {
+  margin: 0;
+  padding: 0;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  background: var(--bg-color, #73c4ee);
+  font-family: 'Cairo', 'Tajawal', sans-serif;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.game-svg {
+  width: 100vw;
+  height: 100vh;
+  display: block;
+}
+
+/* ---------------- نصوص خلايا اللوحة السداسية ---------------- */
+.cell-text {
+  font-family: 'Cairo', 'Tajawal', sans-serif;
+  font-weight: 900;
+  font-size: 104px;
+  fill: var(--cell-text-color, #635e48);
+  dominant-baseline: central;
+  pointer-events: none;
+  transition: fill 0.3s ease;
+}
+
+.cell-text.owner-team-a,
+.cell-text.owner-team-b,
+.cell-text.is-selected {
+  fill: #ffffff !important;
+}
+
+/* لمعة الفقاعة البيضاء */
+.cls-30 {
+  fill: #ffffff;
+  opacity: 0.92;
+  pointer-events: none;
+}
+
+/* حركة الخلية عند الاختيار */
+.svg-cell {
+  cursor: pointer;
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transform-origin: center;
+}
+
+.svg-cell:hover .cell-path {
+  filter: brightness(1.06);
+}
+
+.svg-cell.is-selected .cell-path {
+  filter: drop-shadow(0 0 16px rgba(252, 176, 23, 0.95));
+}
+
+/* ---------------- الحرف المختار في أعلى اليمين ---------------- */
+.selected-hex-text {
+  font-family: 'Cairo', 'Tajawal', sans-serif;
+  font-weight: 900;
+  font-size: 112px;
+  fill: #ffffff;
+  dominant-baseline: central;
+  pointer-events: none;
+}
+
+/* ---------------- نص السؤال في منتصف اليمين ---------------- */
+.q-text-wrap {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  direction: rtl;
+}
+
+.q-main-text {
+  font-family: 'Cairo', 'Tajawal', sans-serif;
+  font-weight: 900;
+  font-size: 52px;
+  line-height: 1.42;
+  color: #ffffff;
+  text-shadow: 0 3px 6px rgba(0, 0, 0, 0.45);
+}
+
+/* ---------------- بطاقة الجواب تحت السؤال ---------------- */
+.q-answer-wrap {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  direction: rtl;
+}
+
+.q-answer-card {
+  display: inline-flex;
+  align-items: center;
+  gap: 18px;
+  padding: 10px 32px;
+  border-radius: 999px;
+  background: #10b981;
+  border: 4px solid #070808;
+  box-shadow: 0 6px 0 #070808, 0 12px 28px rgba(16, 185, 129, 0.4);
+  animation: answerPop 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.q-answer-badge {
+  background: #070808;
+  color: #ffffff;
+  padding: 6px 18px;
+  border-radius: 999px;
+  font-size: 28px;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+}
+
+.q-answer-content {
+  font-size: 46px;
+  font-weight: 900;
+  color: #ffffff;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+@keyframes answerPop {
+  0% { transform: scale(0.65); opacity: 0; }
+  65% { transform: scale(1.08); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+/* ---------------- نص النقاط في الأسفل ---------------- */
+.score-text {
+  font-family: 'Cairo', 'Tajawal', sans-serif;
+  font-weight: 900;
+  font-size: 108px;
+  fill: #ffffff;
+  dominant-baseline: central;
+  pointer-events: none;
+}
+
+/* ---------------- مؤقّت الدور (عائم خفيف) ---------------- */
+.timer-float {
+  position: fixed;
+  top: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.25s ease;
+  z-index: 50;
+}
+
+.timer-float.show {
+  opacity: 1;
+}
+
+.timer-badge {
+  background: #070808;
+  border: 3.5px solid var(--selected-color, #fcb017);
+  box-shadow: 0 6px 0 rgba(0, 0, 0, 0.6);
+  padding: 8px 30px;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  color: #ffffff;
+}
+
+.timer-seconds {
+  font-size: 42px;
+  font-weight: 900;
+  color: var(--selected-color, #fcb017);
+  font-variant-numeric: tabular-nums;
+}
+
+.timer-label {
+  font-size: 24px;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+/* ---------------- شاشة الفوز ---------------- */
+.winner-modal {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: rgba(7, 8, 8, 0.78);
+  backdrop-filter: blur(8px);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 0.4s ease, visibility 0.4s ease;
+  z-index: 70;
+}
+
+.winner-modal.show {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+}
+
+.winner-banner {
+  text-align: center;
+  padding: 3rem 4.5rem;
+  border-radius: 36px;
+  background: #ffffff;
+  border: 5px solid #070808;
+  box-shadow: 0 12px 0 #070808, 0 30px 80px rgba(0, 0, 0, 0.5);
+  color: #070808;
+  animation: popScale 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.winner-icon {
+  font-size: 5rem;
+  line-height: 1;
+  color: #fcb017;
+}
+
+.winner-sub {
+  font-size: 2.1rem;
+  font-weight: 900;
+  color: #070808;
+  margin-top: 0.1em;
+}
+
+.winner-title {
+  font-size: 3.8rem;
+  font-weight: 900;
+  line-height: 1.15;
+  margin-top: 0.05em;
+}
+
+.winner-caption {
+  color: #4b5563;
+  font-size: 1.25rem;
+  font-weight: 800;
+  margin-top: 0.7em;
+}
+
+/* ---------------- بطاقة البداية + رمز QR ---------------- */
+.lobby-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: grid;
+  place-items: center;
+  padding: 1.5rem;
+  background: rgba(7, 8, 8, 0.82);
+  backdrop-filter: blur(8px);
+}
+
+.lobby-overlay.lobby-off {
+  display: none;
+}
+
+.lobby-card {
+  width: min(940px, 96vw);
+  max-height: 92vh;
+  overflow-y: auto;
+  text-align: center;
+  background: #ffffff;
+  color: #070808;
+  border: 4px solid #070808;
+  border-radius: 32px;
+  padding: 1.8rem 1.6rem 1.4rem;
+  box-shadow: 0 8px 0 #070808, 0 20px 60px rgba(0, 0, 0, 0.4);
+}
+
+.lobby-badge {
+  display: inline-block;
+  padding: 0.32em 0.95em;
+  border-radius: 999px;
+  background: #070808;
+  color: #ffffff;
+  font-size: 0.95rem;
+  font-weight: 900;
+  letter-spacing: 0.02em;
+}
+
+.lobby-title {
+  margin: 0.7em 0 0.6em;
+  font-size: 1.9rem;
+  font-weight: 900;
+  line-height: 1.35;
+  color: #070808;
+}
+
+.qr-box {
+  display: inline-block;
+  padding: 12px;
+  background: #ffffff;
+  border: 3px solid #070808;
+  border-radius: 20px;
+  box-shadow: 0 6px 0 #070808;
+  line-height: 0;
+}
+
+.qr-canvas {
+  width: 250px;
+  height: 250px;
+  display: block;
+}
+
+.lobby-url {
+  margin: 0.8rem auto 0.5rem;
+  padding: 0.55rem 1rem;
+  display: inline-block;
+  border-radius: 12px;
+  background: #f3f4f6;
+  border: 2px dashed #9ca3af;
+  color: #111827;
+  font-weight: 900;
+  font-size: 1.05rem;
+  direction: ltr;
+}
+
+.pair-code-wrap {
+  margin: 0.7rem 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5em;
+  color: #374151;
+  font-weight: 800;
+}
+
+.pair-label {
+  font-size: 1rem;
+  color: #4b5563;
+}
+
+.pair-code {
+  color: #d97706;
+  font-size: 1.4em;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+  font-variant-numeric: tabular-nums;
+}
+
+.lobby-status {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5em;
+  font-size: 1rem;
+  color: #4b5563;
+  margin-bottom: 0.7rem;
+  font-weight: 800;
+}
+
+.lobby-overlay.connected .lobby-status {
+  color: #059669;
+}
+
+.lobby-actions {
+  display: flex;
+  gap: 0.6rem;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-top: 0.4rem;
+}
+
+.screen-btn {
+  padding: 0.75em 1.5em;
+  font-size: 1.15rem;
+  font-weight: 900;
+  font-family: inherit;
+  border-radius: 14px;
+  border: 3px solid #070808;
+  box-shadow: 0 4px 0 #070808;
+  cursor: pointer;
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+
+.screen-btn:active {
+  transform: translateY(3px);
+  box-shadow: 0 1px 0 #070808;
+}
+
+.btn-primary {
+  background: #ffd93d;
+  color: #070808;
+}
+
+.btn-secondary {
+  background: #f3f4f6;
+  color: #374151;
+}
+
+/* ---------------- شارة حالة اتصال الحكم في الزاوية ---------------- */
+.conn-badge {
+  position: fixed;
+  top: 14px;
+  right: 14px;
+  z-index: 60;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  background: rgba(7, 8, 8, 0.65);
+  border: 2px solid rgba(255, 255, 255, 0.4);
+  border-radius: 999px;
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 800;
+  cursor: pointer;
+  backdrop-filter: blur(4px);
+  transition: all 0.2s ease;
+}
+
+.sfx-toggle {
+  position: fixed;
+  top: 60px;
+  right: 14px;
+  z-index: 61;
+  background: rgba(7, 8, 8, 0.65);
+  border-color: rgba(255, 255, 255, 0.4);
+  color: #ffffff;
+  backdrop-filter: blur(4px);
+}
+
+.conn-badge:hover {
+  background: #070808;
+  border-color: #ffffff;
+}
+
+.conn-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #f87171;
+}
+
+.conn-badge.online .conn-dot {
+  background: #10b981;
+  box-shadow: 0 0 8px #10b981;
+}
+
+/* ---------------- القصاصات ---------------- */
+.confetti-canvas {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 65;
+}
+
+@keyframes popScale {
+  0% { transform: scale(0.7) translateY(10px); }
+  60% { transform: scale(1.05) translateY(0); }
+  100% { transform: scale(1) translateY(0); }
+}
+
+/* ---------------- مؤقّت الدور: نقطة بلون الفريق (بدون أسماء) ---------------- */
+.timer-dot {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  flex: 0 0 auto;
+  background: var(--team-color, #fcb017);
+  box-shadow: 0 0 12px var(--team-color, #fcb017);
+}
+
+.timer-badge {
+  border: 3px solid var(--team-color, #070808);
+}
+
+/* ---------------- لافتة الأجراس ---------------- */
+.buzz-banner {
+  position: fixed;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 66;
+  display: none;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 30px;
+  border-radius: 999px;
+  border: 4px solid #070808;
+  background: #ffffff;
+  color: #070808;
+  font-weight: 900;
+  box-shadow: 0 8px 0 #070808, 0 20px 50px rgba(0, 0, 0, 0.35);
+}
+
+.buzz-banner[data-mode="open"],
+.buzz-banner[data-mode="turn"],
+.buzz-banner[data-mode="won"],
+.buzz-banner[data-mode="point"] {
+  display: inline-flex;
+}
+
+.buzz-banner-icon {
+  font-size: 2rem;
+  line-height: 1;
+}
+
+.buzz-banner-text {
+  font-size: 2rem;
+  font-weight: 900;
+}
+
+.buzz-banner-sub {
+  font-size: 1.05rem;
+  font-weight: 800;
+  opacity: 0.7;
+}
+
+/* عدّاد الثواني الحيّ داخل اللافتة */
+.buzz-banner-timer {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2.4em;
+  padding: 2px 16px;
+  border-radius: 999px;
+  background: var(--team-color, #070808);
+  color: #ffffff;
+  font-size: 2.1rem;
+  font-weight: 900;
+  line-height: 1.25;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+  box-shadow: inset 0 0 0 3px rgba(255, 255, 255, 0.28);
+}
+
+.buzz-banner-timer[hidden] {
+  display: none !important;
+}
+
+.buzz-banner[data-mode="open"] {
+  animation: buzzPulse 0.9s ease-in-out infinite;
+}
+
+.buzz-banner[data-mode="open"] .buzz-banner-text {
+  background: linear-gradient(90deg, var(--team-a, #6965ae), var(--team-b, #4b9cbf));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.buzz-banner[data-mode="won"] {
+  border-color: var(--team-color, #070808);
+  background: var(--team-color, #070808);
+  color: #ffffff;
+  box-shadow: 0 8px 0 #070808, 0 0 40px var(--team-color, #070808);
+  animation: popScale 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.buzz-banner[data-mode="won"] .buzz-banner-sub {
+  opacity: 0.9;
+}
+
+/* الوضع الحيّ: مؤقّت لاعب يعمل الآن — لون الفريق مع عدّاد كبير */
+.buzz-banner[data-mode="turn"] {
+  border-color: var(--team-color, #070808);
+  background: #070808;
+  color: #ffffff;
+  box-shadow: 0 8px 0 rgba(0, 0, 0, 0.6), 0 0 46px var(--team-color, #070808);
+  animation: popScale 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.buzz-banner[data-mode="turn"] .buzz-banner-text {
+  color: var(--team-color, #ffffff);
+  text-shadow: 0 0 18px rgba(0, 0, 0, 0.6);
+}
+
+.buzz-banner[data-mode="turn"] .buzz-banner-sub {
+  opacity: 0.92;
+}
+
+.buzz-banner[data-mode="point"] {
+  border-color: #16a34a;
+  background: #16a34a;
+  color: #ffffff;
+  box-shadow: 0 8px 0 #070808, 0 0 40px rgba(22, 163, 74, 0.75);
+  animation: popScale 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.buzz-banner[data-mode="point"] .buzz-banner-sub {
+  opacity: 0.95;
+}
+
+@keyframes buzzPulse {
+  0%,
+  100% { transform: translateX(-50%) scale(1); }
+  50% { transform: translateX(-50%) scale(1.06); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .buzz-banner[data-mode="open"] { animation: none; }
+}
+
+/* ---------------- شبكة رموز الدخول في قائمة البداية ---------------- */
+.lobby-qr-grid {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 16px;
+  margin-bottom: 0.6rem;
+}
+
+.qr-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.qr-card-label {
+  font-size: 0.95rem;
+  font-weight: 900;
+  color: #374151;
+}
+
+.qr-card[data-team="a"] .qr-card-label { color: #6965ae; }
+.qr-card[data-team="b"] .qr-card-label { color: #4b9cbf; }
+
+.qr-box-sm {
+  padding: 8px;
+  border-radius: 14px;
+  box-shadow: 0 4px 0 #070808;
+}
+
+.qr-canvas-sm {
+  width: 170px;
+  height: 170px;
+}

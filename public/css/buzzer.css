@@ -1,0 +1,541 @@
+/* ==================================================================
+   جرس اللاعب — كل الألوان مشتقّة من لون فريقي (--team)
+   وثيم اللعبة (--bg / --cell) كما اختاره الحكم.
+   الحالة تُضبط على <body data-view="...">
+   ================================================================== */
+
+:root {
+  --team: #6965ae;
+  --bg: #73c4ee;
+  --cell: #ede5bb;
+  --p: 1;
+}
+
+/* عناصر تُخفى/تُظهر من الجافاسكربت عبر خاصية hidden
+   (نحتاج !important لأن قواعد .bz-* تستخدم display بشكل أقوى من قاعدة المتصفح) */
+[hidden] {
+  display: none !important;
+}
+
+html,
+body.bz-body {
+  min-height: 100%;
+  margin: 0;
+}
+
+body.bz-body {
+  --ink: #ffffff;
+  --ink-dim: rgba(255, 255, 255, 0.72);
+  --panel: color-mix(in srgb, var(--team) 22%, #120e22);
+  background: radial-gradient(
+      120% 90% at 50% -10%,
+      color-mix(in srgb, var(--team) 55%, #ffffff) 0%,
+      color-mix(in srgb, var(--team) 78%, #0d0a18) 42%,
+      #0d0a18 100%
+    ),
+    #0d0a18;
+  color: var(--ink);
+  transition: background 0.6s ease;
+  overflow: hidden;
+  overscroll-behavior: none;
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* ---------- الشريط العلوي ---------- */
+
+.bz-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  padding: max(0.7rem, env(safe-area-inset-top)) 0.9rem 0.5rem;
+}
+
+.bz-top-right {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.bz-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5em;
+  padding: 0.45em 0.9em;
+  border-radius: 999px;
+  font-weight: 800;
+  font-size: 0.95rem;
+  background: color-mix(in srgb, var(--team) 40%, rgba(0, 0, 0, 0.25));
+  border: 2px solid color-mix(in srgb, var(--team) 85%, #ffffff);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.3);
+  white-space: nowrap;
+  max-width: 55vw;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.bz-chip-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--team);
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.65);
+  flex: none;
+}
+
+.bz-icon-btn {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  font-size: 1.15rem;
+  display: grid;
+  place-items: center;
+  background: rgba(255, 255, 255, 0.12);
+  border: 1.5px solid rgba(255, 255, 255, 0.2);
+  color: #fff;
+}
+
+.bz-icon-btn.sfx-off {
+  opacity: 0.6;
+}
+
+.bz-conn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4em;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--ink-dim);
+}
+
+.bz-conn-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #f0872b;
+  box-shadow: 0 0 8px currentColor;
+}
+
+.bz-conn[data-status="open"] .bz-conn-dot {
+  background: #5fca7c;
+}
+.bz-conn[data-status="closed"] .bz-conn-dot {
+  background: #ff6b81;
+}
+.bz-conn[data-status="connecting"] .bz-conn-dot {
+  animation: bzBlink 1s ease-in-out infinite;
+}
+
+@keyframes bzBlink {
+  50% {
+    opacity: 0.25;
+  }
+}
+
+/* ---------- المنطقة الأساسية ---------- */
+
+.bz-stage {
+  height: calc(100vh - 68px);
+  height: calc(100dvh - 68px);
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+  padding: 0 0.9rem max(0.9rem, env(safe-area-inset-bottom));
+}
+
+.bz-question {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0.7rem 0.85rem;
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--cell) 92%, #ffffff);
+  border: 3px solid #070808;
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.35);
+  animation: bzDrop 0.35s cubic-bezier(0.34, 1.4, 0.64, 1);
+  max-height: 46vh;
+  overflow: auto;
+}
+
+@keyframes bzDrop {
+  from {
+    opacity: 0;
+    transform: translateY(-12px);
+  }
+}
+
+.bz-letter {
+  flex: none;
+  width: 2.6rem;
+  height: 2.6rem;
+  display: grid;
+  place-items: center;
+  border-radius: 14px;
+  font-size: 1.5rem;
+  font-weight: 900;
+  color: #fff;
+  background: linear-gradient(160deg, color-mix(in srgb, var(--team) 70%, #fff), var(--team));
+  box-shadow: 0 3px 0 rgba(0, 0, 0, 0.35);
+}
+
+.bz-qtext {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 800;
+  line-height: 1.5;
+  color: #3a3428;
+}
+
+/* ---------- المركز: زر / عدّاد / نتيجة ---------- */
+
+.bz-center {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  display: grid;
+  place-items: center;
+  gap: 0.5rem;
+  padding: 0.8rem;
+  border-radius: 26px;
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--team) 30%, rgba(0, 0, 0, 0.35)),
+    rgba(0, 0, 0, 0.35)
+  );
+  border: 2px solid color-mix(in srgb, var(--team) 45%, rgba(255, 255, 255, 0.12));
+  transition: background 0.4s ease, border-color 0.4s ease, box-shadow 0.4s ease;
+  overflow: hidden;
+}
+
+.bz-center-body {
+  display: grid;
+  place-items: center;
+  gap: 0.35rem;
+  text-align: center;
+  padding: 0.5rem;
+}
+
+.bz-center-icon {
+  font-size: clamp(3rem, 22vw, 7rem);
+  line-height: 1;
+  filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.45));
+}
+
+.bz-center-title {
+  font-size: clamp(1.5rem, 7vw, 2.6rem);
+  font-weight: 900;
+  letter-spacing: 0.01em;
+}
+
+.bz-center-sub {
+  font-size: clamp(0.85rem, 3.4vw, 1.15rem);
+  font-weight: 700;
+  color: var(--ink-dim);
+}
+
+/* زر الضغط الكبير */
+.bz-hit {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  gap: 0.4rem;
+  border-radius: 24px;
+  background: linear-gradient(
+    165deg,
+    color-mix(in srgb, var(--team) 65%, #ffffff),
+    var(--team) 55%,
+    color-mix(in srgb, var(--team) 78%, #000000)
+  );
+  box-shadow: inset 0 0 0 3px rgba(255, 255, 255, 0.35), 0 12px 30px rgba(0, 0, 0, 0.45);
+  color: #fff;
+  animation: bzArm 1.05s ease-in-out infinite;
+}
+
+.bz-hit:active {
+  transform: scale(0.985);
+}
+
+.bz-hit-icon {
+  font-size: clamp(2.6rem, 18vw, 5.5rem);
+  line-height: 1;
+  filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.4));
+}
+
+.bz-hit-label {
+  font-size: clamp(1.8rem, 9vw, 3.2rem);
+  font-weight: 900;
+  text-shadow: 0 3px 0 rgba(0, 0, 0, 0.28);
+}
+
+@keyframes bzArm {
+  0%,
+  100% {
+    filter: brightness(1);
+    transform: scale(1);
+  }
+  50% {
+    filter: brightness(1.22);
+    transform: scale(1.015);
+  }
+}
+
+.bz-hit.bz-pressed {
+  animation: bzSent 0.35s ease-out;
+}
+
+@keyframes bzSent {
+  0% {
+    transform: scale(0.94);
+    filter: brightness(1.6);
+  }
+  100% {
+    transform: scale(1);
+    filter: brightness(1);
+  }
+}
+
+/* عدّاد دائري */
+.bz-ring {
+  position: relative;
+  width: min(58vw, 44vh, 260px);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: conic-gradient(
+    var(--team) calc(var(--p) * 360deg),
+    rgba(255, 255, 255, 0.14) 0
+  );
+  box-shadow: 0 0 34px color-mix(in srgb, var(--team) 60%, transparent);
+  transition: box-shadow 0.3s ease;
+}
+
+.bz-ring::before {
+  content: "";
+  position: absolute;
+  inset: 9%;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--team) 16%, #0d0a18);
+}
+
+.bz-ring-num {
+  position: relative;
+  font-size: clamp(3rem, 20vw, 6rem);
+  font-weight: 900;
+  line-height: 1;
+  text-shadow: 0 4px 0 rgba(0, 0, 0, 0.25);
+}
+
+.bz-ring-sub {
+  position: absolute;
+  bottom: 20%;
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: var(--ink-dim);
+}
+
+/* ---------- الحالات ---------- */
+
+/* أجراس متوقفة */
+body[data-view="off"] .bz-center {
+  background: rgba(0, 0, 0, 0.32);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+body[data-view="off"] .bz-center-icon {
+  filter: grayscale(1) opacity(0.6);
+}
+
+/* استعدّ (لم يُكشف السؤال) */
+body[data-view="idle"] .bz-center,
+body[data-view="waiting"] .bz-center {
+  background: rgba(0, 0, 0, 0.3);
+}
+
+/* دوري: توهّج قوي بلون فريقي + نبض */
+body[data-view="mine"] .bz-center {
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--team) 42%, rgba(0, 0, 0, 0.3)),
+    rgba(0, 0, 0, 0.35)
+  );
+  border-color: color-mix(in srgb, var(--team) 85%, #ffffff);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--team) 45%, transparent),
+    0 0 60px color-mix(in srgb, var(--team) 55%, transparent);
+}
+
+.bz-ring.bz-beat {
+  animation: bzBeat 0.5s ease-out;
+}
+
+@keyframes bzBeat {
+  0% {
+    transform: scale(1.05);
+    box-shadow: 0 0 60px color-mix(in srgb, var(--team) 95%, transparent);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* ليس دوري: باهت بلا توهّج */
+body[data-view="rival"] .bz-center {
+  background: rgba(0, 0, 0, 0.42);
+  border-color: rgba(255, 255, 255, 0.1);
+  box-shadow: none;
+  filter: saturate(0.45) brightness(0.82);
+}
+
+body[data-view="rival"] .bz-ring {
+  background: conic-gradient(
+    #9aa3b0 calc(var(--p) * 360deg),
+    rgba(255, 255, 255, 0.12) 0
+  );
+  box-shadow: none;
+}
+
+body[data-view="rival"] .bz-ring::before {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+/* إجابة صحيحة (أنا) */
+body[data-view="correct"] .bz-center {
+  background: linear-gradient(180deg, #4ade80, #15803d);
+  border-color: #bbf7d0;
+  box-shadow: 0 0 70px rgba(74, 222, 128, 0.7);
+  animation: bzPopIn 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* الخصم أخذ النقطة */
+body[data-view="rivalPoint"] .bz-center {
+  background: rgba(0, 0, 0, 0.45);
+  border-color: rgba(255, 255, 255, 0.12);
+  filter: saturate(0.4) brightness(0.8);
+}
+
+/* انتهى الوقت */
+body[data-view="expired"] .bz-center {
+  background: linear-gradient(180deg, rgba(240, 135, 43, 0.35), rgba(0, 0, 0, 0.4));
+  border-color: rgba(255, 171, 92, 0.5);
+}
+
+/* انتهت اللعبة */
+body[data-view="over"] .bz-center {
+  background: linear-gradient(180deg, rgba(255, 217, 61, 0.4), rgba(0, 0, 0, 0.4));
+  border-color: #ffe680;
+}
+
+@keyframes bzPopIn {
+  0% {
+    transform: scale(0.7);
+  }
+  60% {
+    transform: scale(1.06);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.bz-note {
+  flex: none;
+  margin: 0;
+  text-align: center;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--ink-dim);
+  min-height: 1.2em;
+}
+
+/* ---------- الاحتفال والوميض ---------- */
+
+.bz-flash {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background: #fff;
+  opacity: 0;
+  z-index: 40;
+}
+
+.bz-flash.on {
+  animation: bzFlash 0.5s ease-out;
+}
+
+@keyframes bzFlash {
+  0% {
+    opacity: 0.85;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+.bz-confetti {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 30;
+}
+
+.bz-confetti i {
+  position: absolute;
+  top: -8vh;
+  width: 10px;
+  height: 16px;
+  border-radius: 3px;
+  animation: bzFall linear forwards;
+}
+
+@keyframes bzFall {
+  0% {
+    transform: translateY(-10vh) rotate(0deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(112vh) rotate(720deg);
+    opacity: 0.9;
+  }
+}
+
+/* ---------- زر تشغيل الصوت ---------- */
+
+.sfx-unlock {
+  position: fixed;
+  left: 50%;
+  bottom: max(0.9rem, env(safe-area-inset-bottom));
+  transform: translateX(-50%) translateY(180%);
+  z-index: 60;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5em;
+  padding: 0.7em 1.1em;
+  border-radius: 999px;
+  font-weight: 800;
+  font-size: 0.95rem;
+  color: #241a05;
+  background: linear-gradient(160deg, #ffe680, #fcb017);
+  box-shadow: var(--shadow-md);
+  transition: transform 0.3s cubic-bezier(0.34, 1.4, 0.64, 1);
+}
+
+.sfx-unlock.show {
+  transform: translateX(-50%) translateY(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bz-hit,
+  .bz-ring.bz-beat,
+  .bz-center,
+  .bz-question,
+  .bz-confetti i {
+    animation: none !important;
+  }
+  .bz-body {
+    transition: none;
+  }
+}

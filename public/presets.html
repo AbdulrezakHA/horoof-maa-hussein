@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#130f26" />
+    <title>مجموعات الأسئلة — حروف</title>
+    <link rel="stylesheet" href="/css/base.css" />
+    <link rel="stylesheet" href="/css/presets.css" />
+  </head>
+  <body class="pst-body">
+    <header class="pst-head">
+      <a class="pst-back" href="/referee">→ الحكم</a>
+      <h1>📚 مجموعات الأسئلة</h1>
+      <button
+        class="sfx-toggle"
+        id="sfxBtn"
+        data-sfx-toggle
+        type="button"
+        title="تشغيل/إيقاف المؤثرات الصوتية"
+        aria-label="المؤثرات الصوتية"
+      >
+        <span class="sfx-ico">🔊</span>
+      </button>
+    </header>
+
+    <!-- اختيار المجموعة وأدواتها -->
+    <section class="pst-card">
+      <div class="pst-tools">
+        <select class="pst-select" id="presetSelect" aria-label="المجموعة"></select>
+        <button class="pst-btn pst-primary" id="newBtn" type="button">➕ جديدة</button>
+        <button class="pst-btn" id="dupBtn" type="button">⧉ نسخة</button>
+        <button class="pst-btn" id="exportBtn" type="button">⬇ تصدير</button>
+        <button class="pst-btn" id="importBtn" type="button">⬆ استيراد</button>
+        <button class="pst-btn pst-danger" id="delBtn" type="button">🗑 حذف</button>
+      </div>
+      <div class="pst-stats" id="stats"></div>
+      <div class="pst-warnings" id="warnings" hidden></div>
+      <p class="pst-note">
+        كل مجموعة ملف واحد داخل مجلد <code>presets/</code> باسم المجموعة. عمود «حرف» اتركه
+        <b>تلقائي</b> واللعبة ستستنتج الحرف من أول حرف في الجواب (متجاهلة «ال» التعريف والتشكيل).
+      </p>
+    </section>
+
+    <!-- تحرير الأسئلة -->
+    <section class="pst-card">
+      <div class="pst-tools">
+        <input class="pst-input" id="search" type="search" placeholder="ابحث في الأسئلة أو الأجوبة…" />
+        <label class="pst-toggle"><input type="checkbox" id="showExtra" /> أعمدة إضافية</label>
+        <button class="pst-btn" id="pasteBtn" type="button">📋 لصق من جدول</button>
+        <button class="pst-btn" id="addBtn" type="button">➕ سؤال</button>
+        <button class="pst-btn pst-save" id="saveBtn" type="button">💾 حفظ</button>
+      </div>
+
+      <div class="pst-letters" id="letterFilter"></div>
+
+      <div class="pst-table-wrap">
+        <table class="pst-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>السؤال</th>
+              <th>الجواب</th>
+              <th>حرف</th>
+              <th class="pst-extra" hidden>نقاط</th>
+              <th class="pst-extra" hidden>ثواني</th>
+              <th class="pst-extra" hidden>تلميح</th>
+              <th class="pst-extra" hidden>فئة</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="tbody"></tbody>
+        </table>
+        <div class="pst-empty" id="emptyMsg" hidden>لا توجد أسئلة مطابقة.</div>
+      </div>
+      <button class="pst-more" id="moreBtn" type="button" hidden>عرض المزيد…</button>
+    </section>
+
+    <!-- معاينة بأسلوب اللعبة -->
+    <section class="pst-card pst-preview" id="preview">
+      <div class="pst-preview-head">
+        <span>👁 معاينة كما تظهر للاعبين</span>
+        <button class="pst-icon-btn" id="closePreview" type="button">✕</button>
+      </div>
+      <div style="display: flex; gap: 12px; align-items: flex-start">
+        <span class="pst-preview-letter" id="previewLetter">؟</span>
+        <div style="flex: 1">
+          <div class="pst-preview-q" id="previewQ"></div>
+          <div class="pst-preview-a" id="previewA" hidden>
+            <span>✅</span><span id="previewAText"></span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- نافذة اللصق / الاستيراد -->
+    <div class="pst-modal" id="pasteModal">
+      <div class="pst-modal-box">
+        <h2 id="pasteTitle">📋 لصق من جدول</h2>
+        <p>
+          انسخ عمودين من Google Sheets أو Excel (السؤال ثم الجواب) والصقهما هنا. يمكنك أيضاً لصق
+          ثلاثة أعمدة: سؤال، جواب، حرف. الفاصل يمكن أن يكون Tab أو فاصلة.
+        </p>
+        <textarea class="pst-textarea" id="pasteText" spellcheck="false" placeholder="السؤال	الجواب"></textarea>
+        <div class="pst-note" id="pasteInfo"></div>
+        <div class="pst-modal-actions">
+          <button class="pst-btn" id="pasteCancel" type="button">إلغاء</button>
+          <button class="pst-btn pst-primary" id="pasteCheck" type="button">🔍 تحقّق</button>
+          <button class="pst-btn pst-save" id="pasteApply" type="button" disabled>✅ اعتماد</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="pst-toast" id="toast"><div class="pst-toast-inner" id="toastText"></div></div>
+
+    <script type="module" src="/js/presets.js"></script>
+  </body>
+</html>

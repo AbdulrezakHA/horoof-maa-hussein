@@ -1,0 +1,15 @@
+{
+  "name": "horoof-maa-hussein",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "حروف مع حسين - لعبة حروف تنافسية بين فريقين مع حكم",
+  "scripts": {
+    "start": "node server/index.js",
+    "dev": "node server/index.js",
+    "build:questions": "node scripts/build-questions.mjs"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
