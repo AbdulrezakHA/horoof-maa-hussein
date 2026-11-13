@@ -512,9 +512,9 @@ export function applyAction(state, board, action) {
     }
 
     case "reset": {
-      // جولة جديدة: تُخلط الحروف افتراضياً حتى لا تتكرّر نفس اللوحة كل جولة
+      // جولة جديدة: ٢٥ حرفاً عشوائياً من الـ٢٨ في مواقع عشوائية (تدور كل الحروف مع الجولات)
       const clean = normalizeBoardLetters(board);
-      const fresh = createState(p.shuffle === false ? clean : shuffleBoardLetters(clean));
+      const fresh = createState(p.shuffle === false ? clean : randomBoardLetters(clean));
       fresh.presets = { active: [...(st.presets?.active || [])] };
       fresh.teams.a.name = st.teams.a.name;
       fresh.teams.a.color = st.teams.a.color;
@@ -643,6 +643,28 @@ export function normalizeBoardLetters(board) {
   }
 
   return { ...board, cells };
+}
+
+/**
+ * يوزّع على خلايا اللوحة حروفاً أساسية **عشوائية**: كل جولة تُختار ٢٥ حرفاً (بعدد الخلايا)
+ * من الـ٢٨ بالقرعة، فلا تبقى نفس ثلاثة حروف خارج الشبكة في كل مرة، ولا يتكرّر أي حرف.
+ * يقبل مولّد أرقام عشوائي بديل (rng) لتسهيل الاختبار.
+ */
+export function randomBoardLetters(board, rng = Math.random) {
+  if (!board || !Array.isArray(board.cells)) return board;
+
+  const pool = [...BASE_LETTERS];
+  for (let i = pool.length - 1; i > 0; i--) {
+    const j = Math.floor(rng() * (i + 1));
+    const tmp = pool[i];
+    pool[i] = pool[j];
+    pool[j] = tmp;
+  }
+
+  return {
+    ...board,
+    cells: board.cells.map((cell, i) => ({ ...cell, letter: i < pool.length ? pool[i] : "" })),
+  };
 }
 
 /**

@@ -5,6 +5,10 @@ cd /d "%~dp0"
 
 set PORT=3000
 
+rem --- Prefer the bundled Node runtime (runtime\node.exe) so no install is needed ---
+set NODE=node
+if exist "%~dp0runtime\node.exe" set NODE="%~dp0runtime\node.exe"
+
 echo.
 echo   ============================================
 echo        Haroof maa Hussein  -  Arabic Letters
@@ -27,6 +31,8 @@ timeout /t 6 >nul
 exit /b 0
 
 :run
+if exist "%~dp0runtime\node.exe" goto :firewall
+
 where node >nul 2>nul
 if not errorlevel 1 goto :firewall
 
@@ -36,6 +42,9 @@ echo       1. Open:  https://nodejs.org
 echo       2. Download the version marked LTS
 echo       3. Install it - just click Next until the end
 echo       4. Double-click this file again
+echo.
+echo   (If you used install.bat from the game folder, this should
+echo    never happen: it already comes with a bundled Node runtime.)
 echo.
 pause
 exit /b 1
@@ -54,7 +63,7 @@ echo   for permission to allow the game through the Private network firewall.
 echo   Choose "Allow access" if the prompt appears.
 echo.
 
-powershell -NoProfile -Command "if (Get-NetFirewallRule -DisplayName 'HiveGame' -ErrorAction SilentlyContinue) { exit 0 }; exit 1" >nul 2>nul
+powershell -NoProfile -Command "if (Get-NetFirewallRule -DisplayName 'HoroofMaaHussein','HiveGame' -ErrorAction SilentlyContinue) { exit 0 }; exit 1" >nul 2>nul
 if not errorlevel 1 goto :startgame
 
 choice /C YN /N /M "Add the one-time Windows firewall rule for phones on this Wi-Fi"
@@ -63,13 +72,13 @@ if errorlevel 2 goto :startgame
 echo.
 echo   Windows will now ask for administrator permission once.
 echo   Choose Yes to allow TCP port %PORT% on Private networks.
-powershell -NoProfile -Command "Start-Process -FilePath netsh -ArgumentList 'advfirewall firewall add rule name=HiveGame dir=in action=allow protocol=TCP localport=%PORT% profile=private' -Verb RunAs -Wait"
+powershell -NoProfile -Command "Start-Process -FilePath netsh -ArgumentList 'advfirewall firewall add rule name=HoroofMaaHussein dir=in action=allow protocol=TCP localport=%PORT% profile=private' -Verb RunAs -Wait"
 
 :startgame
 
 start "" "http://localhost:%PORT%/screen"
 
-node server\index.js --port %PORT%
+%NODE% server\index.js --port %PORT%
 
 echo.
 echo   The server has stopped.

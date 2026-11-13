@@ -32,6 +32,7 @@ import {
   findWinner,
   shuffleBoardLetters,
   normalizeBoardLetters,
+  randomBoardLetters,
 } from "../shared/engine.js";
 import {
   listPresets,
@@ -141,9 +142,8 @@ const rooms = new Map();
 
 function getRoom(id = "main") {
   if (!rooms.has(id)) {
-    // كل غرفة تبدأ بلوحة مخلوطة (نفس الحروف، لكن مواضعها مختلفة كل مرة).
-    // normalizeBoardLetters تضمن حروفاً أساسية فقط (٢٨ حرفاً) وبلا أي تكرار.
-    const board = shuffleBoardLetters(normalizeBoardLetters(structuredClone(DEFAULT_BOARD)));
+    // كل غرفة تبدأ بلوحة عشوائية: ٢٥ حرفاً من الحروف الأساسية الـ٢٨ (بلا تكرار) في مواقع عشوائية.
+    const board = randomBoardLetters(normalizeBoardLetters(structuredClone(DEFAULT_BOARD)));
     rooms.set(id, {
       id,
       board,

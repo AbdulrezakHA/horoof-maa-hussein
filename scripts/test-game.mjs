@@ -2,7 +2,7 @@
  * اختبار تكاملي للعبة عبر WebSocket (يحاكي الشاشة + الحكم).
  *   node scripts/test-game.mjs [port]
  */
-import { shuffleBoardLetters, normalizeBoardLetters } from "../shared/engine.js";
+import { shuffleBoardLetters, normalizeBoardLetters, randomBoardLetters } from "../shared/engine.js";
 
 const PORT = process.argv[2] || 3111;
 const BASE = `http://127.0.0.1:${PORT}`;
@@ -134,10 +134,20 @@ async function main() {
   check("لوحة الشاشة مبنية من الحالة (25 حرفاً)", liveOrder.length === 25 && liveOrder2.length === 25);
   check("إعادة الجولة تخلط الحروف من جديد", liveOrder !== liveOrder2);
 
-  // الحروف بعد الخلط = نفس حروف اللوحة الأصلية (تبديل مواقع، لا حذف/تكرار)
-  const sortedOriginal = board.cells.map((c) => c.letter).sort().join("");
-  const sortedLive = board.cells.map((c) => last(ref).state.cells[c.id].letter).sort().join("");
-  check("الخلط لا يفقد أو يكرّر أي حرف", sortedOriginal === sortedLive);
+  // كل جولة تُسحب ٢٥ حرفاً بالقرعة من الـ٢٨ في مواقع جديدة
+  const samePositions = board.cells.every((c) => last(ref).state.cells[c.id].letter === c.letter);
+  check("لوحة الجولة ليست نسخة حرفية من قالب اللوحة (سحب عشوائي)", !samePositions,
+    board.cells.map((c) => last(ref).state.cells[c.id].letter).join(""));
+
+  // الدوران: مع عدّة جولات يجب أن تظهر حروف كانت خارج الشبكة في جولة سابقة
+  const seenLetters = new Set(board.cells.map((c) => last(ref).state.cells[c.id].letter));
+  for (let round = 0; round < 4; round++) {
+    ref.send(JSON.stringify({ t: "action", action: { type: "reset" } }));
+    await sleep(220);
+    for (const c of board.cells) seenLetters.add(last(ref).state.cells[c.id].letter);
+  }
+  check("الحروف تدور بين الجولات (تظهر حروف كانت مستبعدة)", seenLetters.size > 25,
+    `ظهر ${seenLetters.size} حرفاً مختلفاً في ٥ جولات`);
 
   // --- الحروف الأساسية فقط، وبلا تكرار في الشبكة ---
   const GRID_BASE = [..."ابتثجحخدذرزسشصضطظعغفقكلمنهوي"];
@@ -182,6 +192,31 @@ async function main() {
     fixed.cells.map((c) => c.letter).join(""));
   check("التطبيع لا يعدّل اللوحة الأصلية",
     legacyBoard.cells.map((c) => c.letter).join("") === "ؤأىةئبببيو");
+
+  // توزيع الحروف العشوائي: ٢٥ حرفاً بالقرعة من الـ٢٨، بلا تكرار، والحروف المستبعدة تتغيّر
+  const beforeLetters = board.cells.map((c) => c.letter).join("");
+  const seeded = (seed) => () => {
+    seed = (seed * 1103515245 + 12345) % 2147483648;
+    return seed / 2147483648;
+  };
+  const drawA = randomBoardLetters(board, seeded(7));
+  const drawB = randomBoardLetters(board, seeded(99));
+  const lettersOf = (b) => new Set(b.cells.map((c) => c.letter));
+  check("السحب العشوائي يعطي ٢٥ حرفاً أساسياً بلا تكرار",
+    drawA.cells.length === 25 &&
+      new Set(drawA.cells.map((c) => c.letter)).size === 25 &&
+      drawA.cells.every((c) => GRID_BASE.includes(c.letter)),
+    drawA.cells.map((c) => c.letter).join(""));
+  check("كل جولة تستبعد ٣ حروف فقط من الـ٢٨",
+    GRID_BASE.filter((l) => !lettersOf(drawA).has(l)).length === 3,
+    "المستبعد: " + GRID_BASE.filter((l) => !lettersOf(drawA).has(l)).join(" "));
+  check("السحب يحافظ على معرّفات الخلايا ولا يعدّل لوحة المصدر",
+    drawA.cells.every((c, i) => c.id === board.cells[i].id) &&
+      board.cells.map((c) => c.letter).join("") === beforeLetters);
+  check("سحبتان مختلفتان تُستبعد فيهما حروف مختلفة",
+    GRID_BASE.filter((l) => !lettersOf(drawA).has(l)).join("") !==
+      GRID_BASE.filter((l) => !lettersOf(drawB).has(l)).join(""),
+    `${GRID_BASE.filter((l) => !lettersOf(drawA).has(l)).join("")} | ${GRID_BASE.filter((l) => !lettersOf(drawB).has(l)).join("")}`);
 
   // تغيير حرف من الحكم: يُردّ دائماً إلى الحرف الأساسي
   const targetCell = board.cells.find((c) => last(ref).state.cells[c.id].letter === "ص")?.id || "r1c2";
