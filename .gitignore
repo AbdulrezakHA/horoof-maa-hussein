@@ -19,3 +19,4 @@ data/state.json
 *_log.txt
 *_out.txt
 ~$*
+data/active-port.txt

@@ -68,6 +68,8 @@ export class Transport {
         this.onPairing(msg);
       } else if (msg.t === "buzzed") {
         this.onBuzzed(msg);
+      } else if (this.onMessage) {
+        this.onMessage(msg); // رسائل أخرى (مثل kicked للاعب)
       }
     };
 

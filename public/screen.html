@@ -13,7 +13,7 @@
     <link rel="stylesheet" href="/css/screen.css" />
     <script src="/js/vendor/qrcode.js"></script>
   </head>
-  <body class="screen-body">
+  <body class="screen-body" data-game="none">
     <div class="screen-viewport">
       <svg
         id="gameSvg"
@@ -382,6 +382,7 @@
         <div class="winner-sub">مبروك الفوز!</div>
         <div class="winner-title" id="winnerName">الفريق الأول</div>
         <div class="winner-caption">نجح في ربط طرفي اللوحة أولاً!</div>
+        <div class="winner-stats" id="winnerStats"></div>
       </div>
     </div>
 
@@ -393,10 +394,23 @@
       <span class="buzz-banner-timer" id="buzzBannerTimer" hidden></span>
     </div>
 
+    <!-- قائمة الألعاب: قبل أن يختار الحكم لعبة -->
+    <div class="hub-screen" id="hubScreen">
+      <div class="hub-screen-title">🎮 سهرة الألعاب</div>
+      <div class="hub-screen-sub">الحكم يختار اللعبة من جواله…</div>
+      <div class="hub-screen-games">
+        <div class="hub-screen-game"><span>🔤</span>حروف مع حسين</div>
+        <div class="hub-screen-game"><span>🚫</span>الكلمة الممنوعة</div>
+      </div>
+      <div class="hub-screen-night" id="hubNight"></div>
+    </div>
+
+    <!-- لعبة «الكلمة الممنوعة» -->
+    <div class="taboo-screen" id="tabooScreen"></div>
+
     <canvas id="confetti" class="confetti-canvas"></canvas>
 
-    <!-- شارة حالة اتصال الحكم في الزاوية العلوية -->
-    <button class="sfx-toggle" id="sfxBtn" data-sfx-toggle type="button" title="تشغيل/إيقاف المؤثرات الصوتية" aria-label="المؤثرات الصوتية"><span class="sfx-ico">🔊</span></button>
+    <!-- شارة حالة اتصال الحكم في الزاوية العلوية (للعرض فقط — التحكم كله من جوال الحكم) -->
     <div class="conn-badge" id="connBadge">
       <span class="conn-dot" id="connBadgeDot"></span>
       <span id="connBadgeText">بانتظار الحكم</span>
@@ -414,17 +428,22 @@
               <canvas id="qrCanvas" class="qr-canvas"></canvas>
             </div>
           </div>
-          <div class="qr-card" id="qrCardA" data-team="a">
-            <div class="qr-card-label">🔔 جرس الفريق الأول</div>
-            <div class="qr-box qr-box-sm">
-              <canvas id="qrCanvasA" class="qr-canvas qr-canvas-sm"></canvas>
+          <div class="qr-card qr-card-play">
+            <div class="qr-card-label">🔔 اللاعبون — رمز واحد للجميع</div>
+            <div class="qr-box">
+              <canvas id="qrCanvasPlay" class="qr-canvas"></canvas>
             </div>
           </div>
-          <div class="qr-card" id="qrCardB" data-team="b">
-            <div class="qr-card-label">🔔 جرس الفريق الثاني</div>
-            <div class="qr-box qr-box-sm">
-              <canvas id="qrCanvasB" class="qr-canvas qr-canvas-sm"></canvas>
-            </div>
+        </div>
+        <p class="lobby-hint">كل لاعب يمسح الرمز بجواله، يكتب اسمه ويختار فريقه</p>
+        <div class="lobby-teams" id="lobbyTeams">
+          <div class="lobby-team" data-team="a">
+            <div class="lobby-team-name" id="lobbyTeamNameA">الفريق الأول</div>
+            <div class="lobby-team-players" id="lobbyPlayersA"></div>
+          </div>
+          <div class="lobby-team" data-team="b">
+            <div class="lobby-team-name" id="lobbyTeamNameB">الفريق الثاني</div>
+            <div class="lobby-team-players" id="lobbyPlayersB"></div>
           </div>
         </div>
         <div class="lobby-url" id="lobbyUrl">جارٍ تجهيز الرابط…</div>
@@ -433,10 +452,6 @@
           <span class="pair-code" id="lobbyPairCode">------</span>
         </div>
         <p class="lobby-status" id="lobbyStatusText">بانتظار مسح الرمز من الجوال…</p>
-        <div class="lobby-actions">
-          <button class="screen-btn btn-primary" id="lobbyStart">ابدأ اللعب الآن</button>
-          <button class="screen-btn btn-secondary" id="lobbyHide">إخفاء</button>
-        </div>
       </div>
     </div>
 

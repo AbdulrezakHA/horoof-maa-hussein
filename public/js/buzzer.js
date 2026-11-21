@@ -1,35 +1,49 @@
 /**
- * جرس اللاعب — تجربة تلقائية كاملة (بلا أي تدخّل من الحكم أثناء السؤال).
- * يُفتح من: /buzzer?room=main&team=a  (أو team=b)
+ * جوال اللاعب — جرس شخصي لكل لاعب (نظام اللاعبين v2).
  *
- * كل شيء يُشتقّ من حالة الخادم فقط:
- *   - كشف السؤال      → تُفتح الأجراس تلقائياً (المحرّك)
- *   - أول ضغطة        → يفوز صاحبها ويبدأ مؤقّته (المحرّك)
- *   - انتهاء مؤقّت #1 → يبدأ مؤقّت اللاعب الثاني تلقائياً (المحرّك)
- *   - إعلان النقطة    → شاشة احتفال للفائز وشاشة «الخصم أخذ النقطة» للآخر
- *   - سؤال جديد       → كل شيء يتصفّر تلقائياً (round يتغيّر)
+ *  /play?room=main           ← رمز QR واحد للجميع: يكتب اللاعب اسمه ويختار فريقه ثم يضغط جرسه
+ *  /buzzer?room=main&team=a  ← الوضع القديم (خطة بديلة): جرس واحد لكل فريق
+ *
+ * كل شيء يُشتقّ من حالة الخادم:
+ *   الجولة ١: الجميع يفكّر بلا حدّ زمني ← أول من يضغط جرسه يجيب
+ *   الجولة ٢: خطأ/انتهى وقته ← الفريق الآخر يجيب بصوت عالٍ (بلا أجراس) مع عدّاد
+ *   الجولة ٣: مفتوح للجميع بلا أجراس وبلا وقت
  *
  * الحالات المرئية (body[data-view]):
- *   off         الأجراس متوقفة / لم تصل الحالة بعد
- *   idle        استعدّ — لم يُكشف السؤال
- *   arm         الأجراس مفتوحة — اضغط الآن!
- *   mine        دوري — عدّاد بلون فريقي + صوت لكل ثانية
- *   rival       دور الخصم — شاشة باهتة بلا صوت
- *   correct     أخذت النقطة — احتفال!
- *   rivalPoint  الخصم أخذ النقطة
- *   expired     انتهى الوقت (بلا إجابة)
- *   over        انتهت اللعبة
+ *   off · idle · arm · mine · rival · correct · rivalPoint · expired · over
  */
 import { Transport, remainingMs } from "/js/transport.js";
 import { sfx } from "/js/sfx.js";
+import { inkFor } from "/shared/colors.js";
+import { initTabooPhone, renderTabooPhone } from "/js/phone-taboo.js";
 
 const params = new URLSearchParams(location.search);
 const room = params.get("room") || "main";
-const team = params.get("team") === "b" ? "b" : "a";
-const rival = team === "a" ? "b" : "a";
+const PLAYER_MODE = location.pathname.startsWith("/play");
+const LEGACY_TEAM = params.get("team") === "b" ? "b" : "a";
 
-// ألوان احتياطية قبل وصول حالة الخادم (تُستبدل بلون الفريق الحقيقي)
+// ألوان احتياطية قبل وصول حالة الخادم
 const FALLBACK_COLOR = { a: "#6965ae", b: "#4b9cbf" };
+
+/* ---------------- هوية اللاعب (ثابتة على هذا الجوال) ---------------- */
+
+function playerIdOnThisPhone() {
+  const KEY = "horoof-player-id";
+  let id = "";
+  try {
+    id = localStorage.getItem(KEY) || "";
+  } catch {}
+  if (!/^[A-Za-z0-9_-]{6,40}$/.test(id)) {
+    const bytes = crypto.getRandomValues(new Uint8Array(12));
+    id = "p" + [...bytes].map((b) => b.toString(36).padStart(2, "0")).join("").slice(0, 18);
+    try {
+      localStorage.setItem(KEY, id);
+    } catch {}
+  }
+  return id;
+}
+
+const ME = PLAYER_MODE ? playerIdOnThisPhone() : `team:${LEGACY_TEAM}`;
 
 const el = {
   chip: document.getElementById("teamChip"),
@@ -56,23 +70,44 @@ const el = {
   note: document.getElementById("buzzNote"),
   confetti: document.getElementById("confetti"),
   flash: document.getElementById("bzFlash"),
+  stage: document.querySelector(".bz-stage"),
+  join: document.getElementById("joinView"),
+  joinForm: document.getElementById("joinForm"),
+  joinName: document.getElementById("joinName"),
+  joinTeams: document.getElementById("joinTeams"),
+  joinNote: document.getElementById("joinNote"),
+  stats: document.getElementById("myStats"),
+  taboo: document.getElementById("tabooPhone"),
 };
 
-const link = new Transport("buzzer", room, "", { team });
+const link = PLAYER_MODE
+  ? new Transport("player", room, "", { playerId: ME })
+  : new Transport("buzzer", room, "", { team: LEGACY_TEAM });
+
+initTabooPhone({
+  me: ME,
+  myTeam: () => myTeam(),
+  sendRaw: (m) => link.sendRaw(m),
+  sfx,
+  inkFor,
+  getState: () => snap?.state,
+  remainingMs: (t) => remainingMs(t, link.serverOffset),
+});
 
 let snap = null; // آخر لقطة حالة
 let sent = false; // أرسلنا ضغطة وننتظر رد الخادم
-let sentGuard = 0; // مؤقّت أمان لفكّ قفل الزر
+let sentGuard = 0;
+let joining = false; // اللاعب فتح شاشة الانضمام (أول مرة أو لتغيير الاسم/الفريق)
+let chosenTeam = null; // الفريق المختار في شاشة الانضمام
 
-// نتتبّع الانتقالات لتشغيل كل مؤثّر مرّة واحدة فقط
 const seen = {
   round: -1,
   revealed: false,
-  open: false,
-  winner: null,
+  canPress: false,
+  answerer: null,
+  stage: 0,
   verdictAt: 0,
-  turn: null,
-  stage: null,
+  missedAt: 0,
   expired: false,
   over: false,
 };
@@ -80,6 +115,28 @@ const seen = {
 let clockId = null;
 let lastSec = -1;
 let clockEndsAt = 0;
+
+/* ================= من أنا؟ ================= */
+
+const st = () => snap?.state;
+const me = () => st()?.players?.[ME] || null;
+function myTeam() {
+  if (!PLAYER_MODE) return LEGACY_TEAM;
+  return me()?.team || chosenTeam || "a";
+}
+const rivalOf = (t) => (t === "a" ? "b" : "a");
+const teamName = (t) => st()?.teams?.[t]?.name || (t === "a" ? "الفريق الأول" : "الفريق الثاني");
+const teamColor = (t = myTeam()) => st()?.teams?.[t]?.color || FALLBACK_COLOR[t];
+const joined = () => !PLAYER_MODE || !!me();
+
+/** هل يحقّ لي الضغط الآن؟ ولماذا لا (لشرح الجرس الرمادي). */
+function pressRight(state) {
+  const b = state?.current?.buzz || {};
+  if (!b.enabled) return { ok: false, why: "off" };
+  if (!b.open || b.phase !== "open" || b.stage !== 1) return { ok: false, why: "closed" };
+  if (b.noRepeat && state.lastFirst === ME && PLAYER_MODE) return { ok: false, why: "repeat" };
+  return { ok: true };
+}
 
 /* ================= أدوات مساعدة ================= */
 
@@ -116,8 +173,7 @@ function flash() {
 function confettiBurst() {
   if (!el.confetti) return;
   const colors = [teamColor(), "#ffd93d", "#4ade80", "#ff8fab", "#ffffff"];
-  const n = 90;
-  for (let i = 0; i < n; i++) {
+  for (let i = 0; i < 90; i++) {
     const bit = document.createElement("i");
     bit.style.left = `${Math.random() * 100}%`;
     bit.style.background = colors[i % colors.length];
@@ -127,10 +183,6 @@ function confettiBurst() {
     el.confetti.appendChild(bit);
   }
   setTimeout(clearConfetti, 3600);
-}
-
-function teamColor() {
-  return snap?.state?.teams?.[team]?.color || FALLBACK_COLOR[team];
 }
 
 /* ================= المؤقّت المرئي ================= */
@@ -148,7 +200,7 @@ function stopClock() {
 }
 
 function tickClock() {
-  const c = snap?.state?.current;
+  const c = st()?.current;
   const timer = c?.timer;
   if (!timer?.running) {
     stopClock();
@@ -158,16 +210,19 @@ function tickClock() {
   const total = Math.max(1, timer.total || 1);
   const ratio = Math.max(0, Math.min(1, rem / (total * 1000)));
   const secs = Math.ceil(rem / 1000);
+  const answering =
+    (c.buzz?.phase === "answer" && c.buzz?.player?.id === ME) ||
+    (c.buzz?.phase === "team" && c.buzz?.allowed === myTeam());
 
   document.documentElement.style.setProperty("--p", ratio.toFixed(3));
   if (el.ringNum) el.ringNum.textContent = String(secs);
-  if (el.ringSub) el.ringSub.textContent = c.turn === team ? "ثانية" : "للخصم";
+  if (el.ringSub) el.ringSub.textContent = answering ? "ثانية" : "ثانية متبقية";
 
   if (secs === lastSec) return;
   lastSec = secs;
 
-  // صوت كل ثانية — فقط عندما يكون الدور دوري (توهّج + نبض)
-  if (secs > 0 && c.turn === team && view() === "mine") {
+  // صوت كل ثانية — فقط عندما أكون أنا من يجيب
+  if (secs > 0 && answering) {
     el.ring?.classList.remove("bz-beat");
     void el.ring?.offsetWidth;
     el.ring?.classList.add("bz-beat");
@@ -182,59 +237,108 @@ function tickClock() {
 
 /* ================= الاشتقاق والعرض ================= */
 
-function derive(st) {
-  if (!st) {
+function derive(state) {
+  if (!state) {
     return { v: "off", icon: "⏳", title: "جارٍ التحميل...", sub: "", note: "", body: true };
   }
-  const c = st.current || {};
-  const buzz = c.buzz || {};
-  const timer = c.timer || {};
-  const rivalName = st.teams?.[rival]?.name || "الخصم";
+  if (!state.game) {
+    return { v: "idle", icon: "🎮", title: "بانتظار اختيار اللعبة", sub: "الحكم يختار اللعبة الآن…", note: "", body: true };
+  }
+  const c = state.current || {};
+  const b = c.buzz || {};
+  const mine = myTeam();
+  const answer = c.answerRevealed ? c.question?.answer || "" : "";
+  const answerNote = answer ? `الجواب: ${answer}` : "";
 
-  if (st.winner) {
+  if (state.winner) {
     return {
       v: "over",
       icon: "🏆",
-      title: "انتهت اللعبة",
-      sub: `فاز ${st.teams?.[st.winner]?.name || ""}`,
-      note: "",
+      title: state.winner === mine ? "فاز فريقك! 🎉" : "انتهت اللعبة",
+      sub: `فاز ${teamName(state.winner)}`,
+      note: me() && !me().pseudo ? `نقاطك: ${me().score} · ضغطاتك: ${me().buzzes}` : "",
       body: true,
     };
   }
 
-  if (!buzz.enabled) {
-    return {
-      v: "off",
-      icon: "🔇",
-      title: "الأجراس متوقفة",
-      sub: "سيُفتح الضغط من الحكم",
-      note: "",
-      body: true,
-    };
+  if (!b.enabled) {
+    return { v: "off", icon: "🔇", title: "الأجراس متوقفة", sub: "سيُفتح الضغط من الحكم", note: "", body: true };
   }
 
   if (c.verdict) {
-    if (c.verdict.team === team) {
-      return { v: "correct", icon: "✅", title: "إجابة صحيحة!", sub: "لك النقطة 🎉", note: "أحسنت!", body: true };
+    if (c.verdict.playerId === ME) {
+      return { v: "correct", icon: "✅", title: "إجابتك صحيحة!", sub: "لك النقطة 🎉", note: answerNote || "أحسنت!", body: true };
+    }
+    if (c.verdict.team === mine) {
+      const who = state.players?.[c.verdict.playerId];
+      return {
+        v: "correct",
+        icon: "✅",
+        title: "فريقك أخذ النقطة!",
+        sub: who && !who.pseudo ? `أجاب ${who.name} 👏` : "🎉",
+        note: answerNote,
+        body: true,
+      };
     }
     return {
       v: "rivalPoint",
       icon: "❌",
-      title: `${rivalName} أخذ النقطة`,
+      title: `${teamName(c.verdict.team)} أخذ النقطة`,
       sub: "السؤال القادم فرصتك",
-      note: "",
+      note: answerNote,
       body: true,
     };
   }
 
-  if (timer.running) {
-    if (c.turn === team) {
+  if (c.missed) {
+    return { v: "expired", icon: "🤷", title: "لم يُجب أحد", sub: "لا نقطة لأحد هذه المرة", note: answerNote, body: true };
+  }
+
+  // أحدهم يجيب الآن
+  if (b.phase === "answer" && b.player) {
+    if (b.player.id === ME) {
       return {
         v: "mine",
         icon: "",
-        title: "دورك!",
-        sub: "أجب الآن قبل انتهاء الوقت",
+        title: "أنت تجيب!",
+        sub: "قل الجواب بصوت عالٍ",
         note: "أسرِع!",
+        body: true,
+        ring: true,
+      };
+    }
+    const sameTeam = b.player.team === mine;
+    const label = b.player.id.startsWith("team:") ? teamName(b.player.team) : b.player.name;
+    return {
+      v: "rival",
+      icon: "",
+      title: sameTeam ? `زميلك ${label} يجيب` : `${label} يجيب`,
+      sub: sameTeam ? "ساعده بالصمت 🤫" : `من ${teamName(b.player.team)}`,
+      note: "ليس دورك الآن",
+      body: true,
+      ring: true,
+    };
+  }
+
+  if (b.phase === "open") {
+    const right = pressRight(state);
+    if (right.ok) {
+      return { v: "arm", icon: "🔔", title: "اضغط الآن!", sub: "خذ وقتك للتفكير — أول ضغطة تفوز", note: "أول ضغطة فقط تُحتسب", pad: true };
+    }
+    if (right.why === "repeat") {
+      return { v: "rival", icon: "✋", title: "دع غيرك يضغط أولاً", sub: "ضغطت أولاً في السؤال السابق", note: "", body: true };
+    }
+  }
+
+  // الجولة ٢: دور الفريق الآخر — يجيبون بصوت عالٍ بلا أجراس
+  if (b.phase === "team") {
+    if (b.allowed === mine) {
+      return {
+        v: "mine",
+        icon: "",
+        title: "دوركم!",
+        sub: "جاوبوا بصوت عالٍ — حاولوا قدر ما تريدون",
+        note: "بلا جرس",
         body: true,
         ring: true,
       };
@@ -242,20 +346,28 @@ function derive(st) {
     return {
       v: "rival",
       icon: "",
-      title: `${rivalName} يجيب`,
-      sub: "انتظر دورك...",
-      note: "ليس دورك الآن",
+      title: `دور ${teamName(b.allowed)}`,
+      sub: "انتظروا — إن لم يعرفوا يُفتح السؤال للجميع",
+      note: "",
       body: true,
       ring: true,
     };
   }
 
-  if (buzz.winner) {
-    return { v: "expired", icon: "⌛", title: "انتهى الوقت", sub: "لا إجابة — بانتظار الحكم", note: "", body: true };
+  // الجولة ٣: مفتوح للجميع بلا أجراس وبلا وقت
+  if (b.phase === "all") {
+    return {
+      v: "mine",
+      icon: "🗣️",
+      title: "مفتوح للجميع!",
+      sub: "من يعرف الجواب؟ قولوه بصوت عالٍ",
+      note: "الحكم يحدّد الفريق الذي أجاب",
+      body: true,
+    };
   }
 
-  if (buzz.open) {
-    return { v: "arm", icon: "🔔", title: "اضغط الآن!", sub: "أول ضغطة تفوز", note: "أول ضغطة فقط تُحتسب", pad: true };
+  if (b.phase === "done") {
+    return { v: "expired", icon: "⌛", title: "حُسم السؤال", sub: "بانتظار السؤال القادم", note: "", body: true };
   }
 
   return {
@@ -278,7 +390,6 @@ function paint(d) {
   if (el.center) el.center.dataset.state = d.v;
 
   if (d.pad) {
-    // حالة «أرسلنا» تُبقى الزر ظاهراً لكن بلا استجابة
     if (sent) {
       if (el.hitIcon) el.hitIcon.textContent = "📡";
       if (el.hitLabel) el.hitLabel.textContent = "لحظة...";
@@ -289,47 +400,132 @@ function paint(d) {
   }
 }
 
-function render() {
-  const st = snap?.state;
+/* ---------------- شاشة الانضمام (اسم + فريق) ---------------- */
 
-  // الألوان: لون فريقي (وانعكاس إعدادات الحكم)
+function renderJoin() {
+  const showJoin = PLAYER_MODE && (joining || (snap && !me()));
+  show(el.join, showJoin);
+  show(el.stage, !showJoin);
+  if (!showJoin || !el.joinTeams) return;
+
+  const state = st();
+  const counts = { a: 0, b: 0 };
+  for (const pl of Object.values(state?.players || {})) {
+    if (!pl.pseudo) counts[pl.team] = (counts[pl.team] || 0) + 1;
+  }
+  if (!chosenTeam) chosenTeam = me()?.team || (counts.a <= counts.b ? "a" : "b");
+
+  el.joinTeams.replaceChildren();
+  for (const t of ["a", "b"]) {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "bz-team-pick";
+    btn.classList.toggle("active", chosenTeam === t);
+    btn.style.setProperty("--pick", teamColor(t));
+    btn.style.setProperty("--pick-ink", inkFor(teamColor(t)));
+    const name = document.createElement("span");
+    name.className = "bz-team-pick-name";
+    name.textContent = teamName(t);
+    const n = document.createElement("span");
+    n.className = "bz-team-pick-count";
+    n.textContent = `${counts[t]} ${counts[t] === 1 ? "لاعب" : "لاعبين"}`;
+    btn.append(name, n);
+    btn.addEventListener("click", () => {
+      chosenTeam = t;
+      sfx.play("click");
+      renderJoin();
+    });
+    el.joinTeams.appendChild(btn);
+  }
+  if (el.joinName && document.activeElement !== el.joinName && !el.joinName.value) {
+    el.joinName.value = me()?.name || localStorage.getItem("horoof-player-name") || "";
+  }
+}
+
+el.joinForm?.addEventListener("submit", (e) => {
+  e.preventDefault();
+  const name = (el.joinName?.value || "").trim();
+  if (!name) {
+    if (el.joinNote) el.joinNote.textContent = "اكتب اسمك أولاً";
+    el.joinName?.focus();
+    return;
+  }
+  try {
+    localStorage.setItem("horoof-player-name", name);
+  } catch {}
+  link.sendRaw({ t: "join", name, team: chosenTeam || "a" });
+  joining = false;
+  sfx.unlock();
+  sfx.play("toggleOn");
+  if (el.joinNote) el.joinNote.textContent = "";
+  render();
+});
+
+// الضغط على شارة الاسم يفتح شاشة تغيير الاسم/الفريق
+el.chip?.addEventListener("click", () => {
+  if (!PLAYER_MODE) return;
+  joining = true;
+  chosenTeam = me()?.team || chosenTeam;
+  render();
+});
+
+function render() {
+  const state = st();
+
+  // الألوان: لون فريقي
   const color = teamColor();
-  const theme = st?.theme || {};
   const root = document.documentElement.style;
   root.setProperty("--team", color);
+  root.setProperty("--team-ink", inkFor(color));
+  const theme = state?.theme || {};
   if (theme.bgColor) root.setProperty("--bg", theme.bgColor);
   if (theme.cellColor) root.setProperty("--cell", theme.cellColor);
   document.querySelector('meta[name="theme-color"]')?.setAttribute("content", color);
 
   if (el.dot) el.dot.style.background = color;
   if (el.teamName) {
-    el.teamName.textContent = st?.teams?.[team]?.name || (team === "a" ? "الفريق الأول" : "الفريق الثاني");
+    el.teamName.textContent = PLAYER_MODE
+      ? me()
+        ? `${me().name} · ${teamName(myTeam())}`
+        : "انضمّ للعبة"
+      : teamName(LEGACY_TEAM);
+  }
+  if (el.stats) {
+    const m = me();
+    show(el.stats, PLAYER_MODE && !!m);
+    if (m) el.stats.textContent = `نقاطك ${m.score} · ضغطاتك ${m.buzzes}${m.fastest != null ? ` · أسرع ضغطة ${(m.fastest / 1000).toFixed(2)}ث` : ""}`;
   }
 
-  // السؤال: يظهر فقط بعد كشف الحكم، ويختفي عند تغييره
-  const q = st?.current?.question;
-  const revealed = !!st?.current?.revealed && !!q;
-  if (revealed) {
-    show(el.question, true);
-    if (el.qLetter) el.qLetter.textContent = q.letter || "؟";
-    if (el.qText) el.qText.textContent = q.text || "";
-  } else {
-    show(el.question, false);
-    if (el.qLetter) el.qLetter.textContent = "";
-    if (el.qText) el.qText.textContent = "";
+  renderJoin();
+
+  // اللعبة الحالية: «الكلمة الممنوعة» لها واجهتها الخاصة على الجوال
+  const game = state?.game || null;
+  const inJoin = el.join && !el.join.hidden;
+  const tabooOn = game === "taboo" && !inJoin && joined();
+  show(el.taboo, tabooOn);
+  if (tabooOn) {
+    show(el.stage, false);
+    renderTabooPhone(state);
+    return;
   }
 
-  // الحرف المختار: يظهر دائماً للاعب أثناء اختيار الحرف (حتى قبل كشف السؤال)
-  const selectedLetter = st?.current?.question?.letter || "";
+  // السؤال: يظهر فقط بعد كشف الحكم
+  const q = state?.current?.question;
+  const revealed = !!state?.current?.revealed && !!q;
+  show(el.question, revealed);
+  if (el.qLetter) el.qLetter.textContent = revealed ? q.letter || "؟" : "";
+  if (el.qText) el.qText.textContent = revealed ? q.text || "" : "";
+
+  // الحرف المختار يظهر دائماً
+  const selectedLetter = state?.current?.question?.letter || "";
   if (el.letterBar) {
     show(el.letterBar, !!selectedLetter);
     if (el.letterBarValue) el.letterBarValue.textContent = selectedLetter || "؟";
   }
 
-  paint(derive(st));
+  paint(derive(state));
 
-  // المؤقّت
-  const timer = st?.current?.timer;
+  const timer = state?.current?.timer;
   if (timer?.running) {
     if (timer.endsAt !== clockEndsAt) {
       clockEndsAt = timer.endsAt;
@@ -343,84 +539,78 @@ function render() {
   }
 }
 
-/* ================= المؤثرات الصوتية عند الانتقالات ================= */
+/* ================= المؤثرات عند الانتقالات ================= */
 
-function transitions(st) {
-  if (!st) return;
-  const c = st.current || {};
-  const buzz = c.buzz || {};
-  const timer = c.timer || {};
+function transitions(state) {
+  if (!state || state.game !== "huroof") return;
+  const c = state.current || {};
+  const b = c.buzz || {};
 
-  // سؤال/جولة جديدة → تصفير كل شيء محلياً
   const round = c.round ?? 0;
   if (seen.round !== round) {
     seen.round = round;
     seen.revealed = false;
-    seen.open = false;
-    seen.winner = null;
+    seen.canPress = false;
+    seen.answerer = null;
+    seen.stage = 0;
     seen.verdictAt = 0;
-    seen.turn = null;
-    seen.stage = null;
+    seen.missedAt = 0;
     seen.expired = false;
     lastSec = -1;
     clearConfetti();
   }
 
-  // كشف السؤال
   if (c.revealed && !seen.revealed) {
     seen.revealed = true;
     sfx.play("reveal");
   }
 
-  // فتح باب الضغط
-  if (buzz.open && !seen.open && !buzz.winner) {
-    seen.open = true;
+  // فُتح جرسي (الجولة ١)
+  const can = pressRight(state).ok;
+  if (can && !seen.canPress) {
     sfx.play("arm");
     sfx.vibrate([20, 40, 20]);
-  } else if (!buzz.open) {
-    seen.open = false;
+  }
+  seen.canPress = can;
+
+  // انتقال الجولة: دور فريقي (٢) يرنّ عندنا فقط، والجولة ٣ ترنّ عند الجميع
+  if ((b.stage || 0) !== seen.stage) {
+    if (b.stage === 2 && b.phase === "team" && b.allowed === myTeam()) {
+      sfx.play("turnSwitch");
+      sfx.vibrate([30, 40, 30, 40, 120]);
+    } else if (b.stage === 3 && b.phase === "all") {
+      sfx.play("open");
+      sfx.vibrate([20, 40, 20]);
+    }
+    seen.stage = b.stage || 0;
   }
 
-  // أول ضغطة
-  const winner = buzz.winner || null;
-  if (winner && winner !== seen.winner) {
-    seen.winner = winner;
-    if (winner === team) {
+  // أحدهم ضغط
+  const answerer = b.phase === "answer" ? b.player?.id || null : null;
+  if (answerer && answerer !== seen.answerer) {
+    if (answerer === ME) {
       sfx.play("win");
       sfx.vibrate([50, 60, 160]);
     } else {
       sfx.play("buzz");
-      sfx.vibrate(90);
+      sfx.vibrate(60);
     }
-  } else if (!winner) {
-    seen.winner = null;
   }
+  seen.answerer = answerer;
 
-  // انتقال الدور إلى اللاعب الثاني تلقائياً
-  if (timer.stage === "buzz2" && seen.stage !== "buzz2") {
-    seen.stage = "buzz2";
-    sfx.play("turnSwitch");
-    if (c.turn === team) sfx.vibrate([30, 40, 30, 40, 120]);
-  } else if (timer.stage !== "buzz2") {
-    seen.stage = timer.stage || null;
-  }
-
-  // انتهاء الوقت
-  if (seen.winner && !timer.running && !c.verdict && !st.winner) {
-    if (!seen.expired) {
-      seen.expired = true;
-      sfx.play("timeout");
-      sfx.vibrate([120, 60, 120]);
-    }
-  } else if (timer.running || !seen.winner) {
-    seen.expired = false;
+  // انتهى وقتي بلا حكم
+  const last = (b.history || [])[b.history?.length - 1];
+  if (last?.id === ME && last.result === "timeout" && !seen.expired) {
+    seen.expired = true;
+    sfx.play("timeout");
+    sfx.vibrate([120, 60, 120]);
   }
 
   // إعلان النقطة
   const at = c.verdict?.at || 0;
   if (c.verdict && at !== seen.verdictAt) {
     seen.verdictAt = at;
-    if (c.verdict.team === team) {
+    if (c.verdict.team === myTeam()) {
       flash();
       confettiBurst();
       sfx.play("celebrate");
@@ -431,20 +621,27 @@ function transitions(st) {
     }
   }
 
-  // انتهاء اللعبة
-  if (st.winner && !seen.over) {
+  if (state.winner && !seen.over) {
     seen.over = true;
     sfx.play("gameWin");
-    if (st.winner === team) confettiBurst();
+    if (state.winner === myTeam()) confettiBurst();
     sfx.vibrate([60, 80, 60, 80, 300]);
+  } else if (!state.winner) {
+    seen.over = false;
   }
 }
 
 /* ================= الضغط ================= */
 
+let lastPress = 0;
+
 function buzz() {
-  const b = snap?.state?.current?.buzz;
-  if (!b?.enabled || !b.open || b.winner || sent) return;
+  const state = st();
+  if (!pressRight(state).ok || sent) return;
+  // منع ارتداد الضغط (لمستان متتاليتان بالخطأ)
+  const now = Date.now();
+  if (now - lastPress < 300) return;
+  lastPress = now;
 
   sent = true;
   sfx.play("buzz");
@@ -455,7 +652,6 @@ function buzz() {
   link.buzz();
   render();
 
-  // لو تأخر رد الخادم، نفكّ القفل حتى لا يعلق الزر
   clearTimeout(sentGuard);
   sentGuard = setTimeout(() => {
     if (sent) {
@@ -480,16 +676,13 @@ link.onStatus = (status) => {
   const s = STATUS[status] || STATUS.connecting;
   if (el.conn) el.conn.dataset.status = s.cls;
   if (el.connText) el.connText.textContent = s.text;
-  if (status !== "online") {
-    sent = false;
-  }
+  if (status !== "online") sent = false;
   render();
 };
 
 link.onState = (msg) => {
   snap = msg;
-  const c = msg.state?.current;
-  if (c?.buzz?.winner) {
+  if (msg.state?.current?.buzz?.player) {
     sent = false;
     clearTimeout(sentGuard);
   }
@@ -497,18 +690,23 @@ link.onState = (msg) => {
   render();
 };
 
-link.onBuzzed = (msg) => {
+link.onBuzzed = () => {
   sent = false;
   clearTimeout(sentGuard);
-  if (!msg.ok && msg.reason === "taken") {
-    setTimeout(render, 400);
-  }
   render();
+};
+
+// الحكم أخرج هذا اللاعب: نعود لشاشة الانضمام
+link.onMessage = (msg) => {
+  if (msg.t === "kicked") {
+    joining = true;
+    if (el.joinNote) el.joinNote.textContent = "أخرجك الحكم من اللعبة — يمكنك الانضمام من جديد";
+    render();
+  }
 };
 
 /* ================= إضافات ================= */
 
-// إبقاء الشاشة مضاءة إن كان المتصفح يدعم ذلك
 async function keepAwake() {
   try {
     await navigator.wakeLock?.request("screen");
@@ -519,7 +717,6 @@ document.addEventListener("visibilitychange", () => {
   if (!document.hidden) keepAwake();
 });
 
-// منع تكبير اللمس المزدوج
 document.addEventListener("gesturestart", (event) => event.preventDefault());
 document.addEventListener("dblclick", (event) => event.preventDefault());
 

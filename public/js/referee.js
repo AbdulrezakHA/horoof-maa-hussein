@@ -3,8 +3,18 @@
    ================================================================== */
 import { createBoard } from "/js/board.js";
 import { Transport, remainingMs } from "/js/transport.js";
-import { drawQR, getBuzzerUrls } from "/js/qr.js";
+import { drawQR, getPlayUrls } from "/js/qr.js";
 import { sfx } from "/js/sfx.js";
+import { inkFor, findClashes, autoFixColors, COLOR_THEMES, COLOR_LABELS } from "/shared/colors.js";
+import { initTaboo, renderTaboo } from "/js/referee-taboo.js";
+
+/** بطاقات قائمة الألعاب (المفتاح ← الوصف). */
+const HUB_GAMES = [
+  { id: "huroof", icon: "🔤", name: "حروف مع حسين", desc: "لوحة الحروف والأجراس — صِل طرفي اللوحة" },
+  { id: "taboo", icon: "🚫", name: "الكلمة الممنوعة", desc: "اشرح الكلمة لفريقك دون الكلمات الممنوعة" },
+  { id: null, icon: "🖼️", name: "تحدّي الصور", desc: "قريباً", soon: true },
+  { id: null, icon: "😀", name: "إيموجي", desc: "قريباً", soon: true },
+];
 
 const params = new URLSearchParams(location.search);
 const room = params.get("room") || "main";
@@ -39,6 +49,11 @@ const ui = {
   awardBLabel: el("awardBLabel"),
   unclaimBtn: el("unclaimBtn"),
   clearBtn: el("clearBtn"),
+  noPointBtn: el("noPointBtn"),
+  lobbyToggleBtn: el("lobbyToggleBtn"),
+  screenSoundBtn: el("screenSoundBtn"),
+  screenFullBtn: el("screenFullBtn"),
+  screenHint: el("screenHint"),
   turnA: el("turnA"),
   turnB: el("turnB"),
   turnOpen: el("turnOpen"),
@@ -53,7 +68,10 @@ const ui = {
   bgColor: el("bgColor"),
   cellColor: el("cellColor"),
   selectedColor: el("selectedColor"),
-  presetSelect: el("presetSelect"),
+  themeChips: el("themeChips"),
+  colorWarn: el("colorWarn"),
+  colorWarnList: el("colorWarnList"),
+  colorFixBtn: el("colorFixBtn"),
   presetList: el("presetList"),
   presetReadout: el("presetReadout"),
   reloadPresets: el("reloadPresets"),
@@ -80,15 +98,30 @@ const ui = {
   buzzOpenBtn: el("buzzOpenBtn"),
   buzzResetBtn: el("buzzResetBtn"),
   buzzReadout: el("buzzReadout"),
-  buzzQrA: el("buzzQrA"),
-  buzzQrB: el("buzzQrB"),
+  playQr: el("playQr"),
+  playersCols: el("playersCols"),
+  playersHint: el("playersHint"),
+  buzzNoRepeat: el("buzzNoRepeat"),
+  undoBtn: el("undoBtn"),
+  shuffleBtn: el("shuffleBtn"),
+  qCategory: el("qCategory"),
+  qHint: el("qHint"),
+  qHintText: el("qHintText"),
+  hintBtn: el("hintBtn"),
+  judgePanel: el("judgePanel"),
+  judgeStage: el("judgeStage"),
+  judgeWho: el("judgeWho"),
+  judgeTimer: el("judgeTimer"),
+  judgeHistory: el("judgeHistory"),
+  judgeRight: el("judgeRight"),
+  judgeWrong: el("judgeWrong"),
+  judgeLock: el("judgeLock"),
+  judgeNewQ: el("judgeNewQ"),
   sfxBtn: el("sfxBtn"),
   turnALabel: el("turnALabel"),
   turnBLabel: el("turnBLabel"),
   declareALabel: el("declareALabel"),
   declareBLabel: el("declareBLabel"),
-  buzzQrLabelA: el("buzzQrLabelA"),
-  buzzQrLabelB: el("buzzQrLabelB"),
   buzzBanner: el("buzzBanner"),
   buzzBannerIco: el("buzzBannerIco"),
   buzzBannerText: el("buzzBannerText"),
@@ -101,65 +134,6 @@ const ALL_LETTERS = [
   "س", "ش", "ص", "ض", "ط", "ظ", "ع", "غ", "ف", "ق", "ك",
   "ل", "م", "ن", "ه", "و", "ي",
 ];
-
-const PRESETS = {
-  hussein: {
-    name: "حروف مع حسين (الأصلي)",
-    nameA: "الفريق البنفسجي",
-    colorA: "#6965ae",
-    nameB: "الفريق السماوي",
-    colorB: "#4b9cbf",
-    theme: {
-      bgColor: "#73c4ee",
-      cellColor: "#ede5bb",
-      cellTextColor: "#635e48",
-      selectedColor: "#fcb017",
-      selectedTextColor: "#ffffff",
-    },
-  },
-  classic: {
-    name: "كلاسيكي (أخضر وبرتقالي)",
-    nameA: "الفريق الأخضر",
-    colorA: "#3fa65a",
-    nameB: "الفريق البرتقالي",
-    colorB: "#f0872b",
-    theme: {
-      bgColor: "#2c0f4d",
-      cellColor: "#ffffff",
-      cellTextColor: "#4a1479",
-      selectedColor: "#ffd93d",
-      selectedTextColor: "#3a2c00",
-    },
-  },
-  night: {
-    name: "الوضع الليلي الكحلي",
-    nameA: "فريق الياقوت",
-    colorA: "#e94560",
-    nameB: "فريق الزمرد",
-    colorB: "#00b4d8",
-    theme: {
-      bgColor: "#16213e",
-      cellColor: "#1f4068",
-      cellTextColor: "#e0e0e0",
-      selectedColor: "#f39c12",
-      selectedTextColor: "#ffffff",
-    },
-  },
-  sunset: {
-    name: "أرجواني وغروب",
-    nameA: "الفريق الوردي",
-    colorA: "#ff5e7e",
-    nameB: "الفريق البنفسجي",
-    colorB: "#845ec2",
-    theme: {
-      bgColor: "#4b4453",
-      cellColor: "#fbeaff",
-      cellTextColor: "#4b4453",
-      selectedColor: "#ff9671",
-      selectedTextColor: "#ffffff",
-    },
-  },
-};
 
 let state = null;
 let boardCfg = null;
@@ -310,15 +284,8 @@ function act(type, payload = {}) {
 
 /* ---------------- ألوان الفرق ---------------- */
 
-/** يختار لون نص مقروء (أبيض/داكن) فوق خلفية بلون معطى. */
-function inkOn(color) {
-  const hex = String(color || "").replace("#", "");
-  const full = hex.length === 3 ? hex.split("").map((c) => c + c).join("") : hex;
-  const n = parseInt(full || "000000", 16);
-  if (!Number.isFinite(n)) return "#ffffff";
-  const lum = (0.299 * ((n >> 16) & 255) + 0.587 * ((n >> 8) & 255) + 0.114 * (n & 255)) / 255;
-  return lum > 0.6 ? "#111111" : "#ffffff";
-}
+/** لون نص مقروء (أبيض/داكن) فوق خلفية بلون معطى — نفس منطق الشاشة الكبيرة. */
+const inkOn = inkFor;
 
 /** يصبغ زراً بلون الفريق مع لون نص مقروء. */
 function paintTeamButton(btn, color) {
@@ -329,12 +296,89 @@ function paintTeamButton(btn, color) {
 
 /* ---------------- العرض ---------------- */
 
+/* ---------------- السهرة: قائمة الألعاب ونقاطها ---------------- */
+
+function nightBoard(container) {
+  if (!container || !state) return;
+  container.replaceChildren();
+  const title = document.createElement("div");
+  title.className = "night-title";
+  title.textContent = "🏆 نقاط السهرة";
+  container.appendChild(title);
+  const row = document.createElement("div");
+  row.className = "night-row";
+  for (const k of ["a", "b"]) {
+    const team = state.teams[k];
+    const chip = document.createElement("div");
+    chip.className = "night-chip";
+    chip.style.background = team.color;
+    chip.style.color = inkFor(team.color);
+    chip.textContent = `${team.name}: ${state.night?.[k] || 0}`;
+    row.appendChild(chip);
+  }
+  container.appendChild(row);
+}
+
+let hubKey = "";
+function renderHub() {
+  const wrap = el("hubGames");
+  if (!wrap) return;
+  nightBoard(el("nightBoardHub"));
+  nightBoard(el("nightBoardFoot"));
+  const key = JSON.stringify([state.night, state.taboo?.phase, state.winner]);
+  if (key === hubKey && wrap.childElementCount) return;
+  hubKey = key;
+  wrap.replaceChildren();
+  for (const g of HUB_GAMES) {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "hub-game";
+    b.disabled = !!g.soon;
+    b.innerHTML = "";
+    const icon = document.createElement("span");
+    icon.className = "hub-game-icon";
+    icon.textContent = g.icon;
+    const name = document.createElement("span");
+    name.className = "hub-game-name";
+    name.textContent = g.name;
+    const desc = document.createElement("span");
+    desc.className = "hub-game-desc";
+    desc.textContent = g.desc;
+    b.append(icon, name, desc);
+    if (!g.soon) {
+      b.addEventListener("click", () => {
+        act("setGame", { game: g.id });
+        toast(`🎮 ${g.name}`);
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      });
+    }
+    wrap.appendChild(b);
+  }
+  const reset = document.createElement("button");
+  reset.type = "button";
+  reset.className = "btn btn-sm btn-ghost hub-reset";
+  reset.textContent = "↺ تصفير نقاط السهرة";
+  reset.addEventListener("click", () => {
+    if (confirm("تصفير نقاط السهرة للفريقين؟")) act("nightReset");
+  });
+  wrap.appendChild(reset);
+}
+
 function render() {
   if (!state) return;
 
+  // اللعبة الحالية تحدّد الأقسام الظاهرة (data-game في الصفحة)
+  document.body.dataset.game = state.game || "none";
+  renderHub();
+  renderTaboo();
+
   syncPresetsFromState();
 
-  ui.roomLabel.textContent = `الجولة ${state.rev} · ${boardCfg.cells.length} خلية`;
+  ui.roomLabel.textContent = state.game === "taboo"
+    ? "🚫 الكلمة الممنوعة"
+    : state.game === "huroof"
+      ? `🔤 حروف مع حسين · ${boardCfg.cells.length} خلية`
+      : "🎮 قائمة الألعاب";
 
   // النقاط
   ui.scoreNameA.textContent = state.teams.a.name;
@@ -347,7 +391,8 @@ function render() {
   const q = state.current.question;
   const hasCell = !!cell;
   // بعد منح النقطة تُلغى الخلية المحددة، لكن نُبقي سؤالها ظاهراً للحكم
-  const displayCell = cell || (state.current.verdict?.cellId ? state.cells[state.current.verdict.cellId] : null);
+  const resolvedId = state.current.verdict?.cellId || state.current.missed?.cellId || null;
+  const displayCell = cell || (resolvedId ? state.cells[resolvedId] : null);
 
   ui.qLetter.textContent = displayCell ? displayCell.letter : "؟";
   ui.qLetter.classList.toggle("idle", !displayCell);
@@ -387,8 +432,6 @@ function render() {
   if (ui.turnBLabel) ui.turnBLabel.textContent = `${tB.name} — ${buzzOtherSecs} ث`;
   if (ui.declareALabel) ui.declareALabel.textContent = tA.name;
   if (ui.declareBLabel) ui.declareBLabel.textContent = tB.name;
-  if (ui.buzzQrLabelA) ui.buzzQrLabelA.textContent = tA.name;
-  if (ui.buzzQrLabelB) ui.buzzQrLabelB.textContent = tB.name;
   paintTeamButton(ui.turnA, tA.color);
   paintTeamButton(ui.turnB, tB.color);
   paintTeamButton(ui.awardA, tA.color);
@@ -405,6 +448,26 @@ function render() {
   ui.letterBtn.disabled = !hasCell;
   ui.awardA.disabled = !hasCell;
   ui.awardB.disabled = !hasCell;
+  if (ui.noPointBtn) ui.noPointBtn.disabled = !hasCell;
+
+  renderScreenControls();
+  renderPlayers();
+  renderJudge();
+  if (ui.undoBtn) ui.undoBtn.disabled = false;
+
+  // الفئة والتلميح (من ملف المجموعة)
+  if (ui.qCategory) {
+    ui.qCategory.hidden = !q?.category;
+    ui.qCategory.textContent = q?.category ? `📂 ${q.category}` : "";
+  }
+  if (ui.qHint) {
+    ui.qHint.hidden = !q?.hint;
+    if (ui.qHintText) ui.qHintText.textContent = q?.hint ? `💡 ${q.hint}` : "";
+    if (ui.hintBtn) {
+      ui.hintBtn.textContent = state.current.hintRevealed ? "🙈 إخفاء التلميح" : "💡 اعرض التلميح على الشاشة";
+      ui.hintBtn.classList.toggle("active-screen", !!state.current.hintRevealed);
+    }
+  }
 
   // تمييز أزرار الشاشة
   ui.revealBtn.classList.toggle("active-screen", !!state.current.revealed);
@@ -420,20 +483,56 @@ function render() {
   ui.colorA.value = state.teams.a.color;
   ui.colorB.value = state.teams.b.color;
   if (state.theme) {
-    if (ui.bgColor) ui.bgColor.value = state.theme.bgColor || "#73c4ee";
+    if (ui.bgColor) ui.bgColor.value = state.theme.bgColor || "#2f6f9e";
     if (ui.cellColor) ui.cellColor.value = state.theme.cellColor || "#ede5bb";
     if (ui.selectedColor) ui.selectedColor.value = state.theme.selectedColor || "#fcb017";
-    document.documentElement.style.setProperty("--bg-color", state.theme.bgColor || "#73c4ee");
+    document.documentElement.style.setProperty("--bg-color", state.theme.bgColor || "#2f6f9e");
     document.documentElement.style.setProperty("--cell-color", state.theme.cellColor || "#ede5bb");
     document.documentElement.style.setProperty("--selected-color", state.theme.selectedColor || "#fcb017");
   }
   document.documentElement.style.setProperty("--team-a-color", state.teams.a.color);
   document.documentElement.style.setProperty("--team-b-color", state.teams.b.color);
+  document.documentElement.style.setProperty("--team-a-ink", inkFor(state.teams.a.color));
+  document.documentElement.style.setProperty("--team-b-ink", inkFor(state.teams.b.color));
+
+  renderThemeChips();
+  renderColorWarnings();
 
   renderBoardEditor();
   renderLog();
   renderBuzzControls();
   syncPresetsFromState();
+}
+
+/* ---------------- التحكم بالشاشة الكبيرة ---------------- */
+
+function renderScreenControls() {
+  const scr = state.screen || {};
+  const lobbyOn = scr.lobby !== false;
+  const soundOn = scr.sound !== false;
+  const screens = peers?.screen || 0;
+
+  if (ui.lobbyToggleBtn) {
+    ui.lobbyToggleBtn.textContent = lobbyOn ? "▶️ ابدأ اللعب (إخفاء الرموز)" : "🔳 اعرض رموز QR على الشاشة";
+    ui.lobbyToggleBtn.classList.toggle("btn-yellow", lobbyOn);
+  }
+  if (ui.screenSoundBtn) {
+    ui.screenSoundBtn.textContent = soundOn ? "🔊 صوت الشاشة: يعمل" : "🔇 صوت الشاشة: مكتوم";
+    ui.screenSoundBtn.classList.toggle("active-screen", soundOn);
+  }
+  if (ui.screenFullBtn) {
+    const full = !!peers?.screenFullscreen;
+    ui.screenFullBtn.textContent = full ? "🗗 الخروج من ملء الشاشة" : "⛶ ملء الشاشة على التلفاز";
+    ui.screenFullBtn.classList.toggle("active-screen", full);
+    ui.screenFullBtn.disabled = !screens;
+  }
+  if (ui.screenHint) {
+    ui.screenHint.textContent = !screens
+      ? "⚠️ الشاشة غير متصلة"
+      : lobbyOn
+        ? "تعرض رموز QR الآن"
+        : "تعرض اللعبة";
+  }
 }
 
 /* ---------------- أجراس اللاعبين ---------------- */
@@ -454,6 +553,7 @@ function renderBuzzControls() {
   if (ui.buzzOtherSeconds && document.activeElement !== ui.buzzOtherSeconds) {
     ui.buzzOtherSeconds.value = b.otherSeconds || 10;
   }
+  if (ui.buzzNoRepeat) ui.buzzNoRepeat.checked = !!b.noRepeat;
 
   const on = !!b.enabled;
   ui.buzzOpenBtn.disabled = !on || !!b.open;
@@ -477,25 +577,30 @@ function updateBuzzReadout() {
   const conn = peers ? ` · الأجراس: ${peers.buzzerA || 0}/${peers.buzzerB || 0}` : "";
 
   let text;
+  const conn2 = peers ? ` · اللاعبون المتصلون: ${(peers.players || []).length}` : "";
   if (!on) {
-    text = "الأجراس متوقفة — فعّلها ثم امسح رمز كل فريق.";
+    text = "الأجراس متوقفة — فعّلها ليضغط اللاعبون من جوالاتهم.";
   } else if (state.current.verdict) {
-    text = `✅ ${state.teams[state.current.verdict.team].name} أخذ النقطة — السؤال القادم يصفّر كل شيء تلقائياً${conn}`;
-  } else if (timer.running) {
+    text = `✅ ${state.teams[state.current.verdict.team].name} أخذ النقطة${conn2}`;
+  } else if (state.current.missed) {
+    text = `🤷 لم يُجب أحد — الجواب ظاهر على الشاشة${conn2}`;
+  } else if (b.phase === "answer" && b.player) {
     const secs = Math.max(0, Math.ceil(remainingMs(timer, transport.serverOffset) / 1000));
-    const who = state.teams[state.current.turn]?.name || "—";
-    const stage = timer.stage === "buzz2" ? "دور اللاعب الثاني" : "دور اللاعب الأول";
-    text = `⏱️ ${stage}: ${who} — بقي ${secs} ثانية${conn}`;
-  } else if (b.winner) {
-    text = `🔔 ${state.teams[b.winner].name} ضغط أولاً — انتهى الوقت${conn}`;
-  } else if (b.open) {
-    text = `🔔 الأجراس مفتوحة — بانتظار أول ضغطة${conn}`;
+    text = `🔔 ${b.player.name} يجيب — بقي ${secs} ث${conn2}`;
+  } else if (b.phase === "open") {
+    text = `🔔 الأجراس مفتوحة — بانتظار أول ضغطة${conn2}`;
+  } else if (b.phase === "team") {
+    const secs = Math.max(0, Math.ceil(remainingMs(timer, transport.serverOffset) / 1000));
+    text = `⏱️ دور ${state.teams[b.allowed]?.name} — بقي ${secs} ث${conn2}`;
+  } else if (b.phase === "all") {
+    text = `🗣️ مفتوح للجميع — اختر الفريق الذي أجاب${conn2}`;
   } else {
-    text = `الأجراس جاهزة${b.autoArm !== false ? " — تُفتح تلقائياً عند عرض السؤال" : ""}${conn}`;
+    text = `الأجراس جاهزة${b.autoArm !== false ? " — تُفتح تلقائياً عند عرض السؤال" : ""}${conn2}`;
   }
   ui.buzzReadout.textContent = text;
   ui.buzzReadout.classList.toggle("running", on && (!!b.open || !!b.winner || !!timer.running));
   updateBuzzBanner();
+  renderJudge();
 
   // تحديث العدّاد الحيّ كل ربع ثانية أثناء دوران المؤقّت
   const running = !!timer.running;
@@ -514,6 +619,9 @@ function updateBuzzReadout() {
 function updateBuzzBanner() {
   const banner = ui.buzzBanner;
   if (!banner || !state) return;
+  // لوحة الحكم (judgePanel) تعرض كل هذا الآن — نُبقي الشريط القديم مخفياً
+  banner.hidden = true;
+  return;
   const c = state.current || {};
   const b = c.buzz || {};
   const timer = c.timer || {};
@@ -551,8 +659,8 @@ function updateBuzzBanner() {
     show = true;
   }
 
-  // بعد احتساب النقطة يختفي الإشعار
-  if (c.verdict) show = false;
+  // بعد احتساب النقطة (أو «لم يُجب أحد») يختفي الإشعار
+  if (c.verdict || c.missed) show = false;
 
   if (!show) {
     if (!banner.hidden) {
@@ -581,15 +689,162 @@ async function drawBuzzerQRs() {
   if (buzzQrBusy) return;
   buzzQrBusy = true;
   try {
-    const [listA, listB] = await Promise.all([
-      getBuzzerUrls(room, "a"),
-      getBuzzerUrls(room, "b"),
-    ]);
-    drawQR(listA[0]?.url || "", ui.buzzQrA);
-    drawQR(listB[0]?.url || "", ui.buzzQrB);
+    const list = await getPlayUrls(room);
+    drawQR(list[0]?.url || "", ui.playQr);
     buzzQrDrawn = true;
   } catch {
     buzzQrBusy = false;
+  }
+}
+
+/* ---------------- اللاعبون ---------------- */
+
+let playersKey = "";
+function renderPlayers() {
+  if (!ui.playersCols || !state) return;
+  const online = new Set(peers?.players || []);
+  const players = Object.values(state.players || {}).filter((pl) => !pl.pseudo);
+  const key = JSON.stringify([players, [...online], state.teams.a, state.teams.b]);
+  if (key === playersKey) return;
+  playersKey = key;
+
+  const onlineCount = players.filter((pl) => online.has(pl.id)).length;
+  if (ui.playersHint) ui.playersHint.textContent = `${onlineCount} متصل من ${players.length}`;
+
+  ui.playersCols.replaceChildren();
+  for (const t of ["a", "b"]) {
+    const team = state.teams[t];
+    const col = document.createElement("div");
+    col.className = "players-col";
+    col.style.setProperty("--team", team.color);
+    col.style.setProperty("--team-ink", inkFor(team.color));
+    const head = document.createElement("div");
+    head.className = "players-col-head";
+    const list = players.filter((pl) => pl.team === t).sort((x, y) => y.score - x.score);
+    head.textContent = `${team.name} (${list.length})`;
+    col.appendChild(head);
+    if (!list.length) {
+      const empty = document.createElement("div");
+      empty.className = "player-row empty";
+      empty.textContent = "لا أحد بعد";
+      col.appendChild(empty);
+    }
+    for (const pl of list) {
+      const row = document.createElement("div");
+      row.className = "player-row";
+      row.classList.toggle("offline", !online.has(pl.id));
+      const dot = document.createElement("i");
+      dot.className = "player-dot";
+      dot.title = online.has(pl.id) ? "متصل" : "غير متصل";
+      const name = document.createElement("span");
+      name.className = "player-name";
+      name.textContent = pl.name;
+      const stats = document.createElement("span");
+      stats.className = "player-stats";
+      stats.textContent = `${pl.score} ✅${pl.fastest != null ? ` · ${(pl.fastest / 1000).toFixed(1)}ث` : ""}`;
+      const move = document.createElement("button");
+      move.type = "button";
+      move.className = "player-act";
+      move.textContent = "↔";
+      move.title = `نقل إلى ${state.teams[t === "a" ? "b" : "a"].name}`;
+      move.addEventListener("click", () => {
+        act("playerSetTeam", { id: pl.id, team: t === "a" ? "b" : "a" });
+        toast(`نُقل ${pl.name} إلى ${state.teams[t === "a" ? "b" : "a"].name}`);
+      });
+      const kick = document.createElement("button");
+      kick.type = "button";
+      kick.className = "player-act danger";
+      kick.textContent = "✖";
+      kick.title = "إخراج من اللعبة";
+      kick.addEventListener("click", () => {
+        if (confirm(`إخراج ${pl.name} من اللعبة؟`)) act("playerRemove", { id: pl.id });
+      });
+      row.append(dot, name, stats, move, kick);
+      col.appendChild(row);
+    }
+    ui.playersCols.appendChild(col);
+  }
+}
+
+/* ---------------- لوحة الحكم أثناء السؤال ---------------- */
+
+const RESULT_ICON = { wrong: "❌", timeout: "⌛", right: "✅" };
+
+/** يضبط زراً من أزرار اللوحة: نصّه، فعله، لونه، وظهوره. */
+function judgeButton(btn, { label, action, color = null, hidden = false, disabled = false }) {
+  if (!btn) return;
+  btn.hidden = hidden;
+  btn.disabled = disabled;
+  btn.dataset.act = action || "";
+  const key = btn.querySelector("kbd")?.outerHTML || "";
+  btn.innerHTML = `${label} ${key}`;
+  if (color) {
+    btn.style.background = color;
+    btn.style.color = inkFor(color);
+  } else {
+    btn.style.background = "";
+    btn.style.color = "";
+  }
+}
+
+function renderJudge() {
+  const panel = ui.judgePanel;
+  if (!panel || !state) return;
+  const c = state.current || {};
+  const b = c.buzz || {};
+  const show = state.game === "huroof" && !!b.enabled && b.stage > 0 && b.phase !== "done" && b.phase !== "idle" && !c.verdict && !c.missed;
+  panel.hidden = !show;
+  document.body.classList.toggle("judging", show);
+  if (!show) return;
+
+  const tA = state.teams.a;
+  const tB = state.teams.b;
+  const nameOf = (pl) => (pl?.id?.startsWith("team:") ? state.teams[pl.team]?.name : pl?.name) || "—";
+  const answering = b.phase === "answer" && b.player;
+  const focusTeam = answering ? state.teams[b.player.team] : b.phase === "team" ? state.teams[b.allowed] : null;
+  panel.style.setProperty("--team", focusTeam?.color || "#ffd93d");
+  panel.style.setProperty("--team-ink", inkFor(focusTeam?.color || "#ffd93d"));
+  panel.dataset.phase = b.phase;
+
+  const t = c.timer || {};
+  const secs = t.running ? Math.max(0, Math.ceil(remainingMs(t, transport.serverOffset) / 1000)) : null;
+  ui.judgeTimer.hidden = secs == null;
+  if (secs != null) ui.judgeTimer.textContent = secs;
+
+  if (b.phase === "open") {
+    ui.judgeStage.textContent = "الجولة ١ · الأجراس";
+    ui.judgeWho.textContent = "بانتظار أول ضغطة… (بلا حدّ زمني)";
+    judgeButton(ui.judgeRight, { label: "✅ صح", action: "", disabled: true });
+    judgeButton(ui.judgeWrong, { label: "❌ خطأ", action: "", disabled: true });
+    judgeButton(ui.judgeLock, { label: "🔒 إغلاق", action: "lock" });
+  } else if (answering) {
+    ui.judgeStage.textContent = "الجولة ١ · الأجراس";
+    ui.judgeWho.textContent = `🔔 ${nameOf(b.player)} يجيب — ${state.teams[b.player.team].name}`;
+    judgeButton(ui.judgeRight, { label: "✅ صح", action: "correct" });
+    judgeButton(ui.judgeWrong, { label: "❌ خطأ", action: "wrong" });
+    judgeButton(ui.judgeLock, { label: "🔒 إغلاق", action: "", hidden: true });
+  } else if (b.phase === "team") {
+    const team = state.teams[b.allowed];
+    ui.judgeStage.textContent = `الجولة ٢ · دور ${team.name}`;
+    ui.judgeWho.textContent = `${team.name} يجيبون بصوت عالٍ — حتى ينتهي الوقت`;
+    judgeButton(ui.judgeRight, { label: `✅ نقطة لـ ${team.name}`, action: "correct", color: team.color });
+    judgeButton(ui.judgeWrong, { label: "", action: "", hidden: true });
+    judgeButton(ui.judgeLock, { label: "", action: "", hidden: true });
+  } else if (b.phase === "all") {
+    ui.judgeStage.textContent = "الجولة ٣ · مفتوح للجميع";
+    ui.judgeWho.textContent = "من أجاب صح؟ اختر الفريق (بلا وقت)";
+    judgeButton(ui.judgeRight, { label: `✅ ${tA.name}`, action: "correctA", color: tA.color });
+    judgeButton(ui.judgeWrong, { label: `✅ ${tB.name}`, action: "correctB", color: tB.color });
+    judgeButton(ui.judgeLock, { label: "🤷 لم يُجب أحد", action: "noPoint" });
+  }
+
+  ui.judgeHistory.replaceChildren();
+  for (const h of b.history || []) {
+    const chip = document.createElement("span");
+    chip.className = "judge-chip";
+    chip.style.setProperty("--chip", state.teams[h.team]?.color || "#999");
+    chip.textContent = `${nameOf(h)} ${RESULT_ICON[h.result] || "⏳"}${h.ms != null ? ` ${(h.ms / 1000).toFixed(2)}ث` : ""}`;
+    ui.judgeHistory.appendChild(chip);
   }
 }
 
@@ -737,6 +992,124 @@ ui.unclaimBtn.addEventListener("click", () => {
   toast("تمت الإزالة من الفريق");
 });
 ui.clearBtn.addEventListener("click", () => act("clear"));
+/* ---------------- لوحة الحكم: صح / خطأ / إغلاق / سؤال آخر ---------------- */
+
+/** ينفّذ فعل زر من أزرار لوحة الحكم (الفعل يتغيّر حسب الجولة). */
+function judgeDo(btn) {
+  if (!state || !btn || btn.hidden || btn.disabled) return;
+  const cellId = state.current.cellId;
+  const b = state.current.buzz;
+  switch (btn.dataset.act) {
+    case "correct": {
+      const team = b.phase === "team" ? b.allowed : b.player?.team;
+      act("buzzCorrect", { cellId });
+      toast(`✅ نقطة لـ ${team ? state.teams[team].name : "الفريق"}`);
+      break;
+    }
+    case "correctA":
+    case "correctB": {
+      const team = btn.dataset.act === "correctA" ? "a" : "b";
+      act("buzzCorrect", { cellId, team });
+      toast(`✅ نقطة لـ ${state.teams[team].name}`);
+      break;
+    }
+    case "wrong":
+      act("buzzWrong");
+      toast("❌ خطأ — دور الفريق الآخر");
+      break;
+    case "lock":
+      act("buzzClose");
+      toast("🔒 أُغلقت الأجراس");
+      break;
+    case "noPoint":
+      act("noPoint", { cellId });
+      toast("🤷 لم يُجب أحد — الجواب ظاهر على الشاشة");
+      break;
+  }
+}
+const judgeRight = () => judgeDo(ui.judgeRight);
+const judgeWrong = () => judgeDo(ui.judgeWrong);
+const judgeLock = () => judgeDo(ui.judgeLock);
+function judgeNewQ() {
+  if (!state?.current?.cellId) return;
+  act("newQuestion");
+  toast("🔄 سؤال آخر لنفس الحرف");
+}
+ui.judgeRight?.addEventListener("click", judgeRight);
+ui.judgeWrong?.addEventListener("click", judgeWrong);
+ui.judgeLock?.addEventListener("click", judgeLock);
+ui.judgeNewQ?.addEventListener("click", judgeNewQ);
+
+ui.undoBtn?.addEventListener("click", () => {
+  act("undo");
+  toast("↩️ تراجع عن آخر قرار");
+});
+ui.shuffleBtn?.addEventListener("click", () => {
+  if (confirm("خلط حروف الخلايا الحرّة؟ النقاط والخلايا الملوّنة تبقى كما هي.")) {
+    act("shuffle");
+    toast("🔀 خُلطت الحروف الحرّة");
+  }
+});
+ui.hintBtn?.addEventListener("click", () => {
+  act(state?.current?.hintRevealed ? "hideHint" : "revealHint");
+});
+ui.buzzNoRepeat?.addEventListener("change", () => {
+  act("buzzConfig", { noRepeat: ui.buzzNoRepeat.checked });
+});
+
+// اختصارات لوحة المفاتيح (إن كان الحكم على لابتوب)
+document.addEventListener("keydown", (e) => {
+  const tag = (e.target?.tagName || "").toLowerCase();
+  if (tag === "input" || tag === "textarea" || tag === "select") return;
+  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "z") {
+    e.preventDefault();
+    ui.undoBtn?.click();
+    return;
+  }
+  if (e.ctrlKey || e.metaKey || e.altKey) return;
+  if (state?.game !== "huroof") return;
+  if (e.key === "1") judgeRight();
+  else if (e.key === "2") judgeWrong();
+  else if (e.key === "3") judgeLock();
+  else if (e.key === "4") judgeNewQ();
+});
+
+el("changeGameBtn")?.addEventListener("click", () => {
+  if (confirm("العودة إلى قائمة الألعاب؟ اللعبة الحالية تبقى محفوظة كما هي.")) {
+    act("setGame", { game: null });
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+});
+
+initTaboo({
+  act,
+  toast,
+  inkFor,
+  getState: () => state,
+  getPeers: () => peers,
+  remainingMs: (t) => remainingMs(t, transport.serverOffset),
+});
+
+ui.noPointBtn?.addEventListener("click", () => {
+  act("noPoint", { cellId: state.current.cellId });
+  toast("لم يُجب أحد — الجواب ظاهر على الشاشة");
+});
+
+ui.lobbyToggleBtn?.addEventListener("click", () => {
+  const lobbyOn = state?.screen?.lobby !== false;
+  act("screen", { lobby: !lobbyOn });
+  toast(lobbyOn ? "بدأ اللعب — أُخفيت الرموز عن الشاشة" : "رموز QR ظاهرة على الشاشة");
+});
+ui.screenFullBtn?.addEventListener("click", () => {
+  const full = !!peers?.screenFullscreen;
+  act("screenFullscreen");
+  toast(full ? "جارٍ الخروج من ملء الشاشة…" : "جارٍ تكبير الشاشة…");
+});
+ui.screenSoundBtn?.addEventListener("click", () => {
+  const soundOn = state?.screen?.sound !== false;
+  act("screen", { sound: !soundOn });
+  toast(soundOn ? "تم كتم صوت الشاشة" : "تم تشغيل صوت الشاشة");
+});
 
 ui.turnA.addEventListener("click", () => {
   act("setTurn", { turn: "a" });
@@ -782,14 +1155,76 @@ if (ui.bgColor) ui.bgColor.addEventListener("input", () => act("setTheme", { bgC
 if (ui.cellColor) ui.cellColor.addEventListener("input", () => act("setTheme", { cellColor: ui.cellColor.value }));
 if (ui.selectedColor) ui.selectedColor.addEventListener("input", () => act("setTheme", { selectedColor: ui.selectedColor.value }));
 
-if (ui.presetSelect) {
-  ui.presetSelect.addEventListener("change", () => {
-    const p = PRESETS[ui.presetSelect.value];
-    if (!p) return;
-    act("setTeam", { team: "a", name: p.nameA, color: p.colorA });
-    act("setTeam", { team: "b", name: p.nameB, color: p.colorB });
-    act("setTheme", p.theme);
-    toast(`تم تطبيق قالب: ${p.name}`);
+/* ---------------- قوالب الألوان + تنبيه الألوان المتقاربة ---------------- */
+
+let themeChipsKey = "";
+
+/** أزرار القوالب الجاهزة (تُرسم مرة واحدة، ويُعلَّم القالب المطابق للألوان الحالية). */
+function renderThemeChips() {
+  if (!ui.themeChips || !state) return;
+  const current = JSON.stringify([
+    state.teams.a.color, state.teams.b.color,
+    state.theme?.cellColor, state.theme?.selectedColor, state.theme?.bgColor,
+  ].map((c) => String(c || "").toLowerCase()));
+  if (current === themeChipsKey && ui.themeChips.childElementCount) return;
+  themeChipsKey = current;
+
+  ui.themeChips.textContent = "";
+  for (const [id, t] of Object.entries(COLOR_THEMES)) {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "theme-chip";
+    const sig = JSON.stringify([t.teams.a, t.teams.b, t.theme.cellColor, t.theme.selectedColor, t.theme.bgColor]
+      .map((c) => c.toLowerCase()));
+    btn.classList.toggle("active", sig === current);
+    const sw = document.createElement("span");
+    sw.className = "theme-swatches";
+    for (const c of [t.teams.a, t.teams.b, t.theme.cellColor, t.theme.selectedColor, t.theme.bgColor]) {
+      const dot = document.createElement("i");
+      dot.style.background = c;
+      sw.appendChild(dot);
+    }
+    const name = document.createElement("span");
+    name.textContent = t.name;
+    btn.append(sw, name);
+    btn.addEventListener("click", () => {
+      act("setTeam", { team: "a", color: t.teams.a });
+      act("setTeam", { team: "b", color: t.teams.b });
+      act("setTheme", { ...t.theme });
+      toast(`تم تطبيق قالب: ${t.name}`);
+    });
+    ui.themeChips.appendChild(btn);
+  }
+}
+
+/** يعرض تنبيهاً عندما يختار الحكم ألواناً ستختلط على الشاشة، مع زر إصلاح تلقائي. */
+function renderColorWarnings() {
+  if (!ui.colorWarn || !state) return;
+  const clashes = findClashes(state.teams, state.theme || {});
+  ui.colorWarn.hidden = clashes.length === 0;
+  ui.colorWarnList.textContent = "";
+  for (const c of clashes) {
+    const li = document.createElement("li");
+    const pair = document.createElement("span");
+    pair.className = "warn-pair";
+    for (const col of c.colors) {
+      const dot = document.createElement("i");
+      dot.style.background = col;
+      pair.appendChild(dot);
+    }
+    li.append(pair, document.createTextNode(` ${c.msg} — سيُعدَّل ${COLOR_LABELS[c.fix]}`));
+    ui.colorWarnList.appendChild(li);
+  }
+}
+
+if (ui.colorFixBtn) {
+  ui.colorFixBtn.addEventListener("click", () => {
+    const fix = autoFixColors(state.teams, state.theme || {});
+    if (fix.teams.a) act("setTeam", { team: "a", color: fix.teams.a });
+    if (fix.teams.b) act("setTeam", { team: "b", color: fix.teams.b });
+    if (Object.keys(fix.theme).length) act("setTheme", fix.theme);
+    const n = Object.keys(fix.teams).length + Object.keys(fix.theme).length;
+    toast(n ? `✨ تم تعديل ${n} ${n === 1 ? "لون" : "ألوان"} — الألوان الآن مميّزة بوضوح` : "لم أجد بديلاً مناسباً — جرّب قالباً جاهزاً");
   });
 }
 

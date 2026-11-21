@@ -29,13 +29,7 @@ html, body {
   fill: var(--cell-text-color, #635e48);
   dominant-baseline: central;
   pointer-events: none;
-  transition: fill 0.3s ease;
-}
-
-.cell-text.owner-team-a,
-.cell-text.owner-team-b,
-.cell-text.is-selected {
-  fill: #ffffff !important;
+  transition: fill 0.35s ease;
 }
 
 /* لمعة الفقاعة البيضاء */
@@ -45,19 +39,91 @@ html, body {
   pointer-events: none;
 }
 
-/* حركة الخلية عند الاختيار */
+/* ---------------- حركات الخلايا (ناعمة وخفيفة) ---------------- */
 .svg-cell {
-  cursor: pointer;
-  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transform-box: fill-box;
   transform-origin: center;
+  transition: scale 0.35s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-.svg-cell:hover .cell-path {
-  filter: brightness(1.06);
+/* الحرف المختار: «تنفّس» هادئ مع توهّج بلون التحديد */
+.svg-cell.is-selected {
+  scale: 1.06;
+  animation: cellBreathe 2.2s ease-in-out infinite;
 }
 
 .svg-cell.is-selected .cell-path {
-  filter: drop-shadow(0 0 16px rgba(252, 176, 23, 0.95));
+  filter: drop-shadow(0 0 14px color-mix(in srgb, var(--selected-color, #fcb017) 85%, transparent));
+}
+
+@keyframes cellBreathe {
+  0%, 100% { scale: 1.05; }
+  50% { scale: 1.09; }
+}
+
+/* التقاط خلية: نبضة قصيرة */
+.svg-cell.claim {
+  animation: cellClaim 0.55s cubic-bezier(0.34, 1.4, 0.64, 1);
+}
+
+@keyframes cellClaim {
+  0% { scale: 1; }
+  35% { scale: 1.14; }
+  100% { scale: 1; }
+}
+
+/* موجة بلون الفريق تنتشر من الخلية الملتقطة */
+.cell-ripple {
+  transform-box: fill-box;
+  transform-origin: center;
+  pointer-events: none;
+  animation: cellRipple 0.75s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+@keyframes cellRipple {
+  0% { scale: 1; opacity: 0.9; }
+  100% { scale: 1.45; opacity: 0; }
+}
+
+/* جولة جديدة: الخلايا تظهر بالتتابع */
+.svg-cell.cell-in {
+  animation: cellIn 0.5s cubic-bezier(0.34, 1.3, 0.64, 1) both;
+}
+
+@keyframes cellIn {
+  0% { scale: 0.6; opacity: 0; }
+  100% { scale: 1; opacity: 1; }
+}
+
+/* الفوز: خلايا المسار تومض بالتتابع */
+.svg-cell.win-glow {
+  animation: winGlow 0.9s ease-in-out 2;
+}
+
+@keyframes winGlow {
+  0%, 100% { scale: 1; filter: none; }
+  50% { scale: 1.12; filter: brightness(1.25) drop-shadow(0 0 18px rgba(255, 255, 255, 0.8)); }
+}
+
+/* الحرف الكبير أعلى اليمين ونقاط الفريقين */
+.selected-hex-group,
+.score-group {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.selected-hex-group.pop {
+  animation: softPop 0.5s cubic-bezier(0.34, 1.4, 0.64, 1);
+}
+
+.score-group.bump {
+  animation: softPop 0.6s cubic-bezier(0.34, 1.5, 0.64, 1);
+}
+
+@keyframes softPop {
+  0% { scale: 0.86; }
+  55% { scale: 1.08; }
+  100% { scale: 1; }
 }
 
 /* ---------------- الحرف المختار في أعلى اليمين ---------------- */
@@ -88,8 +154,18 @@ html, body {
   line-height: 1.42;
   overflow-wrap: break-word;
   word-break: break-word;
-  color: #ffffff;
-  text-shadow: 0 3px 6px rgba(0, 0, 0, 0.45);
+  /* لون الكتابة يُختار تلقائياً حسب لون خلفية لوحة السؤال */
+  color: var(--panel-ink, #ffffff);
+  text-shadow: 0 3px 6px var(--panel-shadow, rgba(0, 0, 0, 0.45));
+}
+
+.q-main-text.enter {
+  animation: textIn 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes textIn {
+  from { opacity: 0; translate: 0 14px; }
+  to { opacity: 1; translate: 0 0; }
 }
 
 /* ---------------- بطاقة الجواب تحت السؤال ---------------- */
@@ -108,10 +184,11 @@ html, body {
   gap: 18px;
   padding: 10px 32px;
   border-radius: 999px;
-  background: #10b981;
+  /* بلون الفريق الذي أخذ النقطة، والكتابة تُختار تلقائياً لتبقى واضحة */
+  background: var(--answer-bg, #10b981);
+  color: var(--answer-ink, #ffffff);
   border: 4px solid #070808;
-  box-shadow: 0 6px 0 #070808, 0 12px 28px rgba(16, 185, 129, 0.4);
-  animation: answerPop 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+  box-shadow: 0 6px 0 #070808, 0 12px 28px color-mix(in srgb, var(--answer-bg, #10b981) 45%, transparent);
 }
 
 .q-answer-badge {
@@ -127,14 +204,16 @@ html, body {
 .q-answer-content {
   font-size: 46px;
   font-weight: 900;
-  color: #ffffff;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+  color: inherit;
 }
 
-@keyframes answerPop {
-  0% { transform: scale(0.65); opacity: 0; }
-  65% { transform: scale(1.08); opacity: 1; }
-  100% { transform: scale(1); opacity: 1; }
+.q-answer-card.enter {
+  animation: answerIn 0.6s cubic-bezier(0.34, 1.35, 0.64, 1);
+}
+
+@keyframes answerIn {
+  0% { opacity: 0; translate: 0 26px; scale: 0.92; }
+  100% { opacity: 1; translate: 0 0; scale: 1; }
 }
 
 /* ---------------- نص النقاط في الأسفل ---------------- */
@@ -217,7 +296,7 @@ html, body {
   border: 5px solid #070808;
   box-shadow: 0 12px 0 #070808, 0 30px 80px rgba(0, 0, 0, 0.5);
   color: #070808;
-  animation: popScale 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+  animation: bannerIn 0.6s cubic-bezier(0.34, 1.35, 0.64, 1);
 }
 
 .winner-icon {
@@ -259,8 +338,24 @@ html, body {
   backdrop-filter: blur(8px);
 }
 
+/* قائمة البداية تظهر وتختفي بتلاشٍ ناعم (بأمر من جوال الحكم) */
+.lobby-overlay {
+  transition: opacity 0.45s ease, visibility 0.45s ease;
+}
+
+.lobby-overlay .lobby-card {
+  transition: translate 0.5s cubic-bezier(0.22, 1, 0.36, 1), scale 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
 .lobby-overlay.lobby-off {
-  display: none;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.lobby-overlay.lobby-off .lobby-card {
+  translate: 0 24px;
+  scale: 0.96;
 }
 
 .lobby-card {
@@ -413,7 +508,7 @@ html, body {
   color: #ffffff;
   font-size: 14px;
   font-weight: 800;
-  cursor: pointer;
+  pointer-events: none;
   backdrop-filter: blur(4px);
   transition: all 0.2s ease;
 }
@@ -479,7 +574,8 @@ html, body {
   position: fixed;
   top: 12px;
   left: 50%;
-  transform: translateX(-50%);
+  /* التوسيط بخاصية translate المستقلة، فلا تُفسده حركات scale */
+  translate: -50% 0;
   z-index: 66;
   display: none;
   align-items: center;
@@ -525,7 +621,7 @@ html, body {
   padding: 2px 16px;
   border-radius: 999px;
   background: var(--team-color, #070808);
-  color: #ffffff;
+  color: var(--team-ink, #ffffff);
   font-size: 2.1rem;
   font-weight: 900;
   line-height: 1.25;
@@ -539,11 +635,11 @@ html, body {
 }
 
 .buzz-banner[data-mode="open"] {
-  animation: buzzPulse 0.9s ease-in-out infinite;
+  animation: bannerIn 0.45s cubic-bezier(0.34, 1.4, 0.64, 1), buzzPulse 1.4s ease-in-out 0.45s infinite;
 }
 
 .buzz-banner[data-mode="open"] .buzz-banner-text {
-  background: linear-gradient(90deg, var(--team-a, #6965ae), var(--team-b, #4b9cbf));
+  background: linear-gradient(90deg, var(--team-a-color, #6965ae), var(--team-b-color, #4b9cbf));
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -552,9 +648,9 @@ html, body {
 .buzz-banner[data-mode="won"] {
   border-color: var(--team-color, #070808);
   background: var(--team-color, #070808);
-  color: #ffffff;
+  color: var(--team-ink, #ffffff);
   box-shadow: 0 8px 0 #070808, 0 0 40px var(--team-color, #070808);
-  animation: popScale 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+  animation: bannerIn 0.45s cubic-bezier(0.34, 1.4, 0.64, 1);
 }
 
 .buzz-banner[data-mode="won"] .buzz-banner-sub {
@@ -567,7 +663,7 @@ html, body {
   background: #070808;
   color: #ffffff;
   box-shadow: 0 8px 0 rgba(0, 0, 0, 0.6), 0 0 46px var(--team-color, #070808);
-  animation: popScale 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  animation: bannerIn 0.45s cubic-bezier(0.34, 1.4, 0.64, 1);
 }
 
 .buzz-banner[data-mode="turn"] .buzz-banner-text {
@@ -580,11 +676,11 @@ html, body {
 }
 
 .buzz-banner[data-mode="point"] {
-  border-color: #16a34a;
-  background: #16a34a;
-  color: #ffffff;
-  box-shadow: 0 8px 0 #070808, 0 0 40px rgba(22, 163, 74, 0.75);
-  animation: popScale 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+  border-color: var(--team-color, #16a34a);
+  background: var(--team-color, #16a34a);
+  color: var(--team-ink, #ffffff);
+  box-shadow: 0 8px 0 #070808, 0 0 40px var(--team-color, rgba(22, 163, 74, 0.75));
+  animation: bannerIn 0.45s cubic-bezier(0.34, 1.4, 0.64, 1);
 }
 
 .buzz-banner[data-mode="point"] .buzz-banner-sub {
@@ -593,12 +689,22 @@ html, body {
 
 @keyframes buzzPulse {
   0%,
-  100% { transform: translateX(-50%) scale(1); }
-  50% { transform: translateX(-50%) scale(1.06); }
+  100% { scale: 1; }
+  50% { scale: 1.04; }
+}
+
+@keyframes bannerIn {
+  0% { opacity: 0; scale: 0.8; }
+  100% { opacity: 1; scale: 1; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .buzz-banner[data-mode="open"] { animation: none; }
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+  }
 }
 
 /* ---------------- شبكة رموز الدخول في قائمة البداية ---------------- */
@@ -624,8 +730,8 @@ html, body {
   color: #374151;
 }
 
-.qr-card[data-team="a"] .qr-card-label { color: #6965ae; }
-.qr-card[data-team="b"] .qr-card-label { color: #4b9cbf; }
+.qr-card[data-team="a"] .qr-card-label { color: var(--team-a-color, #6965ae); }
+.qr-card[data-team="b"] .qr-card-label { color: var(--team-b-color, #4b9cbf); }
 
 .qr-box-sm {
   padding: 8px;
@@ -636,4 +742,492 @@ html, body {
 .qr-canvas-sm {
   width: 170px;
   height: 170px;
+}
+
+/* ---------------- زر «تشغيل الصوت» (احتياطي فقط إذا حجب المتصفح الصوت) ---------------- */
+.sfx-unlock {
+  position: fixed;
+  bottom: 18px;
+  left: 18px;
+  z-index: 90;
+  display: none;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 18px;
+  border-radius: 999px;
+  border: 3px solid #070808;
+  background: #ffd93d;
+  color: #070808;
+  font: 900 18px 'Cairo', 'Tajawal', sans-serif;
+  box-shadow: 0 5px 0 #070808;
+  cursor: pointer;
+  animation: bannerIn 0.45s cubic-bezier(0.34, 1.4, 0.64, 1);
+}
+
+.sfx-unlock.show {
+  display: inline-flex;
+}
+
+/* ---------------- قائمة البداية: رمز اللاعبين + من انضمّ لكل فريق ---------------- */
+.lobby-hint {
+  margin: 0.2rem 0 0.6rem;
+  font-weight: 800;
+  color: #4b5563;
+}
+
+.lobby-teams {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin: 0 auto 0.8rem;
+  max-width: 760px;
+}
+
+.lobby-team {
+  border: 3px solid #070808;
+  border-radius: 18px;
+  padding: 10px 12px;
+  background: #f9fafb;
+  min-height: 74px;
+}
+
+.lobby-team-name {
+  font-weight: 900;
+  font-size: 1.1rem;
+  margin-bottom: 6px;
+}
+
+.lobby-team-players {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+}
+
+.lobby-player {
+  padding: 3px 12px;
+  border-radius: 999px;
+  border: 2px solid #070808;
+  font-weight: 900;
+  font-size: 0.95rem;
+  animation: bannerIn 0.4s cubic-bezier(0.34, 1.4, 0.64, 1);
+}
+
+.lobby-player.offline {
+  opacity: 0.45;
+}
+
+.lobby-player.empty {
+  border: 2px dashed #9ca3af;
+  background: transparent !important;
+  color: #6b7280 !important;
+  font-weight: 800;
+}
+
+/* ---------------- شاشة الفوز: أفضل لاعب + أسرع ضغطة ---------------- */
+.winner-stats {
+  margin-top: 0.9em;
+  display: grid;
+  gap: 0.3em;
+  font-size: 1.35rem;
+  font-weight: 900;
+  color: #374151;
+}
+
+.winner-stats:empty {
+  display: none;
+}
+
+/* ================= السهرة: ما يظهر لكل لعبة ================= */
+.hub-screen,
+.taboo-screen {
+  display: none;
+}
+
+body[data-game="none"] .hub-screen {
+  display: flex;
+}
+
+body[data-game="taboo"] .taboo-screen {
+  display: flex;
+}
+
+body:not([data-game="huroof"]) .screen-viewport,
+body:not([data-game="huroof"]) .buzz-banner,
+body:not([data-game="huroof"]) .timer-float,
+body:not([data-game="huroof"]) .winner-modal {
+  display: none !important;
+}
+
+body.game-switch .hub-screen,
+body.game-switch .taboo-screen,
+body.game-switch .screen-viewport {
+  animation: gameIn 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes gameIn {
+  from { opacity: 0; scale: 0.97; }
+  to { opacity: 1; scale: 1; }
+}
+
+/* ---------------- قائمة الألعاب على التلفاز ---------------- */
+.hub-screen {
+  position: fixed;
+  inset: 0;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2.4vh;
+  background: radial-gradient(circle at 50% 30%, color-mix(in srgb, var(--bg-color, #2f6f9e) 75%, #ffffff), var(--bg-color, #2f6f9e) 70%);
+  color: var(--panel-ink, #fff);
+  font-family: "Cairo", "Tajawal", sans-serif;
+}
+
+.hub-screen-title {
+  font-size: 7vh;
+  font-weight: 900;
+  text-shadow: 0 0.6vh 0 rgba(0, 0, 0, 0.25);
+}
+
+.hub-screen-sub {
+  font-size: 3vh;
+  font-weight: 800;
+  opacity: 0.85;
+}
+
+.hub-screen-games {
+  display: flex;
+  gap: 2.5vw;
+  margin: 2vh 0;
+}
+
+.hub-screen-game {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1vh;
+  padding: 3vh 3vw;
+  border-radius: 3vh;
+  background: rgba(255, 255, 255, 0.14);
+  border: 0.4vh solid rgba(255, 255, 255, 0.3);
+  font-size: 3.2vh;
+  font-weight: 900;
+  animation: bannerIn 0.6s cubic-bezier(0.34, 1.4, 0.64, 1) both;
+}
+
+.hub-screen-game:nth-child(2) {
+  animation-delay: 0.12s;
+}
+
+.hub-screen-game span {
+  font-size: 9vh;
+  line-height: 1;
+}
+
+.hub-night-title {
+  text-align: center;
+  font-size: 3vh;
+  font-weight: 900;
+  margin-bottom: 1vh;
+}
+
+.hub-night-row {
+  display: flex;
+  gap: 1.5vw;
+}
+
+.hub-night-chip {
+  display: flex;
+  align-items: center;
+  gap: 1.2vw;
+  padding: 1.2vh 2.2vw;
+  border-radius: 999px;
+  border: 0.4vh solid #070808;
+  font-size: 3.2vh;
+  font-weight: 900;
+}
+
+.hub-night-chip b {
+  font-size: 4.4vh;
+}
+
+/* ---------------- «الكلمة الممنوعة» على التلفاز ---------------- */
+.taboo-screen {
+  position: fixed;
+  inset: 0;
+  flex-direction: column;
+  padding: 3vh 3vw;
+  gap: 2vh;
+  background: radial-gradient(circle at 50% 40%, color-mix(in srgb, var(--team, #ffd93d) 28%, #14112a), #0d0b1c 75%);
+  color: #fff;
+  font-family: "Cairo", "Tajawal", sans-serif;
+  transition: background 0.6s ease;
+}
+
+.ts-top {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  gap: 2vw;
+  align-items: center;
+}
+
+.ts-team {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  grid-template-rows: auto auto;
+  align-items: center;
+  padding: 1.4vh 2vw;
+  border-radius: 2.5vh;
+  background: color-mix(in srgb, var(--team) 35%, transparent);
+  border: 0.4vh solid transparent;
+  transition: background 0.4s ease, border-color 0.4s ease, scale 0.4s ease;
+}
+
+.ts-team.active {
+  background: var(--team);
+  color: var(--team-ink, #fff);
+  border-color: #fff;
+  scale: 1.03;
+}
+
+.ts-team-name {
+  font-size: 3.4vh;
+  font-weight: 900;
+}
+
+.ts-team-score {
+  grid-row: span 2;
+  font-size: 9vh;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.ts-team-skips {
+  font-size: 2.4vh;
+  letter-spacing: 0.2em;
+  opacity: 0.9;
+}
+
+.ts-target {
+  font-size: 3.2vh;
+  font-weight: 900;
+  padding: 1vh 2vw;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.ts-main {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2.4vh;
+  text-align: center;
+  animation: textIn 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.ts-title {
+  font-size: 6vh;
+  font-weight: 900;
+}
+
+.ts-sub {
+  font-size: 3vh;
+  font-weight: 800;
+  opacity: 0.8;
+}
+
+.ts-rules {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.2vh 2vw;
+  max-width: 88vw;
+  text-align: start;
+}
+
+.ts-rule {
+  display: flex;
+  align-items: center;
+  gap: 1vw;
+  padding: 1.2vh 1.4vw;
+  border-radius: 1.8vh;
+  background: rgba(255, 255, 255, 0.08);
+  font-size: 2.6vh;
+  font-weight: 800;
+  animation: textIn 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.ts-rule-icon {
+  font-size: 3.6vh;
+}
+
+.ts-foot {
+  font-size: 2.6vh;
+  font-weight: 900;
+  color: #ffd93d;
+}
+
+.ts-starter {
+  padding: 1.2vh 3vw;
+  border-radius: 999px;
+  font-size: 3.4vh;
+  font-weight: 900;
+  border: 0.4vh solid #070808;
+  animation: bannerIn 0.6s cubic-bezier(0.34, 1.4, 0.64, 1) 0.6s both;
+}
+
+.ts-big-team {
+  padding: 1.6vh 4vw;
+  border-radius: 3vh;
+  background: var(--team, #ffd93d);
+  color: var(--team-ink, #fff);
+  font-size: 7vh;
+  font-weight: 900;
+  animation: bannerIn 0.6s cubic-bezier(0.34, 1.4, 0.64, 1);
+}
+
+.ts-describer {
+  font-size: 5vh;
+  font-weight: 900;
+}
+
+.ts-live {
+  display: flex;
+  align-items: center;
+  gap: 5vw;
+}
+
+.ts-ring {
+  position: relative;
+  width: 36vh;
+  height: 36vh;
+}
+
+.ts-ring svg {
+  width: 100%;
+  height: 100%;
+  rotate: -90deg;
+}
+
+.ts-ring-bg {
+  fill: none;
+  stroke: rgba(255, 255, 255, 0.12);
+  stroke-width: 10;
+}
+
+.ts-ring-fg {
+  fill: none;
+  stroke: var(--team, #ffd93d);
+  stroke-width: 10;
+  stroke-linecap: round;
+  stroke-dasharray: 327;
+  transition: stroke-dashoffset 0.25s linear;
+}
+
+.ts-ring-num {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-size: 14vh;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+}
+
+.ts-ring-num.urgent {
+  color: #ff5a5a;
+  animation: tbPulse 1s ease-in-out infinite;
+}
+
+.ts-live-info {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1.4vh;
+  text-align: start;
+}
+
+.ts-live-team {
+  font-size: 3.4vh;
+  font-weight: 800;
+  opacity: 0.85;
+}
+
+.ts-topic {
+  padding: 1vh 2vw;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.14);
+  font-size: 3.4vh;
+  font-weight: 900;
+}
+
+.ts-tally {
+  font-size: 10vh;
+  font-weight: 900;
+  color: #4ade80;
+  line-height: 1;
+}
+
+.ts-chips {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 1vh 0.8vw;
+  max-width: 90vw;
+}
+
+.ts-chip {
+  padding: 0.8vh 1.6vw;
+  border-radius: 999px;
+  font-size: 2.8vh;
+  font-weight: 900;
+  background: rgba(255, 255, 255, 0.1);
+  animation: bannerIn 0.4s cubic-bezier(0.34, 1.4, 0.64, 1);
+}
+
+.ts-chip.right { background: rgba(22, 163, 74, 0.4); }
+.ts-chip.foul { background: rgba(220, 38, 38, 0.55); }
+.ts-chip.skip,
+.ts-chip.timeout { opacity: 0.65; }
+
+.ts-paused {
+  font-size: 5vh;
+  font-weight: 900;
+  color: #ffd93d;
+}
+
+.ts-foul {
+  padding: 1.6vh 4vw;
+  border-radius: 3vh;
+  background: #dc2626;
+  font-size: 6vh;
+  font-weight: 900;
+  animation: tsShake 0.5s ease, bannerIn 0.4s ease;
+}
+
+.ts-trophy {
+  font-size: 18vh;
+  line-height: 1;
+  animation: bannerIn 0.8s cubic-bezier(0.34, 1.4, 0.64, 1);
+}
+
+.ts-winner {
+  font-size: 9vh;
+  font-weight: 900;
+  text-shadow: 0 0.6vh 0 rgba(0, 0, 0, 0.35);
+}
+
+@keyframes tbPulse {
+  0%, 100% { scale: 1; }
+  50% { scale: 1.06; }
+}
+
+@keyframes tsShake {
+  0%, 100% { translate: 0 0; }
+  20% { translate: -1.2vw 0; }
+  40% { translate: 1.2vw 0; }
+  60% { translate: -0.6vw 0; }
+  80% { translate: 0.6vw 0; }
 }

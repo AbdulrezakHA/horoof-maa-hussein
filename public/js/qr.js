@@ -126,3 +126,11 @@ export async function setupRefereeQR(canvas, room = "main") {
   drawQR(url, canvas);
   return url;
 }
+
+/**
+ * رابط صفحة اللاعبين (/play) — رمز واحد للجميع: كل لاعب يكتب اسمه ويختار فريقه.
+ * @param {string} [room]
+ */
+export async function getPlayUrls(room = "main") {
+  return resolveUrls(room, "play");
+}

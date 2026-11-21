@@ -283,7 +283,7 @@ textarea {
 .hex-fill {
   position: absolute;
   inset: calc(var(--cell-w) * 0.042);
-  background: linear-gradient(180deg, var(--cell-color, #ede5bb), color-mix(in srgb, var(--cell-color, #ede5bb) 75%, #c4bd93));
+  background: linear-gradient(180deg, color-mix(in srgb, var(--cell-color, #ede5bb) 92%, white), var(--cell-color, #ede5bb));
   clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
   display: grid;
   place-items: center;
@@ -337,28 +337,30 @@ textarea {
 
 /* فريق أ */
 .hex.owner-a .hex-fill {
+  /* لون الفريق بالضبط مع لمعة خفيفة في الأعلى فقط */
   background: linear-gradient(
     180deg,
-    color-mix(in srgb, var(--team-a-color) 82%, white),
+    color-mix(in srgb, var(--team-a-color) 90%, white),
     var(--team-a-color)
   );
 }
 .hex.owner-a .hex-letter {
-  color: #ffffff;
-  text-shadow: 0 2px 5px rgba(0, 0, 0, 0.55);
+  color: var(--team-a-ink, #ffffff);
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
 }
 
 /* فريق ب */
 .hex.owner-b .hex-fill {
+  /* لون الفريق بالضبط مع لمعة خفيفة في الأعلى فقط */
   background: linear-gradient(
     180deg,
-    color-mix(in srgb, var(--team-b-color) 82%, white),
+    color-mix(in srgb, var(--team-b-color) 90%, white),
     var(--team-b-color)
   );
 }
 .hex.owner-b .hex-letter {
-  color: #ffffff;
-  text-shadow: 0 2px 5px rgba(0, 0, 0, 0.55);
+  color: var(--team-b-ink, #ffffff);
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
 }
 
 .hex.is-selected {
@@ -417,7 +419,8 @@ textarea {
   overflow: hidden;
   border: 4px solid #070808;
   border-radius: calc(var(--cell-w) * 0.24);
-  background: var(--bg-color, #73c4ee);
+  /* يمين ويسار اللوحة = منطقة الفريق الثاني (مثل الشاشة الكبيرة) */
+  background: var(--team-b-color, #4b9cbf);
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
 }
 
@@ -429,7 +432,7 @@ textarea {
   width: 100%;
   height: 25%;
   clip-path: polygon(0 0, 100% 0, 85% 100%, 15% 100%);
-  background: linear-gradient(180deg, var(--team-a-color), color-mix(in srgb, var(--team-a-color) 80%, black));
+  background: var(--team-a-color);
   border-bottom: 3px solid rgba(7, 8, 8, 0.35);
 }
 
@@ -440,7 +443,7 @@ textarea {
   width: 100%;
   height: 25%;
   clip-path: polygon(15% 0, 85% 0, 100% 100%, 0 100%);
-  background: linear-gradient(0deg, var(--team-a-color), color-mix(in srgb, var(--team-a-color) 80%, black));
+  background: var(--team-a-color);
   border-top: 3px solid rgba(7, 8, 8, 0.35);
 }
 
@@ -454,10 +457,10 @@ textarea {
   letter-spacing: 0.05em;
 }
 
-.deco-lbl-top { top: 1.5%; left: 50%; transform: translateX(-50%); }
-.deco-lbl-bottom { bottom: 1.5%; left: 50%; transform: translateX(-50%); }
-.deco-lbl-left { top: 50%; left: 1%; transform: translateY(-50%) rotate(-90deg); transform-origin: center; color: rgba(7, 8, 8, 0.7); text-shadow: 0 1px 0 rgba(255,255,255,0.4); }
-.deco-lbl-right { top: 50%; right: 1%; transform: translateY(-50%) rotate(90deg); transform-origin: center; color: rgba(7, 8, 8, 0.7); text-shadow: 0 1px 0 rgba(255,255,255,0.4); }
+.deco-lbl-top { top: 1.5%; left: 50%; transform: translateX(-50%); color: var(--team-a-ink, #ffffff); text-shadow: none; }
+.deco-lbl-bottom { bottom: 1.5%; left: 50%; transform: translateX(-50%); color: var(--team-a-ink, #ffffff); text-shadow: none; }
+.deco-lbl-left { top: 50%; left: 1%; transform: translateY(-50%) rotate(-90deg); transform-origin: center; color: var(--team-b-ink, #ffffff); text-shadow: none; }
+.deco-lbl-right { top: 50%; right: 1%; transform: translateY(-50%) rotate(90deg); transform-origin: center; color: var(--team-b-ink, #ffffff); text-shadow: none; }
 
 /* ---------- شاشة الترحيب ---------- */
 .landing {

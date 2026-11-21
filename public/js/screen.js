@@ -2,8 +2,10 @@
    منطق الشاشة الكبيرة — مطابق لملف حروف مع حسين layout.svg بمقاس 1920x1080
    ================================================================== */
 import { Transport, remainingMs } from "/js/transport.js";
-import { drawQR, getRefereeUrls, getBuzzerUrls } from "/js/qr.js";
+import { drawQR, getRefereeUrls, getPlayUrls } from "/js/qr.js";
 import { sfx } from "/js/sfx.js";
+import { inkFor, isLight, mix } from "/shared/colors.js";
+import { initTabooScreen, renderTabooScreen } from "/js/screen-taboo.js";
 
 const params = new URLSearchParams(location.search);
 const room = params.get("room") || "main";
@@ -35,8 +37,6 @@ const el = {
   lobbyStatusText: document.getElementById("lobbyStatusText"),
   qrCanvas: document.getElementById("qrCanvas"),
   lobbyPairCode: document.getElementById("lobbyPairCode"),
-  lobbyHide: document.getElementById("lobbyHide"),
-  lobbyStart: document.getElementById("lobbyStart"),
   connBadge: document.getElementById("connBadge"),
   connBadgeDot: document.getElementById("connBadgeDot"),
   connBadgeText: document.getElementById("connBadgeText"),
@@ -47,10 +47,12 @@ const el = {
   buzzBannerText: document.getElementById("buzzBannerText"),
   buzzBannerSub: document.getElementById("buzzBannerSub"),
   buzzBannerTimer: document.getElementById("buzzBannerTimer"),
-  qrCardA: document.getElementById("qrCardA"),
-  qrCardB: document.getElementById("qrCardB"),
-  qrCanvasA: document.getElementById("qrCanvasA"),
-  qrCanvasB: document.getElementById("qrCanvasB"),
+  qrCanvasPlay: document.getElementById("qrCanvasPlay"),
+  lobbyTeamNameA: document.getElementById("lobbyTeamNameA"),
+  lobbyTeamNameB: document.getElementById("lobbyTeamNameB"),
+  lobbyPlayersA: document.getElementById("lobbyPlayersA"),
+  lobbyPlayersB: document.getElementById("lobbyPlayersB"),
+  winnerStats: document.getElementById("winnerStats"),
 };
 
 let state = null;
@@ -124,6 +126,74 @@ if (document.fonts && document.fonts.ready) {
   });
 }
 
+/* ---------------- الحركات (ناعمة وخفيفة مثل ألعاب الجوال) ---------------- */
+const reduceMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+const anim = { owners: null, letters: null, qText: "", selLetter: "", winWave: false };
+
+/** موجة ظهور متتابعة للخلايا عند بداية جولة جديدة (حروف جديدة). */
+function staggerCells() {
+  if (reduceMotion) return;
+  let i = 0;
+  for (const [, els] of cellEls) {
+    els.g.style.animationDelay = `${(i++ % 25) * 28}ms`;
+    replayAnimation(els.g, "cell-in");
+  }
+}
+
+/** التقاط خلية: نبضة خفيفة + موجة بلون الفريق تنتشر من مركزها. */
+function claimCell(els, color) {
+  if (reduceMotion) return;
+  els.g.style.animationDelay = "";
+  replayAnimation(els.g, "claim");
+  const ripple = els.path.cloneNode(false);
+  ripple.removeAttribute("id");
+  ripple.setAttribute("class", "cell-ripple");
+  ripple.setAttribute("fill", "none");
+  ripple.setAttribute("stroke", color);
+  ripple.setAttribute("stroke-width", "10");
+  els.g.appendChild(ripple);
+  setTimeout(() => ripple.remove(), 800);
+}
+
+/** عند الفوز: خلايا الفريق الفائز تومض بالتتابع كموجة. */
+function winWave(team) {
+  if (reduceMotion || !state) return;
+  const ids = [...cellEls.keys()]
+    .filter((id) => state.cells[id]?.owner === team)
+    .sort((x, y) => {
+      const a = state.cells[x];
+      const b = state.cells[y];
+      return team === "a" ? a.r - b.r || a.c - b.c : a.c - b.c || a.r - b.r;
+    });
+  ids.forEach((id, i) => {
+    const els = cellEls.get(id);
+    setTimeout(() => {
+      els.g.style.animationDelay = "";
+      replayAnimation(els.g, "win-glow");
+    }, i * 90);
+  });
+}
+
+/** يعيد تشغيل حركة CSS على عنصر (بإزالة الصنف ثم إعادته). */
+function replayAnimation(node, cls) {
+  if (!node) return;
+  node.classList.remove(cls);
+  void node.getBoundingClientRect();
+  node.classList.add(cls);
+}
+
+/** يحدّث رقم النقاط مع «نبضة» خفيفة عند تغيّره. */
+function setScore(textEl, value, fill) {
+  if (!textEl) return;
+  textEl.style.fill = fill;
+  const v = String(value);
+  if (textEl.textContent === v) return;
+  const first = textEl.dataset.ready !== "1";
+  textEl.textContent = v;
+  textEl.dataset.ready = "1";
+  if (!first) replayAnimation(textEl.closest(".score-group"), "bump");
+}
+
 // ربط جميع خلايا اللوحة السداسية الـ 25 داخل SVG
 for (let r = 0; r < 5; r++) {
   for (let c = 0; c < 5; c++) {
@@ -133,9 +203,6 @@ for (let r = 0; r < 5; r++) {
       const path = g.querySelector(".cell-path");
       const text = g.querySelector(".cell-text");
       cellEls.set(id, { g, path, text });
-      g.addEventListener("click", () => {
-        transport.send({ type: "select", payload: { cellId: id } });
-      });
     }
   }
 }
@@ -143,6 +210,8 @@ for (let r = 0; r < 5; r++) {
 const transport = new Transport("screen", room);
 
 transport.onStatus = (s) => {
+  // بعد كل اتصال (أو إعادة اتصال) نُبلغ الخادم بحالة ملء الشاشة
+  if (s === "online") setTimeout(() => reportFullscreen(true), 300);
   if (el.connBadgeDot) {
     el.connBadgeDot.style.background = s === "online" ? "#10b981" : "#f87171";
   }
@@ -157,13 +226,33 @@ transport.onState = (msg) => {
     if (el.lobbyPairCode) el.lobbyPairCode.textContent = msg.pairing.code;
   }
 
+  onlinePlayers = new Set(msg.peers?.players || []);
   updateLobby(msg.peers);
+  applyScreenControls();
   render();
   renderTimer();
   screenSfx(state);
 };
 
 transport.connect();
+
+/* ---------------- ملء الشاشة (يتحكّم به الحكم من جواله) ---------------- */
+// رقم المنفذ في عنوان النافذة: به يجد الخادم نافذة هذه اللعبة بالضبط ليضغط عليها F11
+document.title = `${document.title} [${location.port || "80"}]`;
+
+// الصفحة لا تستطيع دخول ملء الشاشة وحدها بلا نقرة، فالخادم يضغط F11 على هذه النافذة.
+// هنا فقط نُبلغ الخادم بالحالة الحالية ليعرض الحكم الزر الصحيح.
+let lastFullscreen = null;
+function reportFullscreen(force = false) {
+  const full =
+    !!document.fullscreenElement ||
+    (window.innerWidth >= screen.width - 2 && window.innerHeight >= screen.height - 2);
+  if (!force && full === lastFullscreen) return;
+  lastFullscreen = full;
+  transport.sendRaw({ t: "screenInfo", fullscreen: full });
+}
+window.addEventListener("resize", () => reportFullscreen());
+document.addEventListener("fullscreenchange", () => reportFullscreen());
 
 /* ---------------- قائمة البداية ورمز QR ---------------- */
 function updateLobby(peers) {
@@ -180,18 +269,59 @@ function updateLobby(peers) {
     el.lobby.classList.toggle("connected", connected);
     if (el.lobbyStatusText) {
       el.lobbyStatusText.textContent = connected
-        ? "تم اتصال الحكم ✅ اضغط «ابدأ اللعب»"
-        : "بانتظار مسح الرمز من الجوال…";
+        ? "تم اتصال الحكم ✅ — اضغط «ابدأ اللعب» من جوال الحكم"
+        : "بانتظار مسح الرمز من جوال الحكم…";
     }
   }
+  applyScreenControls();
 }
 
-function showLobby() {
-  if (el.lobby) el.lobby.classList.remove("lobby-off");
+/**
+ * الشاشة الكبيرة للعرض فقط — كل التحكم من جوال الحكم:
+ *  - قائمة البداية (رموز QR) تظهر دائماً ما دام الحكم غير متصل (يحتاج رمز التحقق منها)،
+ *    وبعد اتصاله يُظهرها أو يخفيها من جواله.
+ *  - صوت الشاشة يُشغَّل ويُكتم من جوال الحكم.
+ */
+function applyScreenControls() {
+  const scr = state?.screen || {};
+  const showLobby = !refereeConnected || scr.lobby !== false;
+  if (el.lobby) el.lobby.classList.toggle("lobby-off", !showLobby);
+  sfx.setMuted(scr.sound === false, { persist: false });
+
+  renderLobbyPlayers();
 }
 
-function hideLobby() {
-  if (el.lobby) el.lobby.classList.add("lobby-off");
+/** قائمة اللاعبين المنضمّين لكل فريق (تتحدّث لحظياً أثناء المسح). */
+let onlinePlayers = new Set();
+function renderLobbyPlayers() {
+  if (!state) return;
+  // على البطاقة البيضاء: الألوان الفاتحة (كالأصفر) تُغمَّق قليلاً لتبقى مقروءة
+  const onWhite = (c) => (isLight(c) ? mix(c, "#000000", 0.45) : c);
+  for (const t of ["a", "b"]) {
+    const nameEl = t === "a" ? el.lobbyTeamNameA : el.lobbyTeamNameB;
+    const listEl = t === "a" ? el.lobbyPlayersA : el.lobbyPlayersB;
+    if (!nameEl || !listEl) continue;
+    const team = state.teams[t];
+    const players = Object.values(state.players || {}).filter((pl) => !pl.pseudo && pl.team === t);
+    nameEl.textContent = `${team.name} (${players.length})`;
+    nameEl.style.color = onWhite(team.color);
+    listEl.replaceChildren();
+    if (!players.length) {
+      const empty = document.createElement("span");
+      empty.className = "lobby-player empty";
+      empty.textContent = "بانتظار اللاعبين…";
+      listEl.appendChild(empty);
+    }
+    for (const pl of players) {
+      const chip = document.createElement("span");
+      chip.className = "lobby-player";
+      chip.classList.toggle("offline", !onlinePlayers.has(pl.id));
+      chip.style.background = team.color;
+      chip.style.color = inkFor(team.color);
+      chip.textContent = pl.name;
+      listEl.appendChild(chip);
+    }
+  }
 }
 
 async function initLobby() {
@@ -203,18 +333,10 @@ async function initLobby() {
   } catch (err) {
     if (el.lobbyUrl) el.lobbyUrl.textContent = `${location.origin}/referee`;
   }
-  // رمزا جرس الفريقين — يُمسحان من هاتفي اللاعبين
-  drawBuzzerQr("a");
-  drawBuzzerQr("b");
-}
-
-/** يرسم رمز QR لجرس فريق معيّن. */
-async function drawBuzzerQr(team) {
-  const canvas = team === "a" ? el.qrCanvasA : el.qrCanvasB;
-  if (!canvas) return;
+  // رمز واحد لكل اللاعبين: يكتب اسمه ويختار فريقه
   try {
-    const options = await getBuzzerUrls(room, team);
-    if (options?.[0]) drawQR(options[0].url, canvas);
+    const options = await getPlayUrls(room);
+    if (options?.[0] && el.qrCanvasPlay) drawQR(options[0].url, el.qrCanvasPlay);
   } catch {
     /* نتجاهل: يظهر الرمز عند توفر الرابط */
   }
@@ -225,106 +347,172 @@ function showRefereeUrl(option) {
   if (el.qrCanvas) drawQR(option.url, el.qrCanvas);
 }
 
-if (el.lobbyStart) el.lobbyStart.addEventListener("click", hideLobby);
-if (el.lobbyHide) el.lobbyHide.addEventListener("click", hideLobby);
-if (el.connBadge) el.connBadge.addEventListener("click", showLobby);
 
 initLobby();
 
+initTabooScreen({
+  sfx,
+  inkFor,
+  getState: () => state,
+  remainingMs: (t) => remainingMs(t, transport.serverOffset),
+  confetti: (color) => launchConfetti(color),
+});
+
 /* ---------------- العرض والتحديث ---------------- */
+/** شاشة قائمة الألعاب: نقاط السهرة للفريقين. */
+function renderHubScreen() {
+  const box = document.getElementById("hubNight");
+  if (!box || !state) return;
+  box.replaceChildren();
+  const title = document.createElement("div");
+  title.className = "hub-night-title";
+  title.textContent = "🏆 نقاط السهرة";
+  box.appendChild(title);
+  const row = document.createElement("div");
+  row.className = "hub-night-row";
+  for (const k of ["a", "b"]) {
+    const team = state.teams[k];
+    const chip = document.createElement("div");
+    chip.className = "hub-night-chip";
+    chip.style.background = team.color;
+    chip.style.color = inkFor(team.color);
+    const name = document.createElement("span");
+    name.textContent = team.name;
+    const n = document.createElement("b");
+    n.textContent = String(state.night?.[k] || 0);
+    chip.append(name, n);
+    row.appendChild(chip);
+  }
+  box.appendChild(row);
+}
+
 function render() {
   if (!state) return;
 
+  // اللعبة الحالية: حروف (اللوحة) / الكلمة الممنوعة / قائمة الألعاب
+  const game = state.game || "none";
+  if (document.body.dataset.game !== game) {
+    document.body.dataset.game = game;
+    replayAnimation(document.body, "game-switch");
+  }
+  if (game === "none") renderHubScreen();
+  if (game === "taboo") renderTabooScreen(state);
+
   const teamAColor = state.teams.a?.color || "#6965ae";
   const teamBColor = state.teams.b?.color || "#4b9cbf";
-  const bgColor = state.theme?.bgColor || "#73c4ee";
+  // bgColor = خلفية لوحة السؤال (يمين الشاشة). مناطق اللوحة نفسها تأخذ ألوان الفريقين.
+  const bgColor = state.theme?.bgColor || "#2f6f9e";
   const cellColor = state.theme?.cellColor || "#ede5bb";
-  const cellTextColor = state.theme?.cellTextColor || "#635e48";
   const selectedColor = state.theme?.selectedColor || "#fcb017";
-  const selectedTextColor = state.theme?.selectedTextColor || "#ffffff";
 
-  document.documentElement.style.setProperty("--bg-color", bgColor);
-  document.documentElement.style.setProperty("--cell-text-color", cellTextColor);
-  document.documentElement.style.setProperty("--selected-color", selectedColor);
-  document.documentElement.style.setProperty("--team-a-color", teamAColor);
-  document.documentElement.style.setProperty("--team-b-color", teamBColor);
+  // ألوان الكتابة تُختار تلقائياً لتبقى واضحة فوق أي لون يختاره الحكم
+  const ink = {
+    a: inkFor(teamAColor),
+    b: inkFor(teamBColor),
+    cell: inkFor(cellColor),
+    selected: inkFor(selectedColor),
+    panel: inkFor(bgColor),
+  };
 
-  // تحديث محطات التدرج في SVG
-  const stopA1 = document.getElementById("stopTeamA1");
-  const stopA2 = document.getElementById("stopTeamA2");
-  if (stopA1 && stopA2) {
-    stopA1.setAttribute("stop-color", teamAColor);
-    stopA2.setAttribute("stop-color", teamAColor);
-  }
+  const rootStyle = document.documentElement.style;
+  rootStyle.setProperty("--bg-color", bgColor);
+  rootStyle.setProperty("--panel-ink", ink.panel);
+  rootStyle.setProperty("--panel-shadow", ink.panel === "#ffffff" ? "rgba(0,0,0,.45)" : "rgba(255,255,255,.35)");
+  rootStyle.setProperty("--cell-text-color", ink.cell);
+  rootStyle.setProperty("--selected-color", selectedColor);
+  rootStyle.setProperty("--team-a-color", teamAColor);
+  rootStyle.setProperty("--team-b-color", teamBColor);
+  rootStyle.setProperty("--team-a-ink", ink.a);
+  rootStyle.setProperty("--team-b-ink", ink.b);
 
-  const stopB1 = document.getElementById("stopTeamB1");
-  const stopB2 = document.getElementById("stopTeamB2");
-  if (stopB1 && stopB2) {
-    stopB1.setAttribute("stop-color", teamBColor);
-    stopB2.setAttribute("stop-color", teamBColor);
-  }
+  // تدرّج خفيف جداً (لمعة في الأعلى فقط) — اللون الأساسي هو لون الفريق نفسه بالضبط
+  const setStops = (id1, id2, color, lift = 0.1) => {
+    const s1 = document.getElementById(id1);
+    const s2 = document.getElementById(id2);
+    if (s1) s1.setAttribute("stop-color", mix(color, "#ffffff", lift));
+    if (s2) s2.setAttribute("stop-color", color);
+  };
+  setStops("stopTeamA1", "stopTeamA2", teamAColor);
+  setStops("stopTeamB1", "stopTeamB2", teamBColor);
+  setStops("stopCell1", "stopCell2", cellColor, 0.08);
+  setStops("stopSel1", "stopSel2", selectedColor, 0.12);
 
-  const stopCell1 = document.getElementById("stopCell1");
-  const stopCell2 = document.getElementById("stopCell2");
-  if (stopCell1 && stopCell2) {
-    stopCell1.setAttribute("stop-color", cellColor);
-    stopCell2.setAttribute("stop-color", cellColor);
-  }
+  // منطقة الفريق الثاني (يمين ويسار اللوحة) بلون الفريق الثاني،
+  // ومنطقة الفريق الأول (أعلى وأسفل) بلون الفريق الأول عبر تدرّجه.
+  if (el.bgLeft) el.bgLeft.setAttribute("fill", "url(#grad-team-b)");
+  const r1 = document.getElementById("stopBgRight1");
+  const r2 = document.getElementById("stopBgRight2");
+  if (r1) r1.setAttribute("stop-color", mix(bgColor, "#ffffff", 0.08));
+  if (r2) r2.setAttribute("stop-color", mix(bgColor, "#000000", 0.12));
 
-  const stopSel1 = document.getElementById("stopSel1");
-  const stopSel2 = document.getElementById("stopSel2");
-  if (stopSel1 && stopSel2) {
-    stopSel1.setAttribute("stop-color", selectedColor);
-    stopSel2.setAttribute("stop-color", selectedColor);
-  }
-
-  if (el.bgLeft) el.bgLeft.setAttribute("fill", bgColor);
-
-  // تحديث خلايا اللوحة الـ 25
+  // تحديث خلايا اللوحة الـ 25 (مع اكتشاف ما تغيّر لتشغيل الحركات المناسبة)
+  const prevOwners = anim.owners;
+  const prevLetters = anim.letters;
+  anim.owners = {};
+  anim.letters = {};
+  let changedLetters = 0;
   for (const [id, els] of cellEls) {
     const cell = state.cells[id];
     if (!cell) continue;
 
-    els.text.textContent = cell.letter;
+    if (els.text.textContent !== cell.letter) els.text.textContent = cell.letter;
     const isSelected = state.current.cellId === id;
     const owner = cell.owner;
+    anim.owners[id] = owner;
+    anim.letters[id] = cell.letter;
+    if (prevLetters && prevLetters[id] !== cell.letter) changedLetters++;
+    if (prevOwners && owner && prevOwners[id] !== owner) {
+      claimCell(els, owner === "a" ? teamAColor : teamBColor);
+    }
 
     els.g.classList.toggle("is-selected", isSelected);
-    els.text.classList.toggle("is-selected", isSelected);
-    els.text.classList.toggle("owner-team-a", owner === "a");
-    els.text.classList.toggle("owner-team-b", owner === "b");
+    els.g.classList.toggle("owner-a", owner === "a");
+    els.g.classList.toggle("owner-b", owner === "b");
 
     if (isSelected) {
       els.path.setAttribute("fill", "url(#grad-cell-selected)");
-      els.text.style.fill = selectedTextColor;
+      els.text.style.fill = ink.selected;
     } else if (owner === "a") {
       els.path.setAttribute("fill", "url(#grad-team-a)");
-      els.text.style.fill = "#ffffff";
+      els.text.style.fill = ink.a;
     } else if (owner === "b") {
       els.path.setAttribute("fill", "url(#grad-team-b)");
-      els.text.style.fill = "#ffffff";
+      els.text.style.fill = ink.b;
     } else {
       els.path.setAttribute("fill", "url(#grad-cell-unselected)");
-      els.text.style.fill = cellTextColor;
+      els.text.style.fill = ink.cell;
     }
   }
 
+  // جولة جديدة (تغيّرت حروف كثيرة دفعة واحدة) → موجة ظهور ناعمة
+  if (prevLetters && changedLetters >= 5) staggerCells();
+
   // تحديث الحرف المختار في أعلى اليمين
   // (بعد منح النقطة تُلغى الخلية المحددة، فنُظهر الحرف المُحتسب من verdict)
-  const activeCellId = state.current.cellId || state.current.verdict?.cellId || null;
+  const activeCellId =
+    state.current.cellId || state.current.verdict?.cellId || state.current.missed?.cellId || null;
   const activeCell = activeCellId ? state.cells[activeCellId] : null;
 
   if (!activeCell) {
     el.selectedHexText.textContent = "؟";
+    anim.selLetter = "";
     el.selectedHexPath.setAttribute("fill", "url(#grad-cell-unselected)");
+    el.selectedHexText.style.fill = ink.cell;
   } else {
     el.selectedHexText.textContent = activeCell.letter;
+    if (anim.selLetter !== activeCell.letter) {
+      anim.selLetter = activeCell.letter;
+      replayAnimation(el.selectedHexGroup, "pop");
+    }
     if (activeCell.owner === "a") {
       el.selectedHexPath.setAttribute("fill", "url(#grad-team-a)");
+      el.selectedHexText.style.fill = ink.a;
     } else if (activeCell.owner === "b") {
       el.selectedHexPath.setAttribute("fill", "url(#grad-team-b)");
+      el.selectedHexText.style.fill = ink.b;
     } else {
       el.selectedHexPath.setAttribute("fill", "url(#grad-cell-selected)");
+      el.selectedHexText.style.fill = ink.selected;
     }
   }
 
@@ -337,14 +525,46 @@ function render() {
     el.qText.textContent = "";
     if (el.qAnswerBox) el.qAnswerBox.style.display = "none";
   } else {
-    el.qText.textContent = q?.text || "";
+    const newText = q?.text || "";
+    if (el.qText.textContent !== newText) {
+      el.qText.textContent = newText;
+      replayAnimation(el.qText, "enter");
+    }
     if (state.current.answerRevealed && q?.answer) {
       if (el.qAnswerBox) {
-        el.qAnswerBox.style.display = "inline-flex";
-        el.qAnswerValue.textContent = q.answer;
+        // بطاقة الجواب بلون الفريق الذي أخذ النقطة (أو محايدة إن لم يُجب أحد)
+        const vTeam = state.current.verdict?.team;
+        const cardColor = vTeam ? state.teams[vTeam]?.color : state.current.missed ? "#4b5563" : "#10b981";
+        el.qAnswerBox.style.setProperty("--answer-bg", cardColor);
+        el.qAnswerBox.style.setProperty("--answer-ink", inkFor(cardColor));
+        const badge = el.qAnswerBox.querySelector(".q-answer-badge");
+        if (badge) badge.textContent = "الجواب الصحيح";
+        if (el.qAnswerBox.style.display === "none" || el.qAnswerValue.textContent !== q.answer) {
+          el.qAnswerBox.style.display = "inline-flex";
+          el.qAnswerValue.textContent = q.answer;
+          replayAnimation(el.qAnswerBox, "enter");
+        }
       }
-    } else {
-      if (el.qAnswerBox) el.qAnswerBox.style.display = "none";
+    } else if (el.qAnswerBox) {
+      // بدل الجواب: التلميح (إن كشفه الحكم) أو فئة السؤال
+      const extra = state.current.hintRevealed && q?.hint
+        ? { label: "💡 تلميح", text: q.hint, color: "#f59e0b" }
+        : q?.category
+          ? { label: "📂 الفئة", text: q.category, color: "#475569" }
+          : null;
+      if (extra) {
+        el.qAnswerBox.style.setProperty("--answer-bg", extra.color);
+        el.qAnswerBox.style.setProperty("--answer-ink", inkFor(extra.color));
+        const badge = el.qAnswerBox.querySelector(".q-answer-badge");
+        if (badge) badge.textContent = extra.label;
+        if (el.qAnswerBox.style.display === "none" || el.qAnswerValue.textContent !== extra.text) {
+          el.qAnswerBox.style.display = "inline-flex";
+          el.qAnswerValue.textContent = extra.text;
+          replayAnimation(el.qAnswerBox, "enter");
+        }
+      } else {
+        el.qAnswerBox.style.display = "none";
+      }
     }
   }
 
@@ -352,8 +572,8 @@ function render() {
   fitReadableText();
 
   // تحديث النقاط في أسفل اليمين
-  if (el.scoreTextA) el.scoreTextA.textContent = state.teams.a?.score || 0;
-  if (el.scoreTextB) el.scoreTextB.textContent = state.teams.b?.score || 0;
+  setScore(el.scoreTextA, state.teams.a?.score || 0, ink.a);
+  setScore(el.scoreTextB, state.teams.b?.score || 0, ink.b);
 
   // لافتة الأجراس: «اضغط الآن» أو إعلان الفريق الأسرع
   renderBuzz();
@@ -361,7 +581,12 @@ function render() {
   // فحص الفائز
   if (state.winner && state.winner !== lastWinner) {
     lastWinner = state.winner;
-    showWinner(state.teams[state.winner].name, state.teams[state.winner].color);
+    // موجة على مسار الفائز أولاً، ثم شاشة التهنئة
+    const w = state.winner;
+    winWave(w);
+    setTimeout(() => {
+      if (state?.winner === w) showWinner(state.teams[w].name, state.teams[w].color);
+    }, reduceMotion ? 0 : 1300);
   } else if (!state.winner && lastWinner) {
     lastWinner = null;
     if (el.winnerOverlay) el.winnerOverlay.classList.remove("show");
@@ -376,6 +601,12 @@ function render() {
  *  - «الآن دور الفريق الآخر» + العدّاد الحيّ عند بدء مؤقّت الفريق الثاني
  *  - «نقطة محسوبة!» بعد حسم الحكم
  */
+/** يلوّن لافتة الأجراس بلون الفريق مع كتابة مقروءة تلقائياً. */
+function setBannerColor(color) {
+  el.buzzBanner.style.setProperty("--team-color", color);
+  el.buzzBanner.style.setProperty("--team-ink", inkFor(color));
+}
+
 function renderBuzz() {
   const b = state?.current?.buzz;
   if (!el.buzzBanner) return;
@@ -397,55 +628,65 @@ function renderBuzz() {
     return;
   }
 
-  const verdict = state.current?.verdict;
+  const c = state.current || {};
+  const t = c.timer || {};
+  const rem = t.running ? remainingMs(t, transport.serverOffset) : 0;
+  const secs = t.running && rem > 0 ? Math.ceil(rem / 1000) : null;
+  const nameOf = (pl) => (!pl ? "—" : pl.id?.startsWith("team:") ? state.teams[pl.team]?.name : pl.name);
+
+  // نقطة محسوبة: اسم اللاعب الذي أجاب + فريقه
+  const verdict = c.verdict;
   if (verdict) {
-    const vcolor = state.teams[verdict.team]?.color || "#070808";
+    const pl = verdict.playerId ? state.players?.[verdict.playerId] : null;
+    setBannerColor(state.teams[verdict.team]?.color || "#070808");
     el.buzzBanner.dataset.mode = "point";
-    el.buzzBanner.style.setProperty("--team-color", vcolor);
     if (el.buzzBannerIcon) el.buzzBannerIcon.textContent = "✅";
-    if (el.buzzBannerText) el.buzzBannerText.textContent = "نقطة محسوبة!";
+    if (el.buzzBannerText) el.buzzBannerText.textContent = pl && !pl.pseudo ? `${pl.name} أجاب صح!` : "نقطة محسوبة!";
     if (el.buzzBannerSub) el.buzzBannerSub.textContent = state.teams[verdict.team]?.name || "";
     showTimer(null);
     return;
   }
 
-  // الحالة الحيّة: مؤقّت ضغطة يعمل الآن (اللاعب الأول ثم اللاعب الثاني)
-  const t = state.current?.timer;
-  const isBuzzTimer = t && t.running && (t.stage === "buzz1" || t.stage === "buzz2");
-  const rem = isBuzzTimer ? remainingMs(t, transport.serverOffset) : 0;
-
-  if (isBuzzTimer && rem > 0) {
-    const turn = state.current?.turn;
-    const second = t.stage === "buzz2";
-    const color = state.teams[turn]?.color || "#070808";
+  // لاعب يجيب الآن: اسمه بلون فريقه + العدّاد
+  if (b.phase === "answer" && b.player) {
+    setBannerColor(state.teams[b.player.team]?.color || "#070808");
     el.buzzBanner.dataset.mode = "turn";
-    el.buzzBanner.style.setProperty("--team-color", color);
-    if (el.buzzBannerIcon) el.buzzBannerIcon.textContent = second ? "⏱️" : "⚡";
-    if (el.buzzBannerText) {
-      el.buzzBannerText.textContent = second ? "الآن دور الفريق الآخر" : "ضغط أولاً!";
+    if (el.buzzBannerIcon) el.buzzBannerIcon.textContent = "⚡";
+    if (el.buzzBannerText) el.buzzBannerText.textContent = `${nameOf(b.player)} يجيب!`;
+    if (el.buzzBannerSub) {
+      el.buzzBannerSub.textContent = state.teams[b.player.team]?.name || "";
     }
-    if (el.buzzBannerSub) el.buzzBannerSub.textContent = state.teams[turn]?.name || "";
-    showTimer(Math.ceil(rem / 1000));
+    showTimer(secs);
     return;
   }
 
-  // انتهى مؤقّت الضغطة بلا حسم للحكم
-  if (b.winner) {
-    const color = state.teams[b.winner]?.color || "#070808";
-    el.buzzBanner.dataset.mode = "won";
-    el.buzzBanner.style.setProperty("--team-color", color);
-    if (el.buzzBannerIcon) el.buzzBannerIcon.textContent = "⌛";
-    if (el.buzzBannerText) el.buzzBannerText.textContent = "انتهى الوقت!";
-    if (el.buzzBannerSub) el.buzzBannerSub.textContent = "بانتظار حكم الحكم";
+  // الجولة ١: الأجراس مفتوحة للجميع (بلا حدّ زمني للتفكير)
+  if (b.phase === "open" && b.open) {
+    el.buzzBanner.dataset.mode = "open";
+    if (el.buzzBannerIcon) el.buzzBannerIcon.textContent = "🔔";
+    if (el.buzzBannerText) el.buzzBannerText.textContent = "اضغط الجرس!";
+    if (el.buzzBannerSub) el.buzzBannerSub.textContent = "أول ضغطة تفوز";
     showTimer(null);
     return;
   }
 
-  if (b.open) {
+  // الجولة ٢: دور الفريق الآخر — يجيبون بصوت عالٍ مع العدّاد
+  if (b.phase === "team") {
+    setBannerColor(state.teams[b.allowed]?.color || "#070808");
+    el.buzzBanner.dataset.mode = "turn";
+    if (el.buzzBannerIcon) el.buzzBannerIcon.textContent = "⏱️";
+    if (el.buzzBannerText) el.buzzBannerText.textContent = `دور ${state.teams[b.allowed]?.name}`;
+    if (el.buzzBannerSub) el.buzzBannerSub.textContent = "جاوبوا بصوت عالٍ";
+    showTimer(secs);
+    return;
+  }
+
+  // الجولة ٣: مفتوح للجميع بلا وقت
+  if (b.phase === "all") {
     el.buzzBanner.dataset.mode = "open";
-    if (el.buzzBannerIcon) el.buzzBannerIcon.textContent = "🔔";
-    if (el.buzzBannerText) el.buzzBannerText.textContent = "اضغط الآن!";
-    if (el.buzzBannerSub) el.buzzBannerSub.textContent = "أول ضغطة تفوز";
+    if (el.buzzBannerIcon) el.buzzBannerIcon.textContent = "🗣️";
+    if (el.buzzBannerText) el.buzzBannerText.textContent = "مفتوح للجميع!";
+    if (el.buzzBannerSub) el.buzzBannerSub.textContent = "من يعرف الجواب؟";
     showTimer(null);
     return;
   }
@@ -488,11 +729,12 @@ function screenSfx(st) {
     scSfx.open = false;
   }
 
-  const w = b.winner || null;
-  if (w && w !== scSfx.winner) {
-    scSfx.winner = w;
+  // صوت عند كل ضغطة جديدة (في أي جولة)
+  const who = b.phase === "answer" ? `${b.player?.id}:${b.stage}` : null;
+  if (who && who !== scSfx.winner) {
+    scSfx.winner = who;
     sfx.play("buzz");
-  } else if (!w) {
+  } else if (!who) {
     scSfx.winner = null;
   }
 
@@ -552,6 +794,16 @@ function showWinner(name, color) {
   if (!el.winnerOverlay) return;
   el.winnerName.textContent = name;
   el.winnerName.style.color = color;
+  // إحصاءات ممتعة: أفضل لاعب + أسرع ضغطة
+  if (el.winnerStats) {
+    const players = Object.values(state?.players || {}).filter((pl) => !pl.pseudo);
+    const best = [...players].sort((x, y) => y.score - x.score || (x.fastest ?? 1e9) - (y.fastest ?? 1e9))[0];
+    const fast = [...players].filter((pl) => pl.fastest != null).sort((x, y) => x.fastest - y.fastest)[0];
+    const lines = [];
+    if (best && best.score > 0) lines.push(`🏅 أفضل لاعب: ${best.name} (${best.score} ${best.score === 1 ? "نقطة" : "نقاط"})`);
+    if (fast) lines.push(`⚡ أسرع ضغطة: ${fast.name} (${(fast.fastest / 1000).toFixed(2)} ث)`);
+    el.winnerStats.replaceChildren(...lines.map((t) => Object.assign(document.createElement("div"), { textContent: t })));
+  }
   el.winnerOverlay.classList.add("show");
   launchConfetti(color);
 }
@@ -572,14 +824,15 @@ window.addEventListener("resize", resizeCanvas);
 function launchConfetti(mainColor) {
   if (!ctx) return;
   const colors = [mainColor, "#ffd93d", "#ffffff", "#fcb017", "#6965ae", "#4b9cbf"];
-  for (let i = 0; i < 220; i++) {
+  for (let i = 0; i < 140; i++) {
     particles.push({
       x: Math.random() * window.innerWidth,
       y: -30 - Math.random() * window.innerHeight * 0.6,
       w: 6 + Math.random() * 9,
       h: 9 + Math.random() * 14,
-      vy: 2 + Math.random() * 4.2,
-      vx: -1.4 + Math.random() * 2.8,
+      vy: 1.3 + Math.random() * 2.4,
+      vx: -0.9 + Math.random() * 1.8,
+      sway: Math.random() * Math.PI * 2,
       rot: Math.random() * Math.PI,
       vr: -0.14 + Math.random() * 0.28,
       color: colors[(Math.random() * colors.length) | 0],
@@ -593,7 +846,8 @@ function tick() {
   ctx.clearRect(0, 0, el.confetti.width, el.confetti.height);
   particles = particles.filter((p) => p.y < el.confetti.height + 40);
   for (const p of particles) {
-    p.x += p.vx;
+    p.sway += 0.045;
+    p.x += p.vx + Math.sin(p.sway) * 0.8; // تمايل خفيف كالورق المتساقط
     p.y += p.vy;
     p.rot += p.vr;
     ctx.save();

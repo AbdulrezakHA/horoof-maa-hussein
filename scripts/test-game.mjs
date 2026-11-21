@@ -431,7 +431,9 @@ async function main() {
   check("المؤقّت انطلق تلقائياً بمدّة الجرس",
     st.current.timer.running === true && st.current.timer.total === 5,
     `${st.current.timer.running}/${st.current.timer.total}`);
-  check("مرحلة المؤقّت الأولى buzz1", st.current.timer.stage === "buzz1", String(st.current.timer.stage));
+  check("المؤقّت مؤقّت إجابة (answer) في الجولة ١",
+    st.current.timer.stage === "answer" && st.current.buzz.stage === 1,
+    `${st.current.timer.stage}/${st.current.buzz.stage}`);
   check("الشاشة ترى فائز الجرس", last(screen).state.current.buzz.winner === buzzWinner);
   check("الحكم يرى المؤقّت يعمل", last(ref2).state.current.timer.running === true);
 
@@ -444,27 +446,39 @@ async function main() {
     last(ref2).state.current.buzz.winner === buzzWinner &&
     last(ref2).state.current.buzz.at === atBefore);
 
-  // انتهاء مؤقّت اللاعب الأول → يبدأ مؤقّت اللاعب الثاني تلقائياً
+  // انتهاء وقت أول ضاغط → الجولة ٢: دور الفريق الآخر (يجيبون بصوت عالٍ) لمدة otherSeconds
   ref2.send(JSON.stringify({ t: "action", action: { type: "timerEnd" } }));
   await sleep(250);
   st = last(ref2).state;
-  check("انتهاء مؤقّت الأول يبدأ دور اللاعب الثاني تلقائياً",
-    st.current.turn === buzzLoser, `turn=${st.current.turn}`);
-  check("مرحلة المؤقّت صارت buzz2 وتعمل",
-    st.current.timer.stage === "buzz2" && st.current.timer.running === true,
-    `${st.current.timer.stage}/${st.current.timer.running}`);
-  check("مؤقّت اللاعب الثاني يستخدم otherSeconds",
-    st.current.timer.total === 5, String(st.current.timer.total));
-  check("الفائز الأول بقي مسجّلاً", st.current.buzz.winner === buzzWinner);
-  check("الشاشة ترى دور اللاعب الثاني", last(screen).state.current.turn === buzzLoser);
+  check("انتهاء وقت أول ضاغط يبدأ دور الفريق الآخر (الجولة ٢)",
+    st.current.buzz.stage === 2 && st.current.buzz.phase === "team" &&
+    st.current.buzz.allowed === buzzLoser && st.current.turn === buzzLoser,
+    `stage=${st.current.buzz.stage} phase=${st.current.buzz.phase} allowed=${st.current.buzz.allowed}`);
+  check("مؤقّت الجولة ٢ يعمل بمدة otherSeconds",
+    st.current.timer.stage === "team" && st.current.timer.running === true && st.current.timer.total === 5,
+    `${st.current.timer.stage}/${st.current.timer.running}/${st.current.timer.total}`);
+  check("أول ضاغط سُجّل «انتهى الوقت» في التاريخ",
+    st.current.buzz.history[0]?.team === buzzWinner && st.current.buzz.history[0]?.result === "timeout");
+  check("الشاشة ترى دور الفريق الآخر", last(screen).state.current.turn === buzzLoser);
 
-  // انتهاء مؤقّت اللاعب الثاني يُنهي الجولة
+  // لا أجراس في الجولة ٢ (الفريق يجيب بصوت عالٍ)
+  buzzLoseWs.send(JSON.stringify({ t: "buzz" }));
+  await sleep(200);
+  check("الأجراس لا تعمل في الجولة ٢",
+    last(ref2).state.current.buzz.phase === "team" && lastOf(buzzLoseWs, "buzzed")?.ok === false);
+
+  // ❌ لا يُنهي الجولة ٢ مبكراً
+  ref2.send(JSON.stringify({ t: "action", action: { type: "buzzWrong" } }));
+  await sleep(200);
+  check("❌ لا يُنهي دور الفريق الآخر مبكراً", last(ref2).state.current.buzz.phase === "team");
+
+  // انتهى وقت الفريق الآخر → الجولة ٣ مفتوحة للجميع بلا وقت
   ref2.send(JSON.stringify({ t: "action", action: { type: "timerEnd" } }));
   await sleep(250);
   st = last(ref2).state;
-  check("انتهاء مؤقّت اللاعب الثاني يوقف المؤقّت ويفرّغ الدور",
-    st.current.timer.running === false && st.current.turn === null,
-    `${st.current.timer.running}/${st.current.turn}`);
+  check("انتهاء الجولة ٢ يفتح الجولة ٣ للجميع بلا وقت",
+    st.current.buzz.stage === 3 && st.current.buzz.phase === "all" && st.current.timer.running === false,
+    `stage=${st.current.buzz.stage} phase=${st.current.buzz.phase} timer=${st.current.timer.running}`);
 
   // إعلان النقطة يُسجّل verdict (يُظهر الاحتفال على جوال الفائز)
   ref2.send(JSON.stringify({ t: "action", action: { type: "award", payload: { cellId: "r1c1", team: buzzWinner } } }));
@@ -473,6 +487,314 @@ async function main() {
   check("إعلان النقطة يسجّل verdict للفريق الصحيح",
     st.current.verdict?.team === buzzWinner, JSON.stringify(st.current.verdict));
   check("الشاشة ترى النقطة المُعلنة", last(screen).state.current.verdict?.team === buzzWinner);
+
+  // منح النقطة يكشف الجواب على الشاشة تلقائياً (ليعرف الجميع الجواب الصحيح)
+  check("منح النقطة يكشف السؤال والجواب على الشاشة",
+    st.current.revealed === true && st.current.answerRevealed === true,
+    `${st.current.revealed}/${st.current.answerRevealed}`);
+  check("منح النقطة يوقف المؤقّت ويغلق الأجراس",
+    st.current.timer.running === false && st.current.buzz.open === false);
+  const bzAfterAward = last(buzzA).state.current.question;
+  check("جوال اللاعب يرى الجواب بعد كشفه على الشاشة",
+    !!bzAfterAward?.answer && bzAfterAward.answer === st.current.question.answer,
+    JSON.stringify(bzAfterAward));
+
+  // «لم يُجب أحد»: يكشف الجواب بلا نقطة لأحد، وتبقى الخلية حرّة
+  {
+    ref2.send(JSON.stringify({ t: "action", action: { type: "select", payload: { cellId: "r2c2" } } }));
+    await sleep(250);
+    const bzQ = last(buzzA).state.current.question;
+    check("جوال اللاعب لا يرى الجواب قبل كشفه", bzQ && bzQ.answer === undefined, JSON.stringify(bzQ));
+    const before = last(ref2).state;
+    const scoreSum = before.teams.a.score + before.teams.b.score;
+    ref2.send(JSON.stringify({ t: "action", action: { type: "noPoint", payload: { cellId: "r2c2" } } }));
+    await sleep(250);
+    const s2 = last(ref2).state;
+    check("«لم يُجب أحد» يكشف الجواب على الشاشة",
+      s2.current.revealed === true && s2.current.answerRevealed === true);
+    check("«لم يُجب أحد» يسجّل missed ولا يسجّل نقطة",
+      s2.current.missed?.cellId === "r2c2" && s2.current.verdict === null &&
+      s2.teams.a.score + s2.teams.b.score === scoreSum);
+    check("«لم يُجب أحد» يُبقي الخلية حرّة ويلغي تحديدها",
+      s2.cells.r2c2.owner === null && s2.current.cellId === null);
+    check("جوال اللاعب يرى الجواب بعد «لم يُجب أحد»", !!last(buzzA).state.current.question?.answer);
+  }
+
+  // نظام اللاعبين: QR واحد، اسم + فريق، الجولات الثلاث، ✅/❌، التراجع
+  {
+    let pageOk = false;
+    try {
+      const r = await fetch(BASE + "/play");
+      pageOk = r.ok && (await r.text()).includes("joinView");
+    } catch {}
+    check("صفحة اللاعبين /play تعمل وفيها شاشة الانضمام", pageOk);
+
+    // نوقف أجراس الفرق القديمة حتى لا تدخل في حساب «من متصل»
+    buzzA.close();
+    buzzB.close();
+    const p1 = await connect("player", "main", "", { playerId: "testP1xx" });
+    const p2 = await connect("player", "main", "", { playerId: "testP2xx" });
+    const p3 = await connect("player", "main", "", { playerId: "testP3xx" });
+    await sleep(200);
+    p1.send(JSON.stringify({ t: "join", name: "أحمد", team: "a" }));
+    p2.send(JSON.stringify({ t: "join", name: "سارة", team: "a" }));
+    p3.send(JSON.stringify({ t: "join", name: "أحمد", team: "b" }));
+    await sleep(300);
+    let s3 = last(ref2).state;
+    check("ثلاثة لاعبين انضمّوا بأسمائهم وفرقهم",
+      s3.players.testP1xx?.team === "a" && s3.players.testP2xx?.team === "a" && s3.players.testP3xx?.team === "b");
+    check("الاسم المكرّر يُميَّز تلقائياً", s3.players.testP3xx?.name === "أحمد 2", s3.players.testP3xx?.name);
+    check("الحكم يرى اللاعبين المتصلين",
+      ["testP1xx", "testP2xx", "testP3xx"].every((id) => (last(ref2).peers?.players || []).includes(id)));
+
+    ref2.send(JSON.stringify({ t: "action", action: { type: "buzzConfig", payload: { enabled: true, autoArm: true, seconds: 5, otherSeconds: 8 } } }));
+    ref2.send(JSON.stringify({ t: "action", action: { type: "select", payload: { cellId: "r0c0" } } }));
+    await sleep(200);
+    ref2.send(JSON.stringify({ t: "action", action: { type: "reveal" } }));
+    await sleep(250);
+    check("جوال اللاعب لا يرى الجواب قبل كشفه", last(p1).state.current.question && last(p1).state.current.question.answer === undefined);
+    check("كشف السؤال يفتح الجولة ١ للجميع",
+      last(ref2).state.current.buzz.stage === 1 && last(ref2).state.current.buzz.phase === "open");
+
+    p3.send(JSON.stringify({ t: "buzz" }));
+    await sleep(250);
+    s3 = last(ref2).state;
+    check("أول ضاغط يجيب ويظهر اسمه", s3.current.buzz.player?.id === "testP3xx" && s3.current.buzz.player?.name === "أحمد 2");
+    check("أسرع ضغطة تُسجَّل للاعب", s3.players.testP3xx.buzzes === 1 && s3.players.testP3xx.fastest != null);
+
+    ref2.send(JSON.stringify({ t: "action", action: { type: "buzzWrong" } }));
+    await sleep(250);
+    s3 = last(ref2).state;
+    check("❌ خطأ في الجولة ١ يبدأ دور الفريق الآخر",
+      s3.current.buzz.stage === 2 && s3.current.buzz.phase === "team" && s3.current.buzz.allowed === "a");
+
+    p2.send(JSON.stringify({ t: "buzz" }));
+    await sleep(200);
+    check("لا أجراس في الجولة ٢", lastOf(p2, "buzzed")?.ok === false);
+
+    ref2.send(JSON.stringify({ t: "action", action: { type: "buzzCorrect" } }));
+    await sleep(250);
+    s3 = last(ref2).state;
+    check("✅ في الجولة ٢: الخلية للفريق صاحب الدور بلا نقطة لاعب",
+      s3.cells.r0c0.owner === "a" && s3.current.verdict?.playerId === null &&
+      s3.players.testP1xx.score === 0 && s3.players.testP2xx.score === 0);
+    check("✅ صح يكشف الجواب على الشاشة", s3.current.answerRevealed === true);
+
+    // الجولة ١ صح → نقطة للاعب نفسه
+    ref2.send(JSON.stringify({ t: "action", action: { type: "select", payload: { cellId: "r0c1" } } }));
+    await sleep(200);
+    ref2.send(JSON.stringify({ t: "action", action: { type: "reveal" } }));
+    await sleep(200);
+    p1.send(JSON.stringify({ t: "buzz" }));
+    await sleep(250);
+    ref2.send(JSON.stringify({ t: "action", action: { type: "buzzCorrect" } }));
+    await sleep(250);
+    s3 = last(ref2).state;
+    check("✅ في الجولة ١: الخلية للفريق ونقطة للاعب الذي ضغط",
+      s3.cells.r0c1.owner === "a" && s3.players.testP1xx.score === 1 && s3.current.verdict?.playerId === "testP1xx");
+
+    // الجولة ٣: الحكم يختار الفريق
+    ref2.send(JSON.stringify({ t: "action", action: { type: "select", payload: { cellId: "r0c2" } } }));
+    await sleep(200);
+    ref2.send(JSON.stringify({ t: "action", action: { type: "reveal" } }));
+    await sleep(200);
+    p1.send(JSON.stringify({ t: "buzz" }));
+    await sleep(200);
+    ref2.send(JSON.stringify({ t: "action", action: { type: "buzzWrong" } }));
+    await sleep(200);
+    ref2.send(JSON.stringify({ t: "action", action: { type: "timerEnd" } }));
+    await sleep(200);
+    check("الجولة ٣ مفتوحة للجميع", last(ref2).state.current.buzz.phase === "all");
+    ref2.send(JSON.stringify({ t: "action", action: { type: "buzzCorrect", payload: { team: "b" } } }));
+    await sleep(250);
+    s3 = last(ref2).state;
+    check("✅ في الجولة ٣: الحكم يختار الفريق بلا نقطة لاعب",
+      s3.cells.r0c2.owner === "b" && s3.players.testP3xx.score === 0 && s3.current.verdict?.team === "b");
+
+    // ↩️ تراجع عن آخر قرار
+    ref2.send(JSON.stringify({ t: "action", action: { type: "undo" } }));
+    await sleep(250);
+    s3 = last(ref2).state;
+    check("↩️ التراجع يعيد الخلية حرّة", s3.cells.r0c2.owner === null, String(s3.cells.r0c2.owner));
+    check("↩️ التراجع يُبقي اللاعبين المسجّلين", !!s3.players.testP1xx && !!s3.players.testP3xx);
+
+    // الحكم ينقل لاعباً ويخرج آخر
+    ref2.send(JSON.stringify({ t: "action", action: { type: "playerSetTeam", payload: { id: "testP1xx", team: "b" } } }));
+    ref2.send(JSON.stringify({ t: "action", action: { type: "playerRemove", payload: { id: "testP3xx" } } }));
+    await sleep(300);
+    s3 = last(ref2).state;
+    check("الحكم ينقل لاعباً للفريق الآخر", s3.players.testP1xx?.team === "b");
+    check("الحكم يخرج لاعباً", !s3.players.testP3xx);
+    check("جوال اللاعب المُخرج يُبلَّغ", p3.states.some((m) => m.t === "kicked"));
+
+    // 🔀 خلط الحروف الحرّة لا يمسّ النقاط
+    const before = last(ref2).state;
+    ref2.send(JSON.stringify({ t: "action", action: { type: "shuffle" } }));
+    await sleep(250);
+    const after = last(ref2).state;
+    const ownedSame = Object.values(before.cells).filter((c) => c.owner).every((c) => after.cells[c.id].letter === c.letter && after.cells[c.id].owner === c.owner);
+    check("🔀 الخلط يُبقي الخلايا المملوكة والنقاط",
+      ownedSame && after.teams.a.score === before.teams.a.score && after.teams.b.score === before.teams.b.score);
+    check("🔀 الخلط لا يكرّر الحروف", new Set(Object.values(after.cells).map((c) => c.letter)).size === Object.keys(after.cells).length);
+
+    p1.close(); p2.close(); p3.close();
+    await sleep(150);
+  }
+
+  // ================= السهرة: قائمة الألعاب + «الكلمة الممنوعة» =================
+  {
+    log("\x1b[36m▸ قائمة الألعاب والكلمة الممنوعة\x1b[0m");
+    const packsRes = await (await fetch(BASE + "/api/taboo/packs")).json();
+    const totalCards = (packsRes.packs || []).reduce((n, p) => n + p.total, 0);
+    check("مواضيع الكلمة الممنوعة: ١٠ مواضيع على الأقل", (packsRes.packs || []).length >= 10, String(packsRes.packs?.length));
+    check("٥٠٠ بطاقة على الأقل", totalCards >= 500, String(totalCards));
+    check("كل موضوع فيه ٥٠ بطاقة على الأقل", (packsRes.packs || []).every((p) => p.total >= 50));
+    let pageOk = false;
+    try {
+      const r = await fetch(BASE + "/taboo-packs");
+      pageOk = r.ok && (await r.text()).includes("الكلمة الممنوعة");
+    } catch {}
+    check("صفحة إدارة المواضيع /taboo-packs تعمل", pageOk);
+
+    const send = (type, payload = {}) => ref2.send(JSON.stringify({ t: "action", action: { type, payload } }));
+    const st = () => last(ref2).state;
+
+    // لاعبان في كل فريق
+    const pa1 = await connect("player", "main", "", { playerId: "tabooA1x" });
+    const pa2 = await connect("player", "main", "", { playerId: "tabooA2x" });
+    const pb1 = await connect("player", "main", "", { playerId: "tabooB1x" });
+    const pb2 = await connect("player", "main", "", { playerId: "tabooB2x" });
+    await sleep(200);
+    pa1.send(JSON.stringify({ t: "join", name: "عمر", team: "a" }));
+    pa2.send(JSON.stringify({ t: "join", name: "هند", team: "a" }));
+    pb1.send(JSON.stringify({ t: "join", name: "زياد", team: "b" }));
+    pb2.send(JSON.stringify({ t: "join", name: "رنا", team: "b" }));
+    await sleep(300);
+    const phones = { tabooA1x: pa1, tabooA2x: pa2, tabooB1x: pb1, tabooB2x: pb2 };
+
+    send("setGame", { game: null });
+    await sleep(200);
+    check("قائمة الألعاب: لا لعبة مختارة", st().game === null);
+    check("نقاط السهرة موجودة", typeof st().night?.a === "number" && typeof st().night?.b === "number");
+    const nightBefore = { ...st().night };
+
+    send("tabooConfig", { target: 3, turnSeconds: 60 });
+    send("setGame", { game: "taboo" });
+    await sleep(250);
+    check("اختيار «الكلمة الممنوعة» ينقل الجميع إليها", st().game === "taboo" && last(screen).state.game === "taboo" && last(pa1).state.game === "taboo");
+    check("لعبة جديدة تبدأ بشاشة القوانين وقرعة الفريق البادئ",
+      st().taboo.phase === "rules" && ["a", "b"].includes(st().taboo.startTeam), st().taboo.phase);
+    check("لكل فريق تخطّيان", st().taboo.skips.a === 2 && st().taboo.skips.b === 2);
+
+    send("tabooBegin");
+    await sleep(250);
+    let t = st().taboo;
+    const T = t.turnTeam;
+    const O = T === "a" ? "b" : "a";
+    check("الدور الأول للفريق البادئ مع شارح من الفريق نفسه",
+      t.phase === "ready" && T === t.startTeam && t.describer && st().players[t.describer.id]?.team === T);
+
+    send("tabooStartTurn");
+    await sleep(300);
+    t = st().taboo;
+    check("بدء الدور: بطاقة فيها كلمة وكلمات ممنوعة والعدّاد يعمل",
+      t.phase === "turn" && !!t.card?.word && t.card.forbidden.length >= 3 && t.timer.running === true);
+
+    // السرّية: كل جهاز يرى ما يحقّ له فقط
+    const descId = t.describer.id;
+    const mate = Object.keys(phones).find((id) => id !== descId && st().players[id].team === T);
+    const rival = Object.keys(phones).find((id) => st().players[id].team === O);
+    const cardOf = (ws) => last(ws).state.taboo.card || {};
+    check("🔒 الشارح يرى الكلمة والممنوعة", cardOf(phones[descId]).word === t.card.word && cardOf(phones[descId]).forbidden?.length > 0);
+    check("🔒 زميل الشارح لا يرى الكلمة ولا الممنوعة", !cardOf(phones[mate]).word && !cardOf(phones[mate]).forbidden);
+    check("🔒 الفريق الآخر يرى الممنوعة فقط بلا الكلمة", !cardOf(phones[rival]).word && cardOf(phones[rival]).forbidden?.length > 0);
+    check("🔒 التلفاز لا يرى الكلمة ولا الممنوعة", !cardOf(screen).word && !cardOf(screen).forbidden && !!cardOf(screen).topic);
+    check("🔒 الحكم يرى كل شيء", last(ref2).state.taboo.card.word === t.card.word);
+
+    // ✅ صح → +1 وبطاقة جديدة
+    const firstWord = t.card.word;
+    send("tabooRight");
+    await sleep(250);
+    t = st().taboo;
+    check("✅ صح: +1 وتظهر الكلمة التالية فوراً", t.score[T] === 1 && t.card?.word && t.card.word !== firstWord && t.phase === "turn");
+
+    // ⏭ التخطّي من جوال الشارح فقط
+    phones[mate].send(JSON.stringify({ t: "tabooSkip" }));
+    await sleep(200);
+    check("⏭ غير الشارح لا يستطيع التخطّي", st().taboo.skips[T] === 2);
+    phones[descId].send(JSON.stringify({ t: "tabooSkip" }));
+    await sleep(250);
+    check("⏭ الشارح يتخطّى من جواله (بقي واحد)", st().taboo.skips[T] === 1);
+
+    // 🚫 مخالفة → ‎-1 وينتهي الدور
+    send("tabooFoul", { reason: "letter" });
+    await sleep(250);
+    t = st().taboo;
+    check("🚫 مخالفة: ‎-1 وينتهي الدور فوراً مع السبب",
+      t.score[T] === 0 && t.phase === "turnEnd" && t.foul?.reason === "letter");
+    check("بعد انتهاء الدور تُكشف كلماته للجميع", last(screen).state.taboo.turnLog.length >= 3);
+
+    // الدور التالي للفريق الآخر
+    send("tabooNextTurn");
+    await sleep(250);
+    t = st().taboo;
+    check("الدور التالي للفريق الآخر مع شارح منه", t.phase === "ready" && t.turnTeam === O && st().players[t.describer?.id]?.team === O);
+
+    send("tabooStartTurn");
+    await sleep(200);
+    send("tabooFoul", { reason: "word" });
+    await sleep(250);
+    check("النتيجة لا تنزل تحت الصفر", st().taboo.score[O] === 0);
+
+    // الوصول لحدّ الفوز
+    send("tabooNextTurn");
+    await sleep(200);
+    send("tabooStartTurn");
+    await sleep(200);
+    for (let i = 0; i < 3; i++) {
+      send("tabooRight");
+      await sleep(150);
+    }
+    await sleep(200);
+    t = st().taboo;
+    check("أول فريق يصل حدّ الفوز يفوز", t.phase === "over" && t.winner === T && t.score[T] === 3);
+    check("الفوز يضيف +1 لنقاط السهرة", st().night[T] === nightBefore[T] + 1);
+
+    // التبديل بين الألعاب يحفظ الحالة
+    send("setGame", { game: "huroof" });
+    await sleep(200);
+    send("setGame", { game: "taboo" });
+    await sleep(200);
+    check("التبديل بين الألعاب يحفظ حالة كل لعبة", st().taboo.phase === "over" && st().taboo.winner === T);
+
+    send("tabooNew");
+    await sleep(200);
+    check("لعبة جديدة: النقاط صفر والتخطّيات تتجدّد ونقاط السهرة تبقى",
+      st().taboo.score.a === 0 && st().taboo.score.b === 0 && st().taboo.skips[T] === 2 && st().night[T] === nightBefore[T] + 1);
+
+    send("setGame", { game: "huroof" });
+    await sleep(200);
+    pa1.close(); pa2.close(); pb1.close(); pb2.close();
+    await sleep(150);
+  }
+
+  // التحكم بالشاشة الكبيرة من جوال الحكم
+  {
+    check("قائمة البداية ظاهرة افتراضياً", last(screen).state.screen?.lobby === true);
+    ref2.send(JSON.stringify({ t: "action", action: { type: "screen", payload: { lobby: false } } }));
+    await sleep(200);
+    check("الحكم يُخفي قائمة البداية من جواله", last(screen).state.screen.lobby === false);
+    ref2.send(JSON.stringify({ t: "action", action: { type: "screen", payload: { sound: false } } }));
+    await sleep(200);
+    check("الحكم يكتم صوت الشاشة دون تغيير القائمة",
+      last(screen).state.screen.sound === false && last(screen).state.screen.lobby === false);
+    // الشاشة لا تستطيع إرسال أوامر (للعرض فقط)
+    screen.send(JSON.stringify({ t: "action", action: { type: "screen", payload: { lobby: true, sound: true } } }));
+    await sleep(200);
+    check("الشاشة نفسها لا تستطيع تغيير إعداداتها", last(ref2).state.screen.lobby === false);
+    ref2.send(JSON.stringify({ t: "action", action: { type: "screen", payload: { lobby: true, sound: true } } }));
+    await sleep(200);
+  }
 
   // إعادة الأجراس يدوياً
   ref2.send(JSON.stringify({ t: "action", action: { type: "buzzReset" } }));

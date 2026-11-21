@@ -3,6 +3,7 @@
    ================================================================== */
 
 import { cellCenter, hexMetrics, neighborsOf, cellId } from "/shared/engine.js";
+import { inkFor } from "/shared/colors.js";
 
 /**
  * ينشئ شبكة الخلايا داخل عنصر.
@@ -115,14 +116,18 @@ export function createBoard(root, board, opts = {}) {
     // ألوان الفريقين والثيم تُدار من لوحة الحكم وتُحدّث فوراً
     root.style.setProperty("--team-a-color", state.teams.a.color);
     root.style.setProperty("--team-b-color", state.teams.b.color);
+    // ألوان الكتابة تُختار تلقائياً لتبقى واضحة فوق أي لون
+    root.style.setProperty("--team-a-ink", inkFor(state.teams.a.color));
+    root.style.setProperty("--team-b-ink", inkFor(state.teams.b.color));
 
     if (state.theme) {
-      root.style.setProperty("--bg-color", state.theme.bgColor || "#73c4ee");
-      root.style.setProperty("--cell-color", state.theme.cellColor || "#ede5bb");
-      root.style.setProperty("--cell-text-color", state.theme.cellTextColor || "#635e48");
-      root.style.setProperty("--selected-color", state.theme.selectedColor || "#fcb017");
-      root.style.setProperty("--selected-text-color", state.theme.selectedTextColor || "#ffffff");
-      document.documentElement.style.setProperty("--bg-color", state.theme.bgColor || "#73c4ee");
+      const cellColor = state.theme.cellColor || "#ede5bb";
+      const selectedColor = state.theme.selectedColor || "#fcb017";
+      root.style.setProperty("--bg-color", state.theme.bgColor || "#2f6f9e");
+      root.style.setProperty("--cell-color", cellColor);
+      root.style.setProperty("--cell-text-color", inkFor(cellColor));
+      root.style.setProperty("--selected-color", selectedColor);
+      root.style.setProperty("--selected-text-color", inkFor(selectedColor));
     }
 
     for (const [id, els] of cells) {

@@ -5,7 +5,8 @@ $ErrorActionPreference = 'Continue'
 $root = Split-Path -Parent $MyInvocation.MyCommand.Path
 Set-Location -LiteralPath $root
 $port = 3000
-$rule = 'HoroofMaaHussein'
+$rule = 'HoroofMaaHussein-Ports'
+$ports = '3000-3010'  # the game moves to 3001, 3002... if another program already uses 3000
 $nodeExe = Join-Path $root 'runtime\node.exe'
 
 function Say($m) { Write-Host $m }
@@ -64,11 +65,11 @@ if (Test-Path -LiteralPath $nodeExe) {
 # ---------- 2) Firewall rule (so phones on the same Wi-Fi can connect) ----------
 $hasRule = Get-NetFirewallRule -DisplayName $rule -ErrorAction SilentlyContinue
 if ($hasRule) {
-  Say ('  [ok] Firewall rule already exists (TCP ' + $port + ', private networks).')
+  Say ('  [ok] Firewall rule already exists (TCP ' + $ports + ', private networks).')
 } else {
-  $out = & netsh advfirewall firewall add rule name=$rule dir=in action=allow protocol=TCP localport=$port profile=private 2>&1
+  $out = & netsh advfirewall firewall add rule name=$rule dir=in action=allow protocol=TCP localport=$ports profile=private 2>&1
   if ($LASTEXITCODE -eq 0) {
-    Say ('  [ok] Firewall rule added (TCP ' + $port + ', private networks).')
+    Say ('  [ok] Firewall rule added (TCP ' + $ports + ', private networks).')
   } else {
     Say ('  [!] Could not add the firewall rule: ' + ($out | Out-String).Trim())
     Say '      Right-click install.bat and choose "Run as administrator".'
