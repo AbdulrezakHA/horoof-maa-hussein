@@ -142,6 +142,14 @@ function clearRound(st) {
   st.current.round = (st.current.round || 0) + 1;
 }
 
+/**
+ * بعد منح النقطة: يُلغي تحديد الخلية (فيختفي التحديد الذهبي وتظهر ألوان الفرق فوراً)
+ * مع إبقاء السؤال/الجواب ظاهرين على الشاشة، وإبقاء verdict لجوالات اللاعبين.
+ */
+function deselectAfterAward(st) {
+  st.current.cellId = null;
+}
+
 function pushLog(state, text, tone = "info") {
   state.log.unshift({ at: Date.now(), text, tone });
   if (state.log.length > 40) state.log.length = 40;
@@ -319,6 +327,7 @@ export function applyAction(state, board, action) {
       st.current.verdict = { team, cellId: p.cellId, at: Date.now() };
       if (previous === team) {
         pushLog(st, `${cell.letter} → ${st.teams[team].name} (بدون تغيير)`, "info");
+        deselectAfterAward(st);
         break;
       }
       if (previous) st.teams[previous].score = Math.max(0, st.teams[previous].score - 1);
@@ -336,6 +345,8 @@ export function applyAction(state, board, action) {
         st.phase = "over";
         pushLog(st, `🏆 ${st.teams[w].name} ربط الطرفين!`, "win");
       }
+      // إلغاء تحديد الخلية بعد منح النقطة حتى تظهر ألوان الفرق على الفور
+      deselectAfterAward(st);
       break;
     }
 

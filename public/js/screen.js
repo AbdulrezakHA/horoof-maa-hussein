@@ -59,6 +59,71 @@ let lastWinner = null;
 let refereeConnected = false;
 let cellEls = new Map();
 
+// ---------------- ضبط حجم النص تلقائياً ----------------
+// يقلّص حجم الخط تدريجياً حتى يتّسع النص بالكامل داخل إطاره،
+// لمنع اقتطاع السؤال (أو الجواب) الطويل على شاشة التلفاز.
+
+function fitTextToBox(box, { maxWidth = 0, maxHeight = 0, minSize = 20, step = 2 } = {}) {
+  if (!box) return;
+  box.style.fontSize = "";
+  if (!(box.textContent || "").trim()) return;
+  const base = parseFloat(getComputedStyle(box).fontSize) || 0;
+  if (!base) return;
+  let size = base;
+  box.style.fontSize = `${size}px`;
+  let guard = 0;
+  while (guard < 90) {
+    const tooTall = maxHeight > 0 && box.scrollHeight > maxHeight + 1;
+    const tooWide = maxWidth > 0 && box.scrollWidth > maxWidth + 1;
+    if ((!tooTall && !tooWide) || size <= minSize) break;
+    size = Math.max(minSize, size - step);
+    box.style.fontSize = `${size}px`;
+    guard += 1;
+  }
+}
+
+// يضبط السؤال وبطاقة الجواب معاً
+function fitReadableText() {
+  const qbox = el.qText;
+  if (qbox && qbox.parentElement) {
+    fitTextToBox(qbox, {
+      maxWidth: qbox.parentElement.clientWidth,
+      maxHeight: qbox.parentElement.clientHeight,
+      minSize: 26,
+    });
+  }
+
+  const card = el.qAnswerBox;
+  const val = el.qAnswerValue;
+  if (card && val) {
+    val.style.fontSize = "";
+    if (!card.parentElement || card.style.display === "none") return;
+    const maxW = card.parentElement.clientWidth;
+    const maxH = card.parentElement.clientHeight;
+    const base = parseFloat(getComputedStyle(val).fontSize) || 0;
+    if (base) {
+      let size = base;
+      val.style.fontSize = `${size}px`;
+      let guard = 0;
+      while (guard < 90) {
+        const tooWide = maxW > 0 && card.offsetWidth > maxW - 8;
+        const tooTall = maxH > 0 && card.offsetHeight > maxH - 8;
+        if ((!tooWide && !tooTall) || size <= 18) break;
+        size = Math.max(18, size - 2);
+        val.style.fontSize = `${size}px`;
+        guard += 1;
+      }
+    }
+  }
+}
+
+// أعد الضبط بعد تحميل الخطوط لأن مقاييس النص تتغيّر عندها
+if (document.fonts && document.fonts.ready) {
+  document.fonts.ready.then(() => {
+    try { fitReadableText(); } catch (e) { /* تجاهل */ }
+  });
+}
+
 // ربط جميع خلايا اللوحة السداسية الـ 25 داخل SVG
 for (let r = 0; r < 5; r++) {
   for (let c = 0; c < 5; c++) {
@@ -245,7 +310,8 @@ function render() {
   }
 
   // تحديث الحرف المختار في أعلى اليمين
-  const activeCellId = state.current.cellId;
+  // (بعد منح النقطة تُلغى الخلية المحددة، فنُظهر الحرف المُحتسب من verdict)
+  const activeCellId = state.current.cellId || state.current.verdict?.cellId || null;
   const activeCell = activeCellId ? state.cells[activeCellId] : null;
 
   if (!activeCell) {
@@ -281,6 +347,9 @@ function render() {
       if (el.qAnswerBox) el.qAnswerBox.style.display = "none";
     }
   }
+
+  // ضبط حجم السؤال والجواب تلقائياً حتى لا يُقتطع النص الطويل
+  fitReadableText();
 
   // تحديث النقاط في أسفل اليمين
   if (el.scoreTextA) el.scoreTextA.textContent = state.teams.a?.score || 0;

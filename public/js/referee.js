@@ -83,6 +83,15 @@ const ui = {
   buzzQrA: el("buzzQrA"),
   buzzQrB: el("buzzQrB"),
   sfxBtn: el("sfxBtn"),
+  turnALabel: el("turnALabel"),
+  turnBLabel: el("turnBLabel"),
+  declareALabel: el("declareALabel"),
+  declareBLabel: el("declareBLabel"),
+  buzzQrLabelA: el("buzzQrLabelA"),
+  buzzQrLabelB: el("buzzQrLabelB"),
+  buzzBanner: el("buzzBanner"),
+  buzzBannerIco: el("buzzBannerIco"),
+  buzzBannerText: el("buzzBannerText"),
 };
 
 // الحروف الأساسية فقط (٢٨ حرفاً) — لا نستخدم ة/ء/ئ/ؤ/أ/إ/آ/ى في الشبكة أبداً.
@@ -227,6 +236,7 @@ function refereeSfx(st) {
   if (b.open && !rfSfx.open && !b.winner) {
     rfSfx.open = true;
     sfx.play("arm");
+    if (navigator.vibrate) navigator.vibrate(45);
   } else if (!b.open) {
     rfSfx.open = false;
   }
@@ -235,6 +245,8 @@ function refereeSfx(st) {
   if (w && w !== rfSfx.winner) {
     rfSfx.winner = w;
     sfx.play("buzz");
+    // إشعار لمسي للحكم على الهاتف عند ضغط أحد الفريقين للجرس
+    if (navigator.vibrate) navigator.vibrate([140, 70, 140]);
   } else if (!w) {
     rfSfx.winner = null;
   }
@@ -296,6 +308,25 @@ function act(type, payload = {}) {
   transport.send({ type, payload });
 }
 
+/* ---------------- ألوان الفرق ---------------- */
+
+/** يختار لون نص مقروء (أبيض/داكن) فوق خلفية بلون معطى. */
+function inkOn(color) {
+  const hex = String(color || "").replace("#", "");
+  const full = hex.length === 3 ? hex.split("").map((c) => c + c).join("") : hex;
+  const n = parseInt(full || "000000", 16);
+  if (!Number.isFinite(n)) return "#ffffff";
+  const lum = (0.299 * ((n >> 16) & 255) + 0.587 * ((n >> 8) & 255) + 0.114 * (n & 255)) / 255;
+  return lum > 0.6 ? "#111111" : "#ffffff";
+}
+
+/** يصبغ زراً بلون الفريق مع لون نص مقروء. */
+function paintTeamButton(btn, color) {
+  if (!btn || !color) return;
+  btn.style.background = color;
+  btn.style.color = inkOn(color);
+}
+
 /* ---------------- العرض ---------------- */
 
 function render() {
@@ -315,11 +346,13 @@ function render() {
   const cell = state.current.cellId ? state.cells[state.current.cellId] : null;
   const q = state.current.question;
   const hasCell = !!cell;
+  // بعد منح النقطة تُلغى الخلية المحددة، لكن نُبقي سؤالها ظاهراً للحكم
+  const displayCell = cell || (state.current.verdict?.cellId ? state.cells[state.current.verdict.cellId] : null);
 
-  ui.qLetter.textContent = hasCell ? cell.letter : "؟";
-  ui.qLetter.classList.toggle("idle", !hasCell);
+  ui.qLetter.textContent = displayCell ? displayCell.letter : "؟";
+  ui.qLetter.classList.toggle("idle", !displayCell);
 
-  if (!hasCell) {
+  if (!displayCell) {
     ui.qStatus.textContent = "لم يتم اختيار أي حرف بعد";
     ui.qOwner.textContent = "";
     ui.qText.textContent = "—";
@@ -330,8 +363,8 @@ function render() {
       statusText += " · [الجواب ظاهر]";
     }
     ui.qStatus.textContent = statusText;
-    ui.qOwner.textContent = cell.owner
-      ? `مملوكة حالياً: ${state.teams[cell.owner].name}`
+    ui.qOwner.textContent = displayCell.owner
+      ? `مملوكة حالياً: ${state.teams[displayCell.owner].name}`
       : "خلية حرة";
     ui.qText.textContent = q ? q.text : "لا يوجد سؤال لهذا الحرف — غيّر الحرف";
     ui.answerText.textContent = q ? q.answer : "—";
@@ -340,16 +373,34 @@ function render() {
   // أزرار النقاط
   const owner = cell?.owner || null;
   ui.awardALabel.textContent =
-    owner === "a" ? "مملوكة — تأكيد" : owner === "b" ? "نقل إلى الفريق الأول" : "نقطة للفريق الأول";
+    owner === "a" ? "مملوكة — تأكيد" : owner === "b" ? `نقل إلى ${state.teams.a.name}` : `نقطة لـ ${state.teams.a.name}`;
   ui.awardBLabel.textContent =
-    owner === "b" ? "مملوكة — تأكيد" : owner === "a" ? "نقل إلى الفريق الثاني" : "نقطة للفريق الثاني";
+    owner === "b" ? "مملوكة — تأكيد" : owner === "a" ? `نقل إلى ${state.teams.b.name}` : `نقطة لـ ${state.teams.b.name}`;
   ui.unclaimBtn.disabled = !owner;
 
+  // أزرار الفرق: الأسماء والألوان الفعلية (بدل الأسماء والألوان الثابتة)
+  const tA = state.teams.a;
+  const tB = state.teams.b;
+  const buzzSecs = Number(state.current.buzz?.seconds) || 3;
+  const buzzOtherSecs = Number(state.current.buzz?.otherSeconds) || 10;
+  if (ui.turnALabel) ui.turnALabel.textContent = `${tA.name} — ${buzzSecs} ث`;
+  if (ui.turnBLabel) ui.turnBLabel.textContent = `${tB.name} — ${buzzOtherSecs} ث`;
+  if (ui.declareALabel) ui.declareALabel.textContent = tA.name;
+  if (ui.declareBLabel) ui.declareBLabel.textContent = tB.name;
+  if (ui.buzzQrLabelA) ui.buzzQrLabelA.textContent = tA.name;
+  if (ui.buzzQrLabelB) ui.buzzQrLabelB.textContent = tB.name;
+  paintTeamButton(ui.turnA, tA.color);
+  paintTeamButton(ui.turnB, tB.color);
+  paintTeamButton(ui.awardA, tA.color);
+  paintTeamButton(ui.awardB, tB.color);
+  paintTeamButton(ui.declareA, tA.color);
+  paintTeamButton(ui.declareB, tB.color);
+
   // الأزرار المعطّلة
-  ui.revealBtn.disabled = !hasCell || !q;
-  ui.hideBtn.disabled = !hasCell;
-  ui.revealAnswerBtn.disabled = !hasCell || !q;
-  ui.hideAnswerBtn.disabled = !hasCell || !state.current.answerRevealed;
+  ui.revealBtn.disabled = !displayCell || !q;
+  ui.hideBtn.disabled = !displayCell;
+  ui.revealAnswerBtn.disabled = !displayCell || !q;
+  ui.hideAnswerBtn.disabled = !displayCell || !state.current.answerRevealed;
   ui.newQBtn.disabled = !hasCell;
   ui.letterBtn.disabled = !hasCell;
   ui.awardA.disabled = !hasCell;
@@ -382,6 +433,7 @@ function render() {
   renderBoardEditor();
   renderLog();
   renderBuzzControls();
+  syncPresetsFromState();
 }
 
 /* ---------------- أجراس اللاعبين ---------------- */
@@ -443,6 +495,7 @@ function updateBuzzReadout() {
   }
   ui.buzzReadout.textContent = text;
   ui.buzzReadout.classList.toggle("running", on && (!!b.open || !!b.winner || !!timer.running));
+  updateBuzzBanner();
 
   // تحديث العدّاد الحيّ كل ربع ثانية أثناء دوران المؤقّت
   const running = !!timer.running;
@@ -452,6 +505,75 @@ function updateBuzzReadout() {
     clearInterval(readoutTick);
     readoutTick = null;
   }
+}
+
+/**
+ * لوحة إشعار كبيرة في أعلى شاشة الحكم تُخبره فوراً بمن يضغط الجرس
+ * (بدل أن يضطر للنظر إلى شاشة التلفاز في كل مرة).
+ */
+function updateBuzzBanner() {
+  const banner = ui.buzzBanner;
+  if (!banner || !state) return;
+  const c = state.current || {};
+  const b = c.buzz || {};
+  const timer = c.timer || {};
+  const on = !!b.enabled;
+
+  let show = false;
+  let teamKey = null;
+  let icon = "🔔";
+  let text = "";
+  let accent = null;
+
+  if (on && timer.running && timer.stage === "buzz1") {
+    // الفريق الذي ضغط أولاً ويجيب الآن
+    teamKey = b.winner;
+    const secs = Math.max(0, Math.ceil(remainingMs(timer, transport.serverOffset) / 1000));
+    icon = "⚡";
+    text = `${state.teams[teamKey]?.name || "—"} ضغط أولاً! (اللاعب الأول) — بقي ${secs} ث`;
+    show = !!teamKey;
+  } else if (on && timer.running && timer.stage === "buzz2") {
+    // دور اللاعب الثاني من الفريق الآخر
+    teamKey = c.turn;
+    const secs = Math.max(0, Math.ceil(remainingMs(timer, transport.serverOffset) / 1000));
+    icon = "⏳";
+    text = `دور اللاعب الثاني: ${state.teams[teamKey]?.name || "—"} — بقي ${secs} ث`;
+    show = !!teamKey;
+  } else if (on && b.winner) {
+    teamKey = b.winner;
+    icon = "🔔";
+    text = `${state.teams[b.winner]?.name || "—"} ضغط أولاً — انتهى الوقت، احكم الآن`;
+    show = true;
+  } else if (on && b.open) {
+    icon = "🔔";
+    text = "الأجراس مفتوحة — بانتظار أول ضغطة";
+    accent = "#ffd93d";
+    show = true;
+  }
+
+  // بعد احتساب النقطة يختفي الإشعار
+  if (c.verdict) show = false;
+
+  if (!show) {
+    if (!banner.hidden) {
+      banner.hidden = true;
+      banner.style.background = "";
+      banner.style.color = "";
+    }
+    return;
+  }
+
+  const team = teamKey ? state.teams[teamKey] : null;
+  if (team && team.color) {
+    banner.style.background = team.color;
+    banner.style.color = inkOn(team.color);
+  } else if (accent) {
+    banner.style.background = accent;
+    banner.style.color = inkOn(accent);
+  }
+  if (ui.buzzBannerIco) ui.buzzBannerIco.textContent = icon;
+  if (ui.buzzBannerText) ui.buzzBannerText.textContent = text;
+  banner.hidden = false;
 }
 
 let buzzQrBusy = false;
@@ -510,8 +632,8 @@ function updateTimerReadout() {
   const rem = remainingMs(t, transport.serverOffset);
   if (t.running && rem > 0) {
     const turn =
-      state.current.turn === "a" ? "الفريق الأول" :
-      state.current.turn === "b" ? "الفريق الثاني" :
+      state.current.turn === "a" ? state.teams.a.name :
+      state.current.turn === "b" ? state.teams.b.name :
       "مفتوح للجميع";
     ui.timerReadout.textContent = `${turn} — ${Math.ceil(rem / 1000)} ثانية`;
     ui.timerReadout.classList.add("running");
@@ -618,11 +740,11 @@ ui.clearBtn.addEventListener("click", () => act("clear"));
 
 ui.turnA.addEventListener("click", () => {
   act("setTurn", { turn: "a" });
-  act("startTimer", { seconds: 3 });
+  act("startTimer", { seconds: Number(state.current.buzz?.seconds) || 3 });
 });
 ui.turnB.addEventListener("click", () => {
   act("setTurn", { turn: "b" });
-  act("startTimer", { seconds: 10 });
+  act("startTimer", { seconds: Number(state.current.buzz?.otherSeconds) || 10 });
 });
 ui.turnOpen.addEventListener("click", () => {
   act("setTurn", { turn: "open" });
@@ -729,19 +851,30 @@ document.addEventListener(
 let presetFiles = [];
 let presetsKey = null;
 
+// اختيار متفائل يُعرض فوراً قبل رجوع تأكيد الخادم (يمنع الحاجة للضغط مرتين)
+let optimisticPresets = null;
+
 function activePresetIds() {
+  if (optimisticPresets) return optimisticPresets;
   return (state && state.presets && state.presets.active) || [];
 }
 
-function presetsSig() {
-  return JSON.stringify(activePresetIds());
+function presetsSig(list) {
+  const arr = (list === undefined ? activePresetIds() : list) || [];
+  return JSON.stringify([...arr].map(String).sort());
 }
 
-/** يعيد رسم قائمة المجموعات فقط عند تغيّر الاختيار فعلاً. */
+/** يعيد رسم قائمة المجموعات عند تغيّر الاختيار فعلاً. */
 function syncPresetsFromState() {
-  const sig = presetsSig();
-  if (sig === presetsKey) return;
-  presetsKey = sig;
+  const serverActive = (state && state.presets && state.presets.active) || [];
+  const serverSig = presetsSig(serverActive);
+  // ما دام الاختيار المتفائل لم يؤكّده الخادم، أبقِ واجهة المستخدم كما هي
+  if (optimisticPresets) {
+    if (presetsSig(optimisticPresets) !== serverSig) return;
+    optimisticPresets = null; // وصل تأكيد الخادم
+  }
+  if (serverSig === presetsKey) return;
+  presetsKey = serverSig;
   renderPresets();
 }
 
@@ -789,13 +922,15 @@ function renderPresets() {
     cb.checked = allActive || active.includes(p.id);
     cb.title = "تفعيل/تعطيل هذه المجموعة";
     cb.addEventListener("change", () => {
-      const current = active.length ? active.slice() : presetFiles.map((x) => x.id);
+      const base = activePresetIds();
+      const current = base.length ? base.slice() : presetFiles.map((x) => x.id);
       const set = new Set(current);
       if (cb.checked) set.add(p.id);
       else set.delete(p.id);
       const list = [...set];
       const payload = list.length >= presetFiles.length ? [] : list;
-      presetsKey = JSON.stringify(payload);
+      optimisticPresets = payload;
+      presetsKey = presetsSig(payload);
       act("presets", { active: payload });
       renderPresets();
       try {

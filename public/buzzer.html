@@ -33,6 +33,12 @@
     </header>
 
     <main class="bz-stage">
+      <!-- الحرف المختار (يظهر دائماً أثناء اختيار الحرف، حتى قبل كشف السؤال) -->
+      <section class="bz-letterbar" id="letterBar" hidden>
+        <span class="bz-letterbar-label">الحرف المختار</span>
+        <span class="bz-letterbar-hex" id="letterBarValue">؟</span>
+      </section>
+
       <!-- بطاقة السؤال (تظهر بعد كشف الحكم فقط) -->
       <section class="bz-question" id="bzQuestion" hidden>
         <span class="bz-letter" id="qLetter">أ</span>

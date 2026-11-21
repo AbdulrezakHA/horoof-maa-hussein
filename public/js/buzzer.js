@@ -40,6 +40,8 @@ const el = {
   question: document.getElementById("bzQuestion"),
   qLetter: document.getElementById("qLetter"),
   qText: document.getElementById("qText"),
+  letterBar: document.getElementById("letterBar"),
+  letterBarValue: document.getElementById("letterBarValue"),
   center: document.getElementById("bzCenter"),
   bodyBox: document.querySelector(".bz-center-body"),
   ring: document.getElementById("bzRing"),
@@ -315,6 +317,13 @@ function render() {
     show(el.question, false);
     if (el.qLetter) el.qLetter.textContent = "";
     if (el.qText) el.qText.textContent = "";
+  }
+
+  // الحرف المختار: يظهر دائماً للاعب أثناء اختيار الحرف (حتى قبل كشف السؤال)
+  const selectedLetter = st?.current?.question?.letter || "";
+  if (el.letterBar) {
+    show(el.letterBar, !!selectedLetter);
+    if (el.letterBarValue) el.letterBarValue.textContent = selectedLetter || "؟";
   }
 
   paint(derive(st));

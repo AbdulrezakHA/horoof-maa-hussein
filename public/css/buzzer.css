@@ -189,6 +189,40 @@ body.bz-body {
   color: #3a3428;
 }
 
+/* شريط الحرف المختار: يظهر دائماً للاعب حتى قبل كشف السؤال */
+.bz-letterbar {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  padding: 0.4rem 0.75rem;
+  border-radius: 14px;
+  background: rgba(0, 0, 0, 0.35);
+  border: 2px solid color-mix(in srgb, var(--team) 45%, rgba(255, 255, 255, 0.12));
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
+}
+
+.bz-letterbar-label {
+  font-size: 0.82rem;
+  font-weight: 800;
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.bz-letterbar-hex {
+  min-width: 2rem;
+  height: 2rem;
+  padding: 0 0.45rem;
+  display: grid;
+  place-items: center;
+  border-radius: 10px;
+  font-size: 1.25rem;
+  font-weight: 900;
+  color: #fff;
+  background: linear-gradient(160deg, color-mix(in srgb, var(--team) 70%, #fff), var(--team));
+  box-shadow: 0 3px 0 rgba(0, 0, 0, 0.35);
+}
+
 /* ---------- المركز: زر / عدّاد / نتيجة ---------- */
 
 .bz-center {
