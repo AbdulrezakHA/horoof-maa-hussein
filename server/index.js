@@ -900,15 +900,31 @@ wss.onconnection = (conn) => {
 /*  التشغيل                                                             */
 /* ------------------------------------------------------------------ */
 
+/**
+ * عناوين الكمبيوتر على الشبكة، الأفضل أولاً — رمز QR يستعمل الأول.
+ * نتجاهل العناوين التي لا يصل إليها أي جوال: 169.254.x.x (محوّل بلا شبكة)،
+ * ومحوّلات WSL وHyper-V وVirtualBox وVMware وVPN، ونقدّم الواي فاي ثم الإيثرنت.
+ */
+const VIRTUAL_NIC = /vEthernet|WSL|Hyper-V|VirtualBox|VMware|VMnet|Loopback|Bluetooth|Tailscale|ZeroTier|Hamachi|Radmin|OpenVPN|WireGuard|TAP-|Tun|VPN|Docker|Npcap/i;
 function lanAddresses() {
   const out = [];
   const nets = os.networkInterfaces();
   for (const name of Object.keys(nets)) {
     for (const net of nets[name] || []) {
-      if (net.family === "IPv4" && !net.internal) out.push({ name, address: net.address });
+      if (net.family !== "IPv4" && net.family !== 4) continue;
+      if (net.internal || net.address.startsWith("169.254.")) continue;
+      out.push({ name, address: net.address });
     }
   }
-  return out;
+  const score = ({ name, address }) => {
+    let s = 0;
+    if (VIRTUAL_NIC.test(name)) s -= 100;
+    if (/wi-?fi|wlan|wireless|لاسلكي/i.test(name)) s += 30;
+    else if (/ethernet|^eth|^en/i.test(name)) s += 20;
+    if (/^192\.168\./.test(address) || /^10\./.test(address) || /^172\.(1[6-9]|2\d|3[01])\./.test(address)) s += 10;
+    return s;
+  };
+  return out.sort((a, b) => score(b) - score(a));
 }
 
 /**

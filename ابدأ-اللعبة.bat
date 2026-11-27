@@ -62,24 +62,29 @@ echo     - The game screen opens in Chrome automatically (press F11 for full scr
 echo     - Everything is controlled from the referee phone - no mouse needed.
 echo     - On your phone, scan the QR code shown on the screen.
 echo.
-echo   To allow phones on the same Wi-Fi network, Windows may ask once
-echo   for permission to allow the game through the Private network firewall.
-echo   Choose "Allow access" if the prompt appears.
+echo   If Windows asks whether to allow Node.js through the firewall,
+echo   tick BOTH Private and Public, then choose "Allow access".
 echo.
 
 rem The game may move to 3001, 3002... when another program already uses 3000,
-rem so the rule allows the whole range 3000-3010.
-powershell -NoProfile -Command "if (Get-NetFirewallRule -DisplayName 'HoroofMaaHussein-Ports' -ErrorAction SilentlyContinue) { exit 0 }; exit 1" >nul 2>nul
+rem so the rule allows the whole range 3000-3010 - on ALL network types, because a
+rem new Wi-Fi or a phone hotspot is usually "Public" and a Private-only rule blocks phones.
+set "NODEPATH="
+if exist "%GAMEDIR%runtime\node.exe" set "NODEPATH=%GAMEDIR%runtime\node.exe"
+set "FWPS=%GAMEDIR%server\firewall.ps1"
+powershell -NoProfile -ExecutionPolicy Bypass -File "%FWPS%" -Check -NodeExe "%NODEPATH%" >nul 2>nul
 if not errorlevel 1 goto :startgame
 
-echo   ^>^> Press Y then wait for the Windows Yes/No prompt, or N to skip.
-choice /C YN /M "   Add the one-time Windows firewall rule for phones on this Wi-Fi"
+echo   ^>^> Phones cannot reach this computer yet (Windows firewall).
+echo   ^>^> Press Y then choose Yes on the Windows prompt, or N to skip.
+choice /C YN /M "   Allow the game through the Windows firewall (all Wi-Fi networks and hotspots)"
 if errorlevel 2 goto :startgame
 
 echo.
-echo   Windows will now ask for administrator permission once.
-echo   Choose Yes to allow TCP ports 3000-3010 on Private networks.
-powershell -NoProfile -Command "Start-Process -FilePath netsh -ArgumentList 'advfirewall firewall add rule name=HoroofMaaHussein-Ports dir=in action=allow protocol=TCP localport=3000-3010 profile=private' -Verb RunAs -Wait"
+powershell -NoProfile -Command "Start-Process -FilePath powershell -ArgumentList ('-NoProfile -ExecutionPolicy Bypass -File \"' + $env:FWPS + '\" -NodeExe \"' + $env:NODEPATH + '\"') -Verb RunAs -Wait" >nul 2>nul
+powershell -NoProfile -ExecutionPolicy Bypass -File "%FWPS%" -Check -NodeExe "%NODEPATH%" >nul 2>nul
+if errorlevel 1 (echo   [!] The firewall rule was not added - phones may not connect.) else (echo   [ok] Phones on this network can now connect.)
+echo.
 
 :startgame
 

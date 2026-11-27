@@ -63,17 +63,13 @@ if (Test-Path -LiteralPath $nodeExe) {
 }
 
 # ---------- 2) Firewall rule (so phones on the same Wi-Fi can connect) ----------
-$hasRule = Get-NetFirewallRule -DisplayName $rule -ErrorAction SilentlyContinue
-if ($hasRule) {
-  Say ('  [ok] Firewall rule already exists (TCP ' + $ports + ', private networks).')
+$fw = Join-Path $root 'server\firewall.ps1'
+& powershell -NoProfile -ExecutionPolicy Bypass -File $fw -Check -NodeExe $nodeExe
+if ($LASTEXITCODE -eq 0) {
+  Say ('  [ok] Firewall rule already in place (TCP ' + $ports + ', all networks).')
 } else {
-  $out = & netsh advfirewall firewall add rule name=$rule dir=in action=allow protocol=TCP localport=$ports profile=private 2>&1
-  if ($LASTEXITCODE -eq 0) {
-    Say ('  [ok] Firewall rule added (TCP ' + $ports + ', private networks).')
-  } else {
-    Say ('  [!] Could not add the firewall rule: ' + ($out | Out-String).Trim())
-    Say '      Right-click install.bat and choose "Run as administrator".'
-  }
+  & powershell -NoProfile -ExecutionPolicy Bypass -File $fw -NodeExe $nodeExe
+  if ($LASTEXITCODE -ne 0) { Say '      Right-click install.bat and choose "Run as administrator".' }
 }
 
 # ---------- 3) Desktop + Start Menu shortcuts ----------
