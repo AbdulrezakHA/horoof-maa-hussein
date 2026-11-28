@@ -167,7 +167,7 @@ export function parseSheet(text) {
       continue;
     }
     if (auto && letter !== auto) {
-      warnings.push({ row: rowNo, type: "override", msg: `حرف مخصّص: «${clip(answer, 26)}» → ${letter} (تلقائياً: ${auto})` });
+      warnings.push({ row: rowNo, type: "override", msg: `حرف مخصّص: «${clip(answer, 26)}» إلى الحرف ${letter} (تلقائياً: ${auto})` });
     }
 
     const row = { line: rowNo, text: qText, answer, letter };

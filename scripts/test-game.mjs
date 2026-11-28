@@ -113,8 +113,8 @@ async function main() {
   const board = last(ref).board;
   check("اللوحة فيها 25 خلية", board.cells.length === 25);
   check("الحواف معرّفة", !!board.edges.top && !!board.edges.left);
-  check("الفريق أ: أعلى↔أسفل", JSON.stringify(board.teams.a.goals) === '[["top"],["bottom"]]');
-  check("الفريق ب: يمين↔يسار", JSON.stringify(board.teams.b.goals) === '[["left"],["right"]]');
+  check("الفريق أ: أعلى وأسفل", JSON.stringify(board.teams.a.goals) === '[["top"],["bottom"]]');
+  check("الفريق ب: يمين ويسار", JSON.stringify(board.teams.b.goals) === '[["left"],["right"]]');
 
   // --- خلط الحروف: عشوائي في كل جولة ---
   const ALPHA = "abcdefghijklmnopqrstuvwxy";
@@ -317,7 +317,7 @@ async function main() {
   check("المؤقّت توقّف تلقائياً بعد انتهائه", last(ref).state.current.timer.running === false,
     `phase=${last(ref).state.phase}`);
 
-  // --- ربط طرفي الفريق أ (أعلى↔أسفل) = الفوز ---
+  // --- ربط طرفي الفريق أ (أعلى وأسفل) = الفوز ---
   // العمود r2c2 فوق r1c2 فوق r0c2 (أعلى) وبجوار r3c2 ثم r4c2 (أسفل)
   const chain = ["r0c2", "r1c2", "r2c2", "r3c2", "r4c2"];
   for (const id of chain) {
@@ -337,7 +337,7 @@ async function main() {
   check("النقاط صفر", st.teams.a.score === 0 && st.teams.b.score === 0);
   check("لا يوجد فائز", st.winner === null);
 
-  // --- ربط طرفي الفريق ب (يمين↔يسار) = الفوز ---
+  // --- ربط طرفي الفريق ب (يمين ويسار) = الفوز ---
   const row2 = ["r2c0", "r2c1", "r2c2", "r2c3", "r2c4"];
   for (const id of row2) {
     ref.send(JSON.stringify({ t: "action", action: { type: "award", payload: { cellId: id, team: "b" } } }));
@@ -624,12 +624,12 @@ async function main() {
     check("✅ في الجولة ٣: الحكم يختار الفريق بلا نقطة لاعب",
       s3.cells.r0c2.owner === "b" && s3.players.testP3xx.score === 0 && s3.current.verdict?.team === "b");
 
-    // ↩️ تراجع عن آخر قرار
+    // تراجع عن آخر قرار
     ref2.send(JSON.stringify({ t: "action", action: { type: "undo" } }));
     await sleep(250);
     s3 = last(ref2).state;
-    check("↩️ التراجع يعيد الخلية حرّة", s3.cells.r0c2.owner === null, String(s3.cells.r0c2.owner));
-    check("↩️ التراجع يُبقي اللاعبين المسجّلين", !!s3.players.testP1xx && !!s3.players.testP3xx);
+    check("التراجع يعيد الخلية حرّة", s3.cells.r0c2.owner === null, String(s3.cells.r0c2.owner));
+    check("التراجع يُبقي اللاعبين المسجّلين", !!s3.players.testP1xx && !!s3.players.testP3xx);
 
     // الحكم ينقل لاعباً ويخرج آخر
     ref2.send(JSON.stringify({ t: "action", action: { type: "playerSetTeam", payload: { id: "testP1xx", team: "b" } } }));
@@ -718,20 +718,20 @@ async function main() {
     check("الدور الأول للفريق البادئ مع شارح من الفريق نفسه",
       t.phase === "ready" && T === t.startTeam && t.describer && st().players[t.describer.id]?.team === T);
 
-    // 👁️ الحكم يرى بطاقة الدور القادم قبل البدء، ولا يراها غيره
+    // الحكم يرى بطاقة الدور القادم قبل البدء، ولا يراها غيره
     const preview1 = last(ref2).state.taboo.card;
-    check("👁️ الحكم يرى أول كلمة قبل بدء الدور", !!preview1?.word && preview1.forbidden?.length > 0);
+    check("الحكم يرى أول كلمة قبل بدء الدور", !!preview1?.word && preview1.forbidden?.length > 0);
     check("🔒 قبل الدور: الشاشة والجوالات لا تصلها البطاقة",
       !last(screen).state.taboo.card && Object.values(phones).every((ws) => !last(ws).state.taboo.card));
     send("tabooSwap");
     await sleep(250);
     const preview2 = last(ref2).state.taboo.card;
-    check("🔄 الحكم يبدّل الكلمة قبل الدور", preview2?.word && preview2.word !== preview1.word, `${preview1.word} → ${preview2?.word}`);
+    check("الحكم يبدّل الكلمة قبل الدور", preview2?.word && preview2.word !== preview1.word, `${preview1.word} → ${preview2?.word}`);
 
     send("tabooStartTurn");
     await sleep(300);
     t = st().taboo;
-    check("▶️ الدور يبدأ بالكلمة التي اختارها الحكم", t.card?.word === preview2.word);
+    check("الدور يبدأ بالكلمة التي اختارها الحكم", t.card?.word === preview2.word);
     check("بدء الدور: بطاقة فيها كلمة وكلمات ممنوعة والعدّاد يعمل",
       t.phase === "turn" && !!t.card?.word && t.card.forbidden.length >= 3 && t.timer.running === true);
 
@@ -761,11 +761,11 @@ async function main() {
     await sleep(250);
     check("⏭ الشارح يتخطّى من جواله (بقي واحد)", st().taboo.skips[T] === 1);
 
-    // 🔄 تبديل مجاني من الحكم: كلمة جديدة ولا يُحسب على الفريق
+    // تبديل مجاني من الحكم: كلمة جديدة ولا يُحسب على الفريق
     const beforePass = st().taboo.card.word;
     send("tabooPass");
     await sleep(250);
-    check("🔄 التبديل المجاني يغيّر الكلمة ولا ينقص التخطّيات",
+    check("التبديل المجاني يغيّر الكلمة ولا ينقص التخطّيات",
       st().taboo.card.word !== beforePass && st().taboo.skips[T] === 1 &&
       st().taboo.turnLog.some((l) => l.result === "pass" && l.word === beforePass));
 

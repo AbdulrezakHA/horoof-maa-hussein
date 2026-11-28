@@ -5,12 +5,12 @@
   "teams": {
     "a": {
       "name": "الفريق الأول",
-      "color": "#19a974",
+      "color": "#6965ae",
       "goals": [["top"], ["bottom"]]
     },
     "b": {
       "name": "الفريق الثاني",
-      "color": "#e0453a",
+      "color": "#4b9cbf",
       "goals": [["left"], ["right"]]
     }
   },

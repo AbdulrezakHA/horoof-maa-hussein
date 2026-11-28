@@ -36,7 +36,7 @@ async function main() {
     const p = last.peers;
     if (p.referee > 0) {
       sawReferee = true;
-      console.log(`  ⚠️  peers: screen=${p.screen} referee=${p.referee}`);
+      console.log(`  [!]  peers: screen=${p.screen} referee=${p.referee}`);
       break;
     }
   }
@@ -47,7 +47,7 @@ async function main() {
 
   if (sawReferee) {
     console.log(
-      "  ⚠️  يوجد اتصال حكم من مصدر آخر (تبويب مفتوح من جلسة سابقة؟)\n" +
+      "  [!]  يوجد اتصال حكم من مصدر آخر (تبويب مفتوح من جلسة سابقة؟)\n" +
         "     تأكد من إغلاق كل التبويبات القديمة قبل الاختبار.\n"
     );
   } else {

@@ -204,7 +204,7 @@ export function applyTaboo(st, type, p = {}) {
       return null;
     }
 
-    // ▶️ بدء الدور: البطاقة الأولى (التي رآها الحكم) + العدّاد
+    // بدء الدور: البطاقة الأولى (التي رآها الحكم) + العدّاد
     case "tabooStartTurn": {
       if (t.phase !== "ready" || !t.describer) return null;
       t.card = t.card || p.card || null;
@@ -273,7 +273,7 @@ export function applyTaboo(st, type, p = {}) {
       return { text: `انتهى الدور — ${teamName(t.turnTeam)} +${got}`, tone: "info", icon: "timer" };
     }
 
-    // ⏸ إيقاف مؤقّت / ▶️ استئناف
+    // إيقاف مؤقّت / استئناف
     case "tabooPause": {
       if (t.phase !== "turn") return null;
       t.timer = { ...IDLE, total: t.timer.total, remaining: Math.max(0, t.timer.endsAt - Date.now()) };
@@ -288,7 +288,7 @@ export function applyTaboo(st, type, p = {}) {
       return null;
     }
 
-    // ➡️ الدور التالي: الفريق الآخر مع شارح عشوائي
+    // الدور التالي: الفريق الآخر مع شارح عشوائي
     case "tabooNextTurn": {
       if (t.phase !== "turnEnd") return null;
       t.turnTeam = other(t.turnTeam || t.startTeam || "a");

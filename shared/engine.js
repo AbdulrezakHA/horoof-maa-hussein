@@ -69,8 +69,8 @@ export function createState(board) {
     rev: 0,
     phase: "idle", // idle | question | awarded | over
     teams: {
-      a: { name: board.teams.a?.name || "الفريق الأول", color: board.teams.a?.color || "#19a974", score: 0 },
-      b: { name: board.teams.b?.name || "الفريق الثاني", color: board.teams.b?.color || "#e0453a", score: 0 },
+      a: { name: board.teams.a?.name || "الفريق الأول", color: board.teams.a?.color || "#6965ae", score: 0 },
+      b: { name: board.teams.b?.name || "الفريق الثاني", color: board.teams.b?.color || "#4b9cbf", score: 0 },
     },
     theme: {
       ds: "hussein", // الثيم الأساسي (مفتاح في DS_THEMES)
@@ -339,7 +339,7 @@ function doAward(st, board, cellId, team, creditId = null) {
   const who = pl && !pl.pseudo ? ` (${pl.name})` : "";
 
   if (previous === team) {
-    pushLog(st, `${cell.letter} → ${st.teams[team].name}${who} (بدون تغيير)`, "info");
+    pushLog(st, `${cell.letter} : ${st.teams[team].name}${who} (بدون تغيير)`, "info");
     deselectAfterAward(st);
     return true;
   }
@@ -347,7 +347,7 @@ function doAward(st, board, cellId, team, creditId = null) {
   cell.owner = team;
   st.teams[team].score += 1;
   st.phase = "awarded";
-  pushLog(st, `${cell.letter} → ${st.teams[team].name}${who}${previous ? " (تعديل)" : ""}`, team);
+  pushLog(st, `${cell.letter} : ${st.teams[team].name}${who}${previous ? " (تعديل)" : ""}`, team);
   const w = findWinner(st, board);
   if (w) {
     st.winner = w;

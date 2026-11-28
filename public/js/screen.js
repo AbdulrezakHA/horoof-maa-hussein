@@ -202,6 +202,16 @@ transport.onStatus = (s) => {
   // بعد كل اتصال (أو إعادة اتصال) نُبلغ الخادم بحالة ملء الشاشة
   if (s === "online") setTimeout(() => reportFullscreen(true), 300);
   setIcon(el.connBadgeDot, s === "online" ? "wifi" : "warning");
+  if (s !== "online") {
+    // انقطع الاتصال بالخادم: لا نعرض «الحكم متصل» وهمياً، ونُعيد الحساب عند أول حالة جديدة
+    refereeConnected = null;
+    el.connBadge.classList.remove("ds-pill--mint", "ds-pill--dark");
+    el.connBadge.classList.add("ds-pill--coral");
+    el.connBadgeText.textContent = "انقطع الاتصال — إعادة المحاولة…";
+  } else {
+    el.connBadge.classList.remove("ds-pill--coral");
+    el.connBadge.classList.add("ds-pill--dark");
+  }
 };
 
 transport.onState = (msg) => {

@@ -135,8 +135,8 @@ const DEFAULT_BOARD = readJson("data/board.json", {
   rows: 5,
   cols: 5,
   teams: {
-    a: { name: "الفريق الأول", color: "#19a974", goals: [["top"], ["bottom"]] },
-    b: { name: "الفريق الثاني", color: "#e0453a", goals: [["left"], ["right"]] },
+    a: { name: "الفريق الأول", color: "#6965ae", goals: [["top"], ["bottom"]] },
+    b: { name: "الفريق الثاني", color: "#4b9cbf", goals: [["left"], ["right"]] },
   },
   edges: { top: [], bottom: [], left: [], right: [] },
   cells: [],
@@ -435,7 +435,7 @@ function handleAction(room, action) {
     return;
   }
 
-  // ↩️ تراجع عن آخر قرار (اللاعبون المسجّلون يبقون كما هم)
+  // تراجع عن آخر قرار (اللاعبون المسجّلون يبقون كما هم)
   if (type === "undo") {
     const prev = room.undo.pop();
     if (!prev) return;
@@ -873,7 +873,7 @@ wss.onconnection = (conn) => {
       // لاعب يكتب اسمه ويختار فريقه (أو يغيّرهما لاحقاً)
       case "join": {
         if (conn.meta.role !== "player" || !room) return;
-        // لاعب دخل من الطريق الآخر (الإنترنت ↔ الشبكة المحلية) فصار له جوال «جديد»:
+        // لاعب دخل من الطريق الآخر (الإنترنت والشبكة المحلية) فصار له جوال «جديد»:
         // إن وُجد لاعب غير متصل بنفس الاسم نعيده إليه (اسمه وفريقه ونقاطه) بدل إنشاء «أحمد 2».
         if (!room.state.players?.[conn.meta.playerId]) {
           const norm = (x) => String(x || "").trim().replace(/\s+/g, " ").toLowerCase();
