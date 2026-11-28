@@ -3,7 +3,7 @@
  * ------------------------
  * كل موضوع = ملف TSV داخل `presets/الكلمة_الممنوعة/` واسم الملف هو اسم الموضوع.
  *
- *   السطر الأول (اختياري):  # أيقونة: 🍽️
+ *   السطر الأول (اختياري):  # أيقونة: food
  *   كل سطر بعده:           الكلمة <TAB> ممنوع١ <TAB> ممنوع٢ <TAB> ... (عدد الممنوعة حرّ: ٣ إلى ٨)
  *   الأسطر الفارغة وما يبدأ بـ # تُتجاهل.
  */
@@ -13,6 +13,22 @@ import { ROOT_DIR, safeId } from "./presets.js";
 
 export const TABOO_DIR = path.join(ROOT_DIR, "presets", "الكلمة_الممنوعة");
 const EXT = ".tsv";
+const DEFAULT_ICON = "shapes";
+
+/** معرّفات الرموز المتاحة في /icons.svg (الأيقونة في ملف الموضوع يجب أن تكون واحداً منها). */
+let iconIdsCache = null;
+export function iconIds() {
+  if (!iconIdsCache) {
+    try {
+      const svg = fs.readFileSync(path.join(ROOT_DIR, "public", "icons.svg"), "utf8");
+      iconIdsCache = new Set([...svg.matchAll(/<symbol id="([^"]+)"/g)].map((m) => m[1]));
+    } catch {
+      iconIdsCache = new Set([DEFAULT_ICON]);
+    }
+  }
+  return iconIdsCache;
+}
+export const validIcon = (v) => (iconIds().has(String(v || "").trim()) ? String(v).trim() : DEFAULT_ICON);
 const MAX_FORBIDDEN = 8;
 
 function ensureDir() {
@@ -33,7 +49,7 @@ export function parseTaboo(text) {
     if (!line) return;
     if (line.startsWith("#")) {
       const m = line.match(/^#\s*أيقونة\s*[:：]\s*(.+)$/);
-      if (m) icon = m[1].trim().slice(0, 8);
+      if (m) icon = validIcon(m[1]);
       return;
     }
     const cells = raw.split("\t").map(clean).filter(Boolean);
@@ -54,7 +70,7 @@ export function parseTaboo(text) {
 
 export function serializeTaboo({ icon, cards }) {
   const out = [];
-  if (icon) out.push(`# أيقونة: ${icon}`);
+  if (icon) out.push(`# أيقونة: ${validIcon(icon)}`);
   out.push("# الكلمة\tممنوع١\tممنوع٢\tممنوع٣\t...");
   for (const c of cards || []) {
     const word = clean(c.word);
@@ -74,7 +90,7 @@ export function listTabooPacks() {
     .map((f) => {
       const id = f.slice(0, -EXT.length);
       const { icon, cards, warnings } = loadTaboo(id);
-      return { id, name: id, icon: icon || "🃏", total: cards.length, warnings: warnings.length };
+      return { id, name: id, icon: icon || DEFAULT_ICON, total: cards.length, warnings: warnings.length };
     })
     .sort((a, b) => a.name.localeCompare(b.name, "ar"));
 }
@@ -104,7 +120,7 @@ export function buildTabooDeck(activeIds = []) {
   const deck = [];
   for (const id of ids) {
     const { icon, cards } = loadTaboo(id);
-    cards.forEach((c, i) => deck.push({ id: `${id}#${i}`, word: c.word, forbidden: c.forbidden, topic: id, icon: icon || "🃏" }));
+    cards.forEach((c, i) => deck.push({ id: `${id}#${i}`, word: c.word, forbidden: c.forbidden, topic: id, icon: icon || DEFAULT_ICON }));
   }
   return deck;
 }

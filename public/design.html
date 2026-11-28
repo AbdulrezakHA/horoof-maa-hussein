@@ -221,12 +221,6 @@
         color: var(--on-stage-dim);
         margin-top: 0.5rem;
       }
-      .dz-word {
-        font-family: var(--font-display);
-        font-weight: 800;
-        font-size: var(--fs-2xl);
-        color: var(--ink);
-      }
       .dz-motion {
         display: grid;
         gap: var(--sp-4);
@@ -307,12 +301,6 @@
       }
       .dz-label--ink {
         color: var(--ink-soft);
-      }
-      .dz-pill-sun {
-        background: var(--sun);
-      }
-      .dz-pill-sky {
-        background: var(--sky);
       }
       .dz-phone--paper {
         background: var(--paper);
@@ -500,9 +488,23 @@
           <button class="ds-btn ds-btn--primary" type="button" disabled><span data-i="skip"></span>معطّل</button>
           <button class="ds-btn ds-btn--success" type="button" id="loadBtn"><span class="ds-spinner"></span><span data-i="check"></span>احفظ</button>
         </div>
-        <span class="dz-label">الجرس الكبير</span>
+        <span class="dz-label">اختيار الفريق (مضغوط = مختار) وزر عائم</span>
         <div class="ds-cluster">
-          <button class="ds-buzzer ds-team-b" type="button">اضغط!</button>
+          <button class="ds-btn ds-btn--team ds-team-a" type="button" aria-pressed="true"><span data-i="users"></span>الأولاد</button>
+          <button class="ds-btn ds-btn--team ds-team-b" type="button" aria-pressed="false"><span data-i="users"></span>البنات</button>
+        </div>
+        <p class="dz-p dz-dim">الصنف <code>ds-dock</code> يثبّت أي زر أسفل الشاشة (مثل «اضغط لتشغيل الصوت»).</p>
+        <span class="dz-label">صف: أيقونة ثم نص</span>
+        <div class="ds-card"><div class="ds-row"><span class="ds-badge-icon"><span data-i="hush"></span></span><span class="ds-text">ممنوع قول الكلمة نفسها أو جزء منها أو أي كلمة من عائلتها</span></div></div>
+        <span class="dz-label">النصوص والعناوين الصغيرة</span>
+        <div class="ds-stack ds-stack--tight">
+          <h3 class="ds-title ds-title--sm">عنوان صغير على المسرح</h3>
+          <p class="ds-text">نص عادي على المسرح.</p>
+          <p class="ds-text ds-text--dim">نص ثانوي خافت.</p>
+        </div>
+        <span class="dz-label">الجرس الكبير (مع أيقونة)</span>
+        <div class="ds-cluster">
+          <button class="ds-buzzer ds-team-b" type="button"><span data-i="bell"></span>اضغط!</button>
         </div>
       </section>
 
@@ -553,6 +555,7 @@
           <span class="ds-pill"><span data-i="target"></span>الهدف 10</span>
           <span class="ds-pill ds-pill--team ds-team-a"><span data-i="trophy"></span>الأولاد 2</span>
           <span class="ds-pill ds-pill--dark"><span data-i="timer"></span>60 ثانية</span>
+          <span class="ds-pill ds-pill--coral"><span data-i="timer"></span>9 ثوانٍ</span>
           <span class="ds-pill"><span data-i="skip"></span>بلا حدّ</span>
         </div>
       </section>
@@ -646,11 +649,11 @@
         <div class="ds-cluster" style="gap: var(--sp-10)">
           <div class="ds-qr">
             <div class="ds-qr-frame"><canvas id="qrNet"></canvas></div>
-            <span class="ds-pill dz-pill-sun"><span data-i="globe"></span>عبر الإنترنت</span>
+            <span class="ds-pill ds-pill--sun"><span data-i="globe"></span>عبر الإنترنت</span>
           </div>
           <div class="ds-qr">
             <div class="ds-qr-frame"><canvas id="qrLan"></canvas></div>
-            <span class="ds-pill dz-pill-sky"><span data-i="wifi"></span>نفس الواي فاي</span>
+            <span class="ds-pill ds-pill--sky"><span data-i="wifi"></span>نفس الواي فاي</span>
           </div>
         </div>
       </section>
@@ -812,7 +815,7 @@
                 </div>
                 <div class="ds-center">
                   <span class="ds-chip"><span data-i="food"></span>أكل وشرب</span>
-                  <div class="dz-word">كنافة</div>
+                  <div class="ds-word">كنافة</div>
                   <div class="ds-cluster" style="justify-content: center">
                     <span class="ds-chip ds-chip--forbidden">حلوى</span><span class="ds-chip ds-chip--forbidden">جبن</span><span class="ds-chip ds-chip--forbidden">نابلس</span><span class="ds-chip ds-chip--forbidden">قطر</span>
                   </div>

@@ -226,6 +226,24 @@
   text-wrap: balance;
 }
 
+/* السمة hidden تغلب أي display يضعه مكوّن */
+.ds [hidden],
+.ds-tv [hidden] {
+  display: none !important;
+}
+
+/* نص عادي: على المسرح (--dim للنص الثانوي) */
+.ds-text {
+  margin: 0;
+  font-weight: 700;
+  font-size: var(--fs-md);
+  line-height: 1.5;
+  overflow-wrap: break-word;
+}
+.ds-text--dim {
+  color: var(--on-stage-dim);
+}
+
 /* خلفية المسرح: إضاءة ناعمة + نقاط تنجرف ببطء شديد.
    النقاط طبقة منفصلة تتحرك بـ transform (لا إعادة رسم كل إطار).
    .ds-stage  → لمساحة محدّدة (شاشة، بطاقة)
@@ -408,7 +426,8 @@
   transition: transform 650ms var(--ease-out), opacity 120ms;
 }
 .ds-btn:active,
-.ds-btn.is-pressed {
+.ds-btn.is-pressed,
+.ds-btn[aria-pressed="true"] {
   --d: 0px;
   transform: translateY(var(--depth));
   filter: brightness(0.96);
@@ -588,6 +607,10 @@
     0 var(--d) 0 0 var(--ink),
     0 calc(var(--d) + 10px) 14px -6px var(--ink-35);
   margin-bottom: 14px;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: var(--sp-2);
   cursor: pointer;
   transition:
     transform var(--dur-1) var(--ease-out),
@@ -834,6 +857,27 @@
 .ds-pill--dark {
   background: var(--stage-3);
   color: var(--on-stage);
+}
+.ds-pill--sun {
+  background: var(--sun);
+  color: var(--sun-ink);
+}
+.ds-pill--sky {
+  background: var(--sky);
+  color: var(--sky-ink);
+}
+.ds-pill--coral {
+  background: var(--coral);
+  color: var(--coral-ink);
+}
+/* الكلمة الكبيرة في بطاقة الشارح */
+.ds-word {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: var(--fs-2xl);
+  line-height: 1.15;
+  overflow-wrap: break-word;
+  text-wrap: balance;
 }
 
 /* نقاط التخطّي: ●●○ */
@@ -1597,6 +1641,9 @@ button.ds-hex:focus-visible {
   text-shadow: 0 var(--lift-sm) 0 var(--ink);
   text-wrap: balance;
 }
+.ds-title--sm {
+  font-size: var(--fs-xl);
+}
 .ds-title .ds-icon {
   vertical-align: -0.12em;
 }
@@ -1753,11 +1800,33 @@ button.ds-hex:focus-visible {
 .ds-cluster--between {
   justify-content: space-between;
 }
+/* صف بلا التفاف: أيقونة/زر ثم نص يأخذ الباقي */
+.ds-row {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+}
+.ds-row > .ds-text {
+  flex: 1;
+  min-width: 0;
+}
 /* شبكة بطاقات تتكيّف مع العرض */
 .ds-grid {
   display: grid;
   gap: var(--sp-6);
   grid-template-columns: repeat(auto-fill, minmax(min(var(--min, 260px), 100%), 1fr));
+}
+/* عنصر عائم أسفل الشاشة (زر «شغّل الصوت») */
+.ds-dock {
+  position: fixed;
+  inset-inline: 0;
+  bottom: var(--sp-5);
+  width: max-content;
+  margin-inline: auto;
+  z-index: 150;
+}
+.ds-dock[hidden] {
+  display: none;
 }
 /* محتوى في المنتصف */
 .ds-center {

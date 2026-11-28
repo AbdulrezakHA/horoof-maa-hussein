@@ -4,10 +4,12 @@
    - فريقه: «فلان يشرح — خمّنوا!» (بلا أي كلمة)
    - الفريق الآخر: الكلمات الممنوعة فقط + «راقبوه!»
    (الخادم نفسه لا يرسل لكل جوال إلا ما يحقّ له رؤيته)
+   كل العناصر من مكتبة نظام التصميم (ds-*)، والرموز من /icons.svg.
    ================================================================== */
 import { TABOO_RULES, skipsLeft } from "/shared/taboo.js";
+import { icon, confetti, replay } from "/js/ds.js";
 
-let ctx = null; // { me, myTeam, sendRaw, sfx, remainingMs, inkFor, getState }
+let ctx = null; // { me, myTeam, sendRaw, sfx, remainingMs, getState }
 let root = null;
 let lastKey = "";
 let tick = null;
@@ -21,7 +23,34 @@ const $ = (tag, cls, text) => {
   return n;
 };
 
-const REMINDER = "🚫 لا حروف · لا عدد حروف · لا قافية · لا ترجمة · لا إشارات · لا أصوات";
+/** عنصر فيه رمز ثم نص (شارة، رقاقة، زر…). */
+const withIcon = (tag, cls, iconName, text) => {
+  const n = $(tag, cls);
+  if (iconName) n.appendChild(icon(iconName));
+  if (text != null) n.appendChild(document.createTextNode(text));
+  return n;
+};
+
+/** لافتة بأيقونة: ds-banner + نبرة. */
+function banner(tone, iconName, text) {
+  const b = $("div", `ds-banner${tone ? ` ds-banner--${tone}` : ""}`);
+  const ic = $("span", "ds-banner-icon");
+  ic.appendChild(icon(iconName));
+  b.append(ic, $("span", "", text));
+  return b;
+}
+
+const REMINDER = "لا حروف · لا عدد حروف · لا قافية · لا ترجمة · لا إشارات · لا أصوات";
+/** أيقونة كل قانون (بنفس ترتيب TABOO_RULES). */
+const RULE_ICONS = ["hush", "ban", "no-letters", "hash", "music", "translate", "hand", "wave", "pen", "phone"];
+/** رقاقة سجلّ الدور: صنف + أيقونة. */
+const CHIP = {
+  right: ["ds-chip--right", "check"],
+  skip: ["ds-chip--skip", "skip"],
+  pass: ["ds-chip--pass", "swap"],
+  foul: ["ds-chip--foul", "ban"],
+  timeout: ["", "timer"],
+};
 
 export function initTabooPhone(context) {
   ctx = context;
@@ -40,6 +69,16 @@ export function renderTabooPhone(st) {
   updateClock(st);
 }
 
+function forbiddenChips(card) {
+  const fb = $("div", "ds-cluster ds-cluster--center");
+  for (const w of card?.forbidden || []) fb.appendChild($("span", "ds-chip ds-chip--forbidden", w));
+  return fb;
+}
+
+function topicChip(card) {
+  return card?.topic ? withIcon("span", "ds-chip", card.icon || "shapes", card.topic) : null;
+}
+
 function draw(st) {
   const t = st.taboo;
   const mine = ctx.myTeam();
@@ -49,59 +88,78 @@ function draw(st) {
   root.replaceChildren();
 
   // النتيجة دائماً في الأعلى
-  const score = $("div", "tp-score");
+  const head = $("div", "ds-stack ds-stack--tight");
+  const score = $("div", "ds-cluster ds-cluster--between");
   for (const k of ["a", "b"]) {
-    const s = $("div", "tp-score-team", `${tName(k)}  ${t.score[k]}`);
-    s.style.background = st.teams[k].color;
-    s.style.color = ctx.inkFor(st.teams[k].color);
-    s.classList.toggle("mine", k === mine);
-    score.appendChild(s);
+    score.appendChild(withIcon("span", `ds-pill ds-pill--team ds-team-${k}`, k === mine ? "user" : null, `${tName(k)} ${t.score[k]}`));
   }
-  root.append(score, $("div", "tp-target", `🎯 أول فريق يصل ${t.target} يفوز`));
+  head.append(score, withIcon("span", "ds-pill ds-pill--dark", "target", `أول فريق يصل ${t.target} يفوز`));
+  root.appendChild(head);
 
-  const body = $("div", "tp-body");
+  const body = $("div", "ds-stack");
   root.appendChild(body);
+  const center = (...kids) => {
+    const c = $("div", "ds-center");
+    c.append(...kids.filter(Boolean));
+    return c;
+  };
+  const badge = (name, extra = "") => {
+    const b = $("span", `ds-badge-icon ds-badge-icon--lg ${extra}`.trim());
+    b.appendChild(icon(name));
+    return b;
+  };
+  const title = (text, iconName) => withIcon("h2", "ds-title ds-title--sm", iconName, text);
+  const dim = (text) => $("p", "ds-text ds-text--dim", text);
 
   if (t.phase === "setup") {
-    body.append($("div", "tp-big", "🚫 الكلمة الممنوعة"), $("div", "tp-sub", "بانتظار الحكم…"));
+    body.appendChild(center(badge("hush", "ds-float"), title("الكلمة الممنوعة"), dim("بانتظار الحكم…")));
   }
 
   if (t.phase === "rules") {
-    body.append($("div", "tp-big", "📜 القوانين"));
-    const ol = $("ol", "tp-rules");
-    for (const r of TABOO_RULES) ol.appendChild($("li", "", r));
-    body.append(ol, $("div", "tp-sub", "أي مخالفة = ⁦-1⁩ وينتهي الدور فوراً"));
+    body.appendChild(center(title("القوانين", "scroll")));
+    const card = $("div", "ds-card ds-stack ds-stack--tight");
+    TABOO_RULES.forEach((r, i) => {
+      const row = $("div", "ds-row");
+      const b = $("span", "ds-badge-icon");
+      b.appendChild(icon(RULE_ICONS[i] || "ban"));
+      row.append(b, $("span", "ds-text", r));
+      card.appendChild(row);
+    });
+    body.append(card, banner("danger", "warning", "أي مخالفة = ⁦-1⁩ وينتهي الدور فوراً"));
   }
 
   if (t.phase === "ready") {
     if (isDescriber) {
-      body.append($("div", "tp-icon", "🎤"), $("div", "tp-big", "أنت الشارح!"), $("div", "tp-sub", "امسك جوالك واستعدّ — الحكم سيبدأ الدور"));
-      body.classList.add("tp-me");
+      body.appendChild(center(badge("megaphone", "ds-glow-turn"), title("أنت الشارح!"), dim("امسك جوالك واستعدّ — الحكم سيبدأ الدور")));
     } else {
-      body.append(
-        $("div", "tp-big", `دور ${tName(t.turnTeam)}`),
-        $("div", "tp-sub", t.describer ? `🎤 الشارح: ${t.describer.name}` : "بانتظار القرعة…"),
-        $("div", "tp-sub", myTurn ? "استعدّوا للتخمين!" : "استعدّوا لمراقبة الكلمات الممنوعة")
+      body.appendChild(
+        center(
+          title(`دور ${tName(t.turnTeam)}`),
+          t.describer ? withIcon("span", "ds-pill", "user", `الشارح: ${t.describer.name}`) : dim("بانتظار القرعة…"),
+          dim(myTurn ? "استعدّوا للتخمين!" : "استعدّوا لمراقبة الكلمات الممنوعة")
+        )
       );
     }
   }
 
   if (t.phase === "turn" || t.phase === "paused") {
-    const clock = $("div", "tp-clock", "—");
-    clock.id = "tpClock";
-    body.appendChild(clock);
-    if (t.phase === "paused") body.appendChild($("div", "tp-paused", "⏸ متوقف مؤقتاً"));
-    const topic = t.card?.topic ? $("div", "tp-topic", `${t.card.icon || "🃏"} ${t.card.topic}`) : null;
+    const clock = withIcon("span", "ds-pill ds-pill--dark", "timer");
+    const num = $("span", "", "—");
+    num.id = "tpClock";
+    clock.appendChild(num);
+    const row = $("div", "ds-cluster ds-cluster--between");
+    row.appendChild(clock);
+    const got = t.turnLog.filter((l) => l.result === "right").length;
+    row.appendChild($("span", `ds-pill ds-pill--team ds-team-${t.turnTeam}`, `هذا الدور +${got}`));
+    body.appendChild(row);
+    if (t.phase === "paused") body.appendChild(banner("info", "pause", "متوقف مؤقتاً"));
 
     if (isDescriber) {
-      body.classList.add("tp-me");
-      if (topic) body.appendChild(topic);
-      body.appendChild($("div", "tp-word", t.card?.word || "…"));
-      const fb = $("div", "tp-forbidden");
-      for (const w of t.card?.forbidden || []) fb.appendChild($("span", "tp-fword", w));
-      body.append(fb, $("div", "tp-reminder", REMINDER));
+      const card = $("div", "ds-card ds-center");
+      card.append(topicChip(t.card) || "", $("div", "ds-word", t.card?.word || "…"), forbiddenChips(t.card), withIcon("p", "ds-hint", "ban", REMINDER));
+      body.appendChild(card);
       const left = skipsLeft(t, mine);
-      const skip = $("button", "tp-skip", left === Infinity ? "⏭ تخطّي" : `⏭ تخطّي (${left} متبقٍ للفريق)`);
+      const skip = withIcon("button", "ds-btn ds-btn--block", "skip", left === Infinity ? "تخطّي" : `تخطّي (${left} متبقٍ للفريق)`);
       skip.type = "button";
       skip.disabled = left <= 0 || t.phase !== "turn";
       skip.addEventListener("click", () => {
@@ -112,36 +170,39 @@ function draw(st) {
       });
       body.appendChild(skip);
     } else if (myTurn) {
-      body.append(
-        $("div", "tp-icon", "🤔"),
-        $("div", "tp-big", `${t.describer?.name || ""} يشرح`),
-        $("div", "tp-sub", "خمّنوا بصوت عالٍ!")
-      );
-      if (topic) body.appendChild(topic);
+      body.appendChild(center(badge("question", "ds-float"), title(`${t.describer?.name || ""} يشرح`), dim("خمّنوا بصوت عالٍ!"), topicChip(t.card)));
     } else {
-      body.append($("div", "tp-big", `👀 راقبوا ${t.describer?.name || ""}!`));
-      if (topic) body.appendChild(topic);
-      const fb = $("div", "tp-forbidden");
-      for (const w of t.card?.forbidden || []) fb.appendChild($("span", "tp-fword", w));
-      body.append(fb, $("div", "tp-reminder", "إن قال أي كلمة منها أو خالف القوانين اصرخوا: ممنوع!"), $("div", "tp-reminder tp-dim", REMINDER));
+      body.appendChild(
+        center(
+          title(`راقبوا ${t.describer?.name || ""}!`, "eye"),
+          topicChip(t.card),
+          forbiddenChips(t.card),
+          banner("danger", "megaphone", "إن قال أي كلمة منها أو خالف القوانين اصرخوا: ممنوع!"),
+          dim(REMINDER)
+        )
+      );
     }
-    const got = t.turnLog.filter((l) => l.result === "right").length;
-    body.appendChild($("div", "tp-tally", `هذا الدور: +${got}`));
   }
 
   if (t.phase === "turnEnd") {
-    if (t.foul) body.appendChild($("div", "tp-foul", `🚫 ممنوع: ${t.foul.label} (⁦-1⁩)`));
+    if (t.foul) body.appendChild(banner("danger", "ban", `ممنوع: ${t.foul.label} (⁦-1⁩)`));
     const got = t.turnLog.filter((l) => l.result === "right").length;
-    body.append($("div", "tp-big", `انتهى دور ${tName(t.turnTeam)}: +${got}`));
-    const ICON = { right: "✅", skip: "⏭", pass: "🔄", foul: "🚫", timeout: "⏰" };
-    const chips = $("div", "tp-chips");
-    for (const l of t.turnLog) chips.appendChild($("span", `tp-chip ${l.result}`, `${ICON[l.result] || ""} ${l.word}`));
+    body.appendChild(center(title(`انتهى دور ${tName(t.turnTeam)}: +${got}`)));
+    const chips = $("div", "ds-cluster ds-cluster--center");
+    for (const l of t.turnLog) {
+      const [cls, ic] = CHIP[l.result] || ["", "shapes"];
+      chips.appendChild(withIcon("span", `ds-chip ${cls}`.trim(), ic, l.word));
+    }
     body.appendChild(chips);
   }
 
   if (t.phase === "over") {
     const won = t.winner === mine;
-    body.append($("div", "tp-icon", won ? "🏆" : "👏"), $("div", "tp-big", won ? "فاز فريقك!" : `فاز ${tName(t.winner)}`), $("div", "tp-sub", `${t.score.a} : ${t.score.b}`));
+    const trophy = icon("trophy", "ds-trophy ds-float");
+    body.appendChild(
+      center(won ? trophy : badge("star", "ds-float"), title(won ? "فاز فريقك!" : `فاز ${tName(t.winner)}`), withIcon("span", "ds-pill", null, `${t.score.a} : ${t.score.b}`))
+    );
+    if (won) replay(body, "ds-pop-in");
   }
 }
 
@@ -158,7 +219,11 @@ function updateClock(st) {
   const ms = t.phase === "paused" ? t.timer.remaining : ctx.remainingMs(t.timer);
   const secs = Math.max(0, Math.ceil((ms || 0) / 1000));
   el.textContent = String(secs);
-  el.classList.toggle("urgent", live && secs <= 10);
+  // آخر ١٠ ثوانٍ: الشارة تحمرّ
+  const pill = el.closest(".ds-pill");
+  const urgent = live && secs <= 10;
+  pill?.classList.toggle("ds-pill--coral", urgent);
+  pill?.classList.toggle("ds-pill--dark", !urgent);
   // صوت العدّ الأخير على جوال الشارح فقط
   if (live && secs !== lastSec) {
     lastSec = secs;
@@ -190,6 +255,7 @@ function sounds(st) {
     }
     if (t.phase === "over" && t.winner && t.winner !== seen.winner) {
       ctx.sfx.play(t.winner === ctx.myTeam() ? "celebrate" : "wrong");
+      if (t.winner === ctx.myTeam()) confetti(null, 90);
     }
     seen.phase = t.phase;
     seen.winner = t.winner;

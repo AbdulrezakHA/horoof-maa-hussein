@@ -7,86 +7,108 @@
       name="viewport"
       content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"
     />
-    <meta name="theme-color" content="#1b1633" />
-    <title>حروف مع حسين — جرس اللاعب</title>
+    <meta name="theme-color" content="" />
+    <title>حروف مع حسين — جوال اللاعب</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Cairo:wght@700;800;900&family=Tajawal:wght@700;800;900&display=swap"
-      rel="stylesheet" media="print" onload="this.media='all'"
-    />
-    <link rel="stylesheet" href="/css/base.css" />
-    <link rel="stylesheet" href="/css/buzzer.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Baloo+Bhaijaan+2:wght@500;700;800&family=Tajawal:wght@500;700;800&display=swap"
+          rel="stylesheet" media="print" onload="this.media='all'" />
+    <link rel="stylesheet" href="/css/ds.css" />
   </head>
-  <body class="bz-body" data-view="off">
-    <header class="bz-top">
-      <div class="bz-chip" id="teamChip">
-        <span class="bz-chip-dot" id="teamColorDot"></span>
-        <span id="teamName">الفريق</span>
-      </div>
-      <div class="bz-top-right">
-        <button class="bz-icon-btn" id="sfxBtn" type="button" data-sfx-toggle aria-label="كتم الأصوات">🔊</button>
-        <div class="bz-conn" id="connState" data-status="connecting">
-          <i class="bz-conn-dot" id="connDot"></i>
-          <span id="connText">جارٍ الاتصال...</span>
-        </div>
-      </div>
-    </header>
-
-    <!-- شاشة الانضمام: اسم اللاعب + اختيار الفريق (صفحة /play فقط) -->
-    <section class="bz-join" id="joinView" hidden>
-      <form class="bz-join-card" id="joinForm" autocomplete="off">
-        <div class="bz-join-icon">🔔</div>
-        <h1 class="bz-join-title">انضمّ للعبة</h1>
-        <label class="bz-join-label" for="joinName">اسمك</label>
-        <input class="bz-join-input" id="joinName" maxlength="24" placeholder="اكتب اسمك هنا" enterkeyhint="done" />
-        <div class="bz-join-label">اختر فريقك</div>
-        <div class="bz-join-teams" id="joinTeams"></div>
-        <button class="bz-join-go" type="submit">دخول ←</button>
-        <p class="bz-join-note" id="joinNote"></p>
-      </form>
-    </section>
-
-    <!-- لعبة «الكلمة الممنوعة» على جوال اللاعب -->
-    <section class="taboo-phone" id="tabooPhone" hidden></section>
-
-    <main class="bz-stage">
-      <!-- الحرف المختار (يظهر دائماً أثناء اختيار الحرف، حتى قبل كشف السؤال) -->
-      <section class="bz-letterbar" id="letterBar" hidden>
-        <span class="bz-letterbar-label">الحرف المختار</span>
-        <span class="bz-letterbar-hex" id="letterBarValue">؟</span>
-      </section>
-
-      <!-- بطاقة السؤال (تظهر بعد كشف الحكم فقط) -->
-      <section class="bz-question" id="bzQuestion" hidden>
-        <span class="bz-letter" id="qLetter">أ</span>
-        <p class="bz-qtext" id="qText"></p>
-      </section>
-
-      <!-- العنصر المركزي: الزر أو العدّاد أو النتيجة -->
-      <section class="bz-center" id="bzCenter" data-state="idle">
-        <div class="bz-ring" id="bzRing" hidden>
-          <span class="bz-ring-num" id="ringNum">15</span>
-          <span class="bz-ring-sub" id="ringSub">ثانية</span>
-        </div>
-        <div class="bz-center-body">
-          <span class="bz-center-icon" id="centerIcon">🔔</span>
-          <span class="bz-center-title" id="centerTitle">الأجراس متوقفة</span>
-          <span class="bz-center-sub" id="centerSub">سيُفتح الضغط من الحكم</span>
-        </div>
-        <button class="bz-hit" id="buzzPad" type="button" hidden>
-          <span class="bz-hit-icon" id="hitIcon">🔔</span>
-          <span class="bz-hit-label" id="hitLabel">اضغط الآن!</span>
+  <body class="ds ds-page" data-view="off">
+    <div class="ds-phone ds-team-a" id="app">
+      <header class="ds-cluster ds-cluster--between">
+        <button class="ds-btn ds-btn--team" id="teamChip" type="button">
+          <span data-i="users"></span>
+          <span id="teamName">الفريق</span>
         </button>
+        <div class="ds-cluster ds-cluster--tight">
+          <button class="ds-btn ds-btn--icon" id="sfxBtn" type="button" data-sfx-toggle aria-label="كتم الأصوات">
+            <svg class="ds-icon" aria-hidden="true"><use href="/icons.svg#volume" /></svg>
+          </button>
+          <span class="ds-pill ds-pill--dark" id="connState" data-status="connecting">
+            <svg class="ds-icon" id="connIcon" aria-hidden="true"><use href="/icons.svg#timer" /></svg>
+            <span id="connText">جارٍ الاتصال...</span>
+          </span>
+        </div>
+      </header>
+
+      <!-- شاشة الانضمام: اسم اللاعب + اختيار الفريق (صفحة /play فقط) -->
+      <section class="ds-stack" id="joinView" hidden>
+        <div class="ds-banner ds-banner--danger" id="joinKicked" hidden>
+          <span class="ds-banner-icon"><span data-i="close"></span></span>
+          <span>أخرجك الحكم من اللعبة — يمكنك الانضمام من جديد</span>
+        </div>
+        <form class="ds-card ds-stack" id="joinForm" autocomplete="off">
+          <div class="ds-center">
+            <span class="ds-badge-icon ds-badge-icon--lg"><span data-i="bell"></span></span>
+            <h1 class="ds-card-title">انضمّ للعبة</h1>
+          </div>
+          <div class="ds-field">
+            <label class="ds-label" for="joinName">اسمك</label>
+            <input class="ds-input" id="joinName" maxlength="24" placeholder="اكتب اسمك هنا" enterkeyhint="done" />
+          </div>
+          <div class="ds-field">
+            <span class="ds-label">اختر فريقك</span>
+            <div class="ds-stack ds-stack--tight" id="joinTeams"></div>
+          </div>
+          <button class="ds-btn ds-btn--primary ds-btn--lg ds-btn--block" type="submit">
+            دخول
+            <span data-i="arrow"></span>
+          </button>
+          <p class="ds-hint ds-hint--error" id="joinNote"></p>
+        </form>
       </section>
 
-      <p class="bz-note" id="buzzNote">أول ضغطة فقط تُحتسب</p>
-      <p class="bz-stats" id="myStats" hidden></p>
-    </main>
+      <!-- لعبة «الكلمة الممنوعة» على جوال اللاعب -->
+      <section class="ds-stack" id="tabooPhone" hidden></section>
 
-    <!-- طبقة الاحتفال -->
-    <div class="bz-confetti" id="confetti" aria-hidden="true"></div>
-    <div class="bz-flash" id="bzFlash" aria-hidden="true"></div>
+      <main class="ds-stack" id="bzStage">
+        <!-- الحرف المختار (يظهر دائماً أثناء اختيار الحرف، حتى قبل كشف السؤال) -->
+        <section class="ds-letterbar" id="letterBar" hidden>
+          <span>الحرف المختار</span>
+          <b id="letterBarValue">؟</b>
+        </section>
+
+        <!-- بطاقة السؤال (تظهر بعد كشف الحكم فقط) -->
+        <section class="ds-qpanel" id="bzQuestion" hidden>
+          <div class="ds-hex ds-letter-badge is-selected">
+            <div class="ds-hex-in"><div class="ds-hex-face"><span class="ds-hex-letter" id="qLetter">أ</span></div></div>
+          </div>
+          <div class="ds-qpanel-text" id="qText"></div>
+        </section>
+
+        <!-- العنصر المركزي: الزر أو العدّاد أو النتيجة -->
+        <section class="ds-center" id="bzCenter" data-state="idle">
+          <div class="ds-ring" id="bzRing" hidden>
+            <svg viewBox="0 0 100 100" aria-hidden="true"><circle class="ds-ring-bg" cx="50" cy="50" r="46" /><circle class="ds-ring-fg" cx="50" cy="50" r="46" /></svg>
+            <span class="ds-ring-num" id="ringNum">15</span>
+          </div>
+          <p class="ds-text ds-text--dim" id="ringSub" hidden>ثانية</p>
+          <div class="ds-center" id="centerBody">
+            <span class="ds-badge-icon ds-badge-icon--lg" id="centerBadge">
+              <svg class="ds-icon" id="centerIcon" aria-hidden="true"><use href="/icons.svg#volume-off" /></svg>
+            </span>
+            <h2 class="ds-title ds-title--sm" id="centerTitle">الأجراس متوقفة</h2>
+            <p class="ds-text ds-text--dim" id="centerSub">سيُفتح الضغط من الحكم</p>
+          </div>
+          <button class="ds-buzzer" id="buzzPad" type="button" hidden>
+            <svg class="ds-icon" id="hitIcon" aria-hidden="true"><use href="/icons.svg#bell" /></svg>
+            <span id="hitLabel">اضغط الآن!</span>
+          </button>
+        </section>
+
+        <div class="ds-banner ds-banner--info" id="buzzBanner" hidden>
+          <span class="ds-banner-icon"><svg class="ds-icon" id="bannerIcon" aria-hidden="true"><use href="/icons.svg#info" /></svg></span>
+          <span id="bannerText"></span>
+        </div>
+        <div class="ds-center">
+          <span class="ds-answer" id="bzAnswer" hidden><span data-i="check"></span><span id="bzAnswerText"></span></span>
+        </div>
+        <p class="ds-text ds-text--dim ds-center" id="buzzNote">أول ضغطة فقط تُحتسب</p>
+        <div class="ds-center"><span class="ds-pill ds-pill--dark" id="myStats" hidden></span></div>
+      </main>
+    </div>
 
     <script type="module" src="/js/buzzer.js"></script>
   </body>

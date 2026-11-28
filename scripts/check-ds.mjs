@@ -27,28 +27,21 @@ const SKIP_DIRS = ["public/js/vendor", "public/sounds"];
 /** شاشات قديمة تنتظر النقل لنظام التصميم (تُحذف واحدة واحدة عند نقلها). */
 const LEGACY = new Set([
   "public/_mobile-preview.html",
-  "public/buzzer.html",
   "public/index.html",
   "public/presets.html",
   "public/referee.html",
   "public/screen.html",
   "public/taboo-packs.html",
   "public/css/base.css",
-  "public/css/buzzer.css",
   "public/css/presets.css",
   "public/css/referee.css",
   "public/css/screen.css",
   "public/js/board.js",
-  "public/js/buzzer.js",
-  "public/js/diag.js",
-  "public/js/phone-taboo.js",
   "public/js/presets.js",
-  "public/js/qr.js",
   "public/js/referee-taboo.js",
   "public/js/referee.js",
   "public/js/screen-taboo.js",
   "public/js/screen.js",
-  "public/js/sfx.js",
 ]);
 
 const EMOJI = /[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}\u{2B00}-\u{2BFF}\u{23E9}-\u{23FA}\u{231A}\u{231B}\u{2190}-\u{21FF}\u{FE0F}]/u;

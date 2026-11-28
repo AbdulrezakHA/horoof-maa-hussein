@@ -47,10 +47,11 @@
     var box = document.createElement("div");
     box.setAttribute("dir", "rtl");
     box.style.cssText =
-      "position:fixed;left:0;right:0;bottom:0;z-index:99999;background:#2a0f14;color:#fff;" +
-      "font:15px/1.6 sans-serif;padding:16px;border-top:4px solid #ff5a6b;max-height:70%;overflow:auto";
+      "position:fixed;left:0;right:0;bottom:0;z-index:99999;background:var(--ink,black);color:var(--paper,white);" +
+      "font:15px/1.6 sans-serif;padding:16px;border-top:4px solid var(--coral,red);max-height:70%;overflow:auto";
     var html =
-      "<b style='font-size:17px'>⚠️ اللعبة لم تعمل على هذا الجهاز</b><br>" +
+      "<b style='font-size:17px'><svg width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round' style='vertical-align:-3px;margin-inline-end:6px'><use href='/icons.svg#warning'/></svg>" +
+      "اللعبة لم تعمل على هذا الجهاز</b><br>" +
       "أرسِل صورة لهذه الرسالة لمن يطوّر اللعبة.<br><br>" +
       "<b>المتصفح:</b> <span style='direction:ltr;unicode-bidi:embed;font-size:12px'>" +
       navigator.userAgent.replace(/</g, "&lt;") +

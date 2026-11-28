@@ -124,6 +124,7 @@
 | `ds-container` | صفحة عريضة (لوحة الحكم على الكمبيوتر، صفحات الإدارة) |
 | `ds-stack` (`--tight` / `--loose`) | عمود بمسافات ثابتة |
 | `ds-cluster` (`--tight` / `--center` / `--between`) | صف يلتفّ: أزرار، شارات |
+| `ds-row` | صف بلا التفاف: أيقونة ثم نص (`ds-text`) يأخذ الباقي |
 | `ds-grid` (+ `--min`) | شبكة بطاقات تتكيّف مع العرض |
 | `ds-center` | محتوى في المنتصف |
 
@@ -135,20 +136,21 @@
 
 | المكوّن | الأصناف |
 |---|---|
-| زر | `ds-btn` + `--primary` / `--success` / `--danger` / `--info` / `--grape` / `--team` / `--ghost` · `--sm` / `--lg` / `--block` / `--icon` · `is-loading` + `ds-spinner` |
+| زر | `ds-btn` + `--primary` / `--success` / `--danger` / `--info` / `--grape` / `--team` / `--ghost` / `aria-pressed="true"` (مختار) · `--sm` / `--lg` / `--block` / `--icon` · `is-loading` + `ds-spinner` |
 | الجرس الكبير | `ds-buzzer` (داخل `ds-team-a` / `ds-team-b`) |
 | بطاقة | `ds-card` (+ `--stage` / `--team`) · `ds-card-title` |
 | بطاقة لعبة | `ds-game-tile` (+ `--coral` / `--sky` / `--mint`) · `-art` · `-name` · `-tag` |
 | الفريق والنتيجة | `ds-team` (+ `is-turn` / `is-waiting`) · `ds-score` (+ `bump()`) · `ds-dots` / `ds-dot` |
-| شارات ورقائق | `ds-pill` (+ `--team` / `--dark`) · `ds-chip` (+ `--right` / `--skip` / `--pass` / `--foul` / `--forbidden`) |
+| شارات ورقائق | `ds-pill` (+ `--team` / `--dark` / `--sun` / `--sky` / `--coral`) · `ds-chip` (+ `--right` / `--skip` / `--pass` / `--foul` / `--forbidden`) |
 | لاعب | `ds-player` · `ds-avatar` |
 | العدّاد | `ds-ring` (+ `ring()`) · `ds-timebar` (`--p`) |
 | لافتة / رسالة | `ds-banner` (+ `--success` / `--danger` / `--info` / `--team`) · `toast()` |
 | حقول | `ds-field` · `ds-label` · `ds-input` · `ds-hint` · `ds-switch` · `ds-seg` (+ `segmented()`) · `ds-stepper` |
 | أيقونات | `ds-icon` · `ds-badge-icon` (+ `--lg`) |
 | رمز QR | `ds-qr` · `ds-qr-frame` |
-| نافذة | `ds-modal` (+ `is-open`) |
-| شاشات | `ds-title` · `ds-winner` · `ds-trophy` · `ds-rules` / `ds-rule` (+ `--foul`) · `ds-pager` |
+| نافذة | `ds-modal` (+ `is-open`) · `ds-dock` (زر عائم أسفل الشاشة) |
+| نص | `ds-text` (+ `--dim`) · `ds-word` (الكلمة الكبيرة) |
+| شاشات | `ds-title` (+ `--sm`) · `ds-winner` · `ds-trophy` · `ds-rules` / `ds-rule` (+ `--foul`) · `ds-pager` |
 | حروف مع حسين | `ds-hex` (+ `is-selected` / `is-a` / `is-b` / `is-claim` / `is-win`) · `ds-board` · `ds-letter-badge` · `ds-qpanel` · `ds-answer` · `ds-steps` / `ds-step` · `ds-hexkeys` · `ds-letterbar` |
 
 ---

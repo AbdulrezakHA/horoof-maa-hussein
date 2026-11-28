@@ -62,7 +62,7 @@ async function main() {
     ["/referee", "<html"],
     ["/buzzer?team=a", "buzzer"],
     ["/buzzer?team=b", "buzzer"],
-    ["/css/buzzer.css", "--team"],
+    ["/css/ds.css", "--team"],
     ["/js/buzzer.js", "Transport"],
     ["/js/qr.js", "getBuzzerUrls"],
   ]) {

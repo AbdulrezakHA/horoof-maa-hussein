@@ -9,6 +9,8 @@
      لذلك يظهر زر صغير "اضغط لتشغيل الصوت" عند الحاجة.
    ================================================================== */
 
+import { icon } from "/js/ds.js";
+
 const LS_MUTED = "horoof-sfx-muted";
 
 let ctx = null;
@@ -283,22 +285,23 @@ function playFile(name) {
 
 function updateButtons() {
   document.querySelectorAll("[data-sfx-toggle]").forEach((el) => {
-    el.textContent = muted ? "🔇" : "🔊";
+    el.replaceChildren(icon(muted ? "volume-off" : "volume"));
     el.setAttribute("aria-label", muted ? "تشغيل الأصوات" : "كتم الأصوات");
     el.classList.toggle("sfx-off", muted);
   });
 }
 
 function hideOverlay() {
-  if (overlay) overlay.classList.remove("show");
+  if (overlay) overlay.hidden = true;
 }
 
 function ensureOverlay() {
   if (overlay || typeof document === "undefined") return overlay;
   overlay = document.createElement("button");
   overlay.type = "button";
-  overlay.className = "sfx-unlock";
-  overlay.innerHTML = "<span>🔊</span> اضغط لتشغيل الصوت";
+  overlay.className = "ds-btn ds-btn--primary ds-dock";
+  overlay.hidden = true;
+  overlay.append(icon("volume"), document.createTextNode("اضغط لتشغيل الصوت"));
   overlay.addEventListener("click", (e) => {
     e.stopPropagation();
     unlock();
@@ -312,7 +315,8 @@ function maybeShowOverlay() {
   if (muted) return hideOverlay();
   const c = audio();
   if (c && c.state === "running") return hideOverlay();
-  ensureOverlay()?.classList.add("show");
+  const o = ensureOverlay();
+  if (o) o.hidden = false;
 }
 
 /** إيماءة أولى من المستخدم → نفتح الصوت. */

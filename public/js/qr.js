@@ -10,8 +10,9 @@
  * @param {{ dark?: string, light?: string, margin?: number }} [opts]
  */
 export function drawQR(text, canvas, opts = {}) {
-  const dark = opts.dark || "#1a0930";
-  const light = opts.light || "#ffffff";
+  const css = getComputedStyle(document.documentElement);
+  const dark = opts.dark || css.getPropertyValue("--ink").trim() || "black";
+  const light = opts.light || css.getPropertyValue("--white").trim() || "white";
   const margin = opts.margin ?? 4;
 
   const qr = window.qrcode(0, "M"); // 0 = اختيار حجم تلقائي
@@ -157,7 +158,7 @@ export async function getRoutes(room = "main", path = "play") {
   const isLocal = ["localhost", "127.0.0.1", "::1", ""].includes(host);
   const isTunnel = location.protocol === "https:";
 
-  // 🌐 الإنترنت
+  // الإنترنت
   const pub = info?.publicUrl || (isTunnel ? location.origin : null);
   out.netStatus = info?.tunnel?.status || (pub ? "ok" : "off");
   if (pub) {
@@ -165,7 +166,7 @@ export async function getRoutes(room = "main", path = "play") {
     out.netStatus = "ok";
   }
 
-  // 📶 الشبكة المحلية
+  // الشبكة المحلية
   if (!isLocal && !isTunnel) {
     out.lan = { url: `${location.origin}/${path}?${qs}`, host: location.host };
   } else if (info?.addresses?.length) {
