@@ -3,80 +3,58 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="" />
     <title>حروف مع حسين</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap"
-      rel="stylesheet" media="print" onload="this.media='all'"
-    />
-    <link rel="stylesheet" href="/css/base.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Baloo+Bhaijaan+2:wght@500;700;800&family=Tajawal:wght@500;700;800&display=swap"
+          rel="stylesheet" media="print" onload="this.media='all'" />
+    <link rel="stylesheet" href="/css/ds.css" />
     <script src="/js/vendor/qrcode.js"></script>
-    <style>
-      .qr {
-        display: block;
-        width: 170px;
-        height: 170px;
-        margin: 0.8rem auto 0;
-        border-radius: 12px;
-        background: #fff;
-        padding: 8px;
-        image-rendering: pixelated;
-      }
-      .qr-fallback {
-        display: none;
-        text-align: center;
-        font-size: 0.85rem;
-        color: var(--ink-dim);
-        margin-top: 0.8rem;
-      }
-    </style>
   </head>
-  <body>
-    <div class="landing">
-      <div class="landing-card">
-        <h1>🔤 حروف مع حسين</h1>
-        <p class="sub">لعبة حروف تنافسية — فريقان، حَكَم، وشاشة كبيرة</p>
-
-        <div class="role-grid">
-          <a class="role-link" href="/screen" id="linkScreen">
-            <span class="ico">📺</span>
-            <span>
-              <strong>الشاشة الكبيرة</strong>
-              <span>افتحها على جهاز العرض أو التلفاز — تعرض اللوحة والسؤال والمؤقّت</span>
-            </span>
-          </a>
-
-          <a class="role-link" href="/referee" id="linkReferee">
-            <span class="ico">📱</span>
-            <span>
-              <strong>لوحة الحكم</strong>
-              <span>افتحها على جوالك — تتحكم بالجولة وتكشف الجواب (لا يظهر للاعبين)</span>
-            </span>
-          </a>
-        </div>
-
-        <div class="lan-box">
-          <strong>📡 افتح «لوحة الحكم» على جوالك</strong>
-          <span>تأكد أن الجوال والكمبيوتر على نفس شبكة الواي-فاي، ثم افتح:</span>
-          <code id="lanUrl">http://localhost:3000/referee</code>
-          <canvas class="qr" id="qrCanvas" width="180" height="180"></canvas>
-          <div class="qr-fallback" id="qrFallback">امسح الرمز بكاميرا الجوال، أو انسخ الرابط أعلاه</div>
-        </div>
-
-        <p class="tiny" style="text-align: center; margin-top: 1rem">
-          كل سؤالات اللعبة مخزّنة محلياً — لا يحتاج إنترنت أثناء التشغيل.
-        </p>
+  <body class="ds ds-page">
+    <div class="ds-phone ds-stack ds-stack--loose">
+      <div class="ds-center">
+        <span class="ds-badge-icon ds-badge-icon--lg ds-float"><span data-i="hexagon"></span></span>
+        <h1 class="ds-title">حروف مع حسين</h1>
+        <p class="ds-text ds-text--dim">لعبة حروف تنافسية — فريقان، حَكَم، وشاشة كبيرة</p>
       </div>
+
+      <div class="ds-stack">
+        <a class="ds-btn ds-btn--primary ds-btn--lg ds-btn--block" href="/screen" id="linkScreen"><span data-i="tv"></span>الشاشة الكبيرة</a>
+        <p class="ds-hint">افتحها على جهاز العرض أو التلفاز — تعرض اللوحة والسؤال والمؤقّت.</p>
+        <a class="ds-btn ds-btn--success ds-btn--lg ds-btn--block" href="/referee" id="linkReferee"><span data-i="judge"></span>لوحة الحكم</a>
+        <p class="ds-hint">افتحها على جوالك — تتحكم بالجولة وتكشف الجواب (لا يظهر للاعبين).</p>
+        <a class="ds-btn ds-btn--info ds-btn--lg ds-btn--block" href="/play"><span data-i="phone"></span>جوال اللاعب</a>
+        <p class="ds-hint">كل لاعب يفتحها على جواله، يكتب اسمه ويختار فريقه.</p>
+      </div>
+
+      <div class="ds-card ds-center">
+        <div class="ds-card-title"><span data-i="qr"></span> افتح «لوحة الحكم» على جوالك</div>
+        <p class="ds-text ds-text--soft">تأكد أن الجوال والكمبيوتر على نفس شبكة الواي-فاي، ثم افتح:</p>
+        <code id="lanUrl">http://localhost:3000/referee</code>
+        <div class="ds-qr"><div class="ds-qr-frame"><canvas id="qrCanvas"></canvas></div></div>
+        <p class="ds-hint" id="qrFallback" hidden>امسح الرمز بكاميرا الجوال، أو انسخ الرابط أعلاه</p>
+      </div>
+
+      <div class="ds-cluster ds-cluster--center">
+        <a class="ds-btn ds-btn--sm" href="/presets"><span data-i="scroll"></span>مجموعات الأسئلة</a>
+        <a class="ds-btn ds-btn--sm" href="/taboo-packs"><span data-i="hush"></span>مواضيع الكلمة الممنوعة</a>
+        <a class="ds-btn ds-btn--sm" href="/design"><span data-i="palette"></span>نظام التصميم</a>
+      </div>
+
+      <p class="ds-hint ds-center">كل سؤالات اللعبة مخزّنة محلياً — لا يحتاج إنترنت أثناء التشغيل.</p>
     </div>
 
     <script type="module">
+      import { hydrateIcons } from "/js/ds.js";
       import { setupRefereeQR } from "/js/qr.js";
 
+      hydrateIcons();
       const canvas = document.getElementById("qrCanvas");
       const url = await setupRefereeQR(canvas, "main");
       document.getElementById("lanUrl").textContent = url;
-      document.getElementById("qrFallback").style.display = "block";
+      document.getElementById("qrFallback").hidden = false;
     </script>
   </body>
 </html>

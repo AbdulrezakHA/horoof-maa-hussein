@@ -939,8 +939,8 @@ async function main() {
 
   const pageRes = await fetch(`${BASE}/presets`);
   check("صفحة إدارة المجموعات تُخدم", pageRes.ok === true);
-  const cssRes = await fetch(`${BASE}/css/presets.css`);
-  check("تنسيق المجموعات يُخدم", cssRes.ok === true);
+  const cssRes = await fetch(`${BASE}/css/ds.css`);
+  check("تنسيق نظام التصميم يُخدم", cssRes.ok === true);
   const jsRes = await fetch(`${BASE}/js/presets.js`);
   check("سكربت المجموعات يُخدم", jsRes.ok === true);
   const unitRes = await fetch(`${BASE}/shared/letters.js`);

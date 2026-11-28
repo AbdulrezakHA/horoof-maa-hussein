@@ -2409,6 +2409,72 @@ button.ds-hex:focus-visible {
 }
 
 /* ================================================================
+   الصفحات الإدارية: جدول، مربع نص، حقول مدمجة
+   ================================================================ */
+.ds-textarea {
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 5em;
+  padding: 0.5em 0.9em;
+  font: 700 var(--fs-md) var(--font-body);
+  line-height: 1.7;
+  color: var(--ink);
+  background: var(--white);
+  border: var(--line) solid var(--ink);
+  border-radius: var(--r-md);
+  box-shadow: inset 0 3px 0 var(--ink-12);
+  resize: vertical;
+}
+.ds-textarea:focus-visible {
+  outline: var(--focus-w) solid var(--focus);
+  outline-offset: var(--focus-gap);
+}
+.ds-textarea--tall {
+  min-height: 55vh;
+}
+.ds-input--sm,
+.ds-select--sm {
+  min-height: 2.4em;
+  padding: 0.3em 0.6em;
+  font-size: var(--fs-sm);
+  border-radius: var(--r-sm);
+}
+.ds-select.is-warn {
+  border-color: var(--coral);
+}
+.ds-select.is-manual {
+  border-color: var(--sun-side);
+}
+.ds-table-wrap {
+  overflow-x: auto;
+  border: var(--line) solid var(--ink);
+  border-radius: var(--r-md);
+  background: var(--white);
+}
+.ds-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--fs-sm);
+  color: var(--ink);
+}
+.ds-table th {
+  padding: var(--sp-2) var(--sp-3);
+  background: var(--paper-2);
+  text-align: start;
+  font-family: var(--font-display);
+  white-space: nowrap;
+}
+.ds-table td {
+  padding: var(--sp-1) var(--sp-2);
+  border-top: var(--line-thin) solid var(--ink-12);
+  vertical-align: top;
+}
+.ds-table .ds-input,
+.ds-table .ds-textarea {
+  min-width: 8em;
+}
+
+/* ================================================================
    تقليل الحركة: نُبقي المحتوى ظاهراً بلا حركة
    ================================================================ */
 @media (prefers-reduced-motion: reduce) {

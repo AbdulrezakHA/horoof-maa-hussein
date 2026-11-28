@@ -148,6 +148,7 @@
 | لاعب | `ds-player` · `ds-avatar` |
 | العدّاد | `ds-ring` (+ `--sm`، و`ring()`) · `ds-timebar` (`--p`) |
 | لافتة / رسالة | `ds-banner` (+ `--success` / `--danger` / `--info` / `--team` / `--sm`، و`-text` / `-sub`) · `toast()` |
+| جداول | `ds-table` (داخل `ds-table-wrap`) · `ds-textarea` (+ `--tall`) · `ds-input--sm` / `ds-select--sm` · `ds-select.is-warn` / `.is-manual` |
 | قوائم | `ds-list` / `ds-list-item` · `ds-collapse` (بطاقة قابلة للطيّ) · `ds-kbd` · `ds-swatch` / `ds-swatches` · `ds-card--preview` · `ds-text--soft` |
 | حقول | `ds-field` · `ds-label` · `ds-input` (+ `--num`) · `ds-select` · `ds-color` · `ds-hint` · `ds-switch` · `ds-seg` (+ `segmented()`) · `ds-stepper` |
 | أيقونات | `ds-icon` · `ds-badge-icon` (+ `--lg`) |

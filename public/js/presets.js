@@ -9,6 +9,9 @@
 
 import { BASE_LETTERS, letterOfAnswer } from "/shared/letters.js";
 import { sfx } from "/js/sfx.js";
+import { icon, hydrateIcons, toast as dsToast } from "/js/ds.js";
+
+hydrateIcons();
 
 const $ = (id) => document.getElementById(id);
 
@@ -27,6 +30,7 @@ const el = {
   pasteBtn: $("pasteBtn"),
   addBtn: $("addBtn"),
   saveBtn: $("saveBtn"),
+  saveLabel: $("saveLabel"),
   letterFilter: $("letterFilter"),
   tbody: $("tbody"),
   emptyMsg: $("emptyMsg"),
@@ -46,9 +50,6 @@ const el = {
   pasteCancel: $("pasteCancel"),
   pasteCheck: $("pasteCheck"),
   pasteApply: $("pasteApply"),
-
-  toast: $("toast"),
-  toastText: $("toastText"),
 };
 
 const PAGE = 200;
@@ -88,19 +89,14 @@ async function api(url, body) {
   return data;
 }
 
-let toastTimer = null;
+/** رسالة قصيرة: kind = ok (صح) | bad (تحذير) */
 function toast(msg, kind = "") {
-  el.toastText.textContent = msg;
-  el.toast.className = "pst-toast pst-show" + (kind ? " pst-toast-" + kind : "");
-  clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => {
-    el.toast.className = "pst-toast";
-  }, 2600);
+  dsToast(msg, kind === "ok" ? "check" : kind === "bad" ? "warning" : null, 2600);
 }
 
 function markDirty(value = true) {
   state.dirty = value;
-  el.saveBtn.textContent = value ? "💾 حفظ •" : "💾 حفظ";
+  el.saveLabel.textContent = value ? "حفظ •" : "حفظ";
   el.saveBtn.disabled = false;
 }
 
@@ -154,7 +150,7 @@ function renderSelect() {
   for (const p of state.presets) {
     const o = document.createElement("option");
     o.value = p.id;
-    const warn = p.warnings ? ` ⚠${p.warnings}` : "";
+    const warn = p.warnings ? ` — ${p.warnings} تنبيه` : "";
     const act = state.active.length === 0 || state.active.includes(p.id) ? "" : " (غير مفعّلة)";
     o.textContent = `${p.name} — ${p.total} سؤال${warn}${act}`;
     sel.appendChild(o);
@@ -178,7 +174,7 @@ async function openPreset(id) {
   state.warnings = data.warnings || [];
   state.shown = PAGE;
   state.previewIndex = -1;
-  el.preview.classList.remove("pst-open");
+  el.preview.hidden = true;
   el.presetSelect.value = data.id;
   markDirty(false);
   renderAll();
@@ -195,10 +191,12 @@ function renderAll() {
   renderTable();
 }
 
-function chip(text, cls = "") {
+/** شارة إحصاء: tone = ok (أخضر) | warn (أصفر) | bad (أحمر) */
+function chip(text, tone = "", iconName = null) {
   const s = document.createElement("span");
-  s.className = "pst-chip" + (cls ? " " + cls : "");
-  s.textContent = text;
+  s.className = "ds-pill" + (tone === "ok" ? " ds-pill--mint" : tone === "warn" ? " ds-pill--sun" : tone === "bad" ? " ds-pill--coral" : "");
+  if (iconName) s.appendChild(icon(iconName));
+  s.appendChild(document.createTextNode(text));
   return s;
 }
 
@@ -211,13 +209,13 @@ function renderStats() {
   const bad = state.warnings.filter((w) => w.type !== "override").length;
   const totalLabel = state.active.length ? `${state.active.length} مفعّلة` : "كل المجموعات مفعّلة";
 
-  el.stats.appendChild(chip(`📄 ${state.rows.length} سؤال`));
-  el.stats.appendChild(chip(`🔤 ${covered} / 28 حرفاً`, covered >= 20 ? "pst-ok" : "pst-warn"));
-  el.stats.appendChild(chip(`📚 ${totalLabel}`));
-  if (overrides) el.stats.appendChild(chip(`✍️ ${overrides} حرف مخصّص`));
-  el.stats.appendChild(bad ? chip(`⚠ ${bad} تنبيه`, "pst-bad") : chip("✅ لا مشاكل", "pst-ok"));
+  el.stats.appendChild(chip(`${state.rows.length} سؤال`, "", "scroll"));
+  el.stats.appendChild(chip(`${covered} / 28 حرفاً`, covered >= 20 ? "ok" : "warn", "type"));
+  el.stats.appendChild(chip(totalLabel, "", "gamepad"));
+  if (overrides) el.stats.appendChild(chip(`${overrides} حرف مخصّص`, "", "pen"));
+  el.stats.appendChild(bad ? chip(`${bad} تنبيه`, "bad", "warning") : chip("لا مشاكل", "ok", "check"));
   const empty = BASE_LETTERS.filter((l) => counts[l] === 0);
-  if (empty.length) el.stats.appendChild(chip(`حروف بلا أسئلة: ${empty.join(" ")}`, "pst-warn"));
+  if (empty.length) el.stats.appendChild(chip(`حروف بلا أسئلة: ${empty.join(" ")}`, "warn"));
 }
 
 function renderWarnings() {
@@ -230,49 +228,54 @@ function renderWarnings() {
   el.warnings.hidden = false;
   for (const w of list.slice(0, 60)) {
     const d = document.createElement("div");
-    d.className = "pst-warning pst-warning-" + (w.type || "missing");
+    d.className = "ds-text";
     d.textContent = (w.row ? `صف ${w.row}: ` : "") + w.msg;
     el.warnings.appendChild(d);
   }
   if (list.length > 60) {
     const d = document.createElement("div");
-    d.className = "pst-warning";
+    d.className = "ds-text";
     d.textContent = `… و${list.length - 60} تنبيهاً آخر`;
     el.warnings.appendChild(d);
   }
 }
 
+/** زر حرف في مرشّح الحروف: الحرف + عدد أسئلته. */
+function letterButton(label, count, on, empty, onClick) {
+  const b = document.createElement("button");
+  b.type = "button";
+  b.className = "ds-btn ds-btn--sm";
+  b.setAttribute("aria-pressed", String(on));
+  if (empty) b.classList.add("ds-btn--ghost");
+  const n = document.createElement("span");
+  n.className = "ds-hint";
+  n.textContent = String(count);
+  b.append(document.createTextNode(label), n);
+  b.addEventListener("click", onClick);
+  return b;
+}
+
 function renderLetterFilter() {
   const counts = letterCounts(state.rows);
   el.letterFilter.textContent = "";
-  const all = document.createElement("button");
-  all.type = "button";
-  all.className = "pst-letter" + (state.letterFilter ? "" : " pst-letter-on");
-  all.innerHTML = `الكل<small>${state.rows.length}</small>`;
-  all.addEventListener("click", () => {
-    state.letterFilter = "";
-    state.shown = PAGE;
-    renderLetterFilter();
-    renderTable();
-  });
-  el.letterFilter.appendChild(all);
-
-  for (const l of BASE_LETTERS) {
-    const b = document.createElement("button");
-    b.type = "button";
-    const n = counts[l] || 0;
-    b.className =
-      "pst-letter" +
-      (state.letterFilter === l ? " pst-letter-on" : "") +
-      (n ? "" : " pst-letter-empty");
-    b.innerHTML = `${l}<small>${n}</small>`;
-    b.addEventListener("click", () => {
-      state.letterFilter = state.letterFilter === l ? "" : l;
+  el.letterFilter.appendChild(
+    letterButton("الكل", state.rows.length, !state.letterFilter, false, () => {
+      state.letterFilter = "";
       state.shown = PAGE;
       renderLetterFilter();
       renderTable();
-    });
-    el.letterFilter.appendChild(b);
+    })
+  );
+  for (const l of BASE_LETTERS) {
+    const n = counts[l] || 0;
+    el.letterFilter.appendChild(
+      letterButton(l, n, state.letterFilter === l, !n, () => {
+        state.letterFilter = state.letterFilter === l ? "" : l;
+        state.shown = PAGE;
+        renderLetterFilter();
+        renderTable();
+      })
+    );
   }
 }
 
@@ -322,13 +325,13 @@ function buildRow(row, i) {
   num.textContent = String(i + 1);
   tr.appendChild(num);
 
-  tr.appendChild(cellArea("text", row.text, "اكتب السؤال…", "pst-q"));
-  tr.appendChild(cellInput("answer", row.answer, "الجواب", "pst-a"));
+  tr.appendChild(cellArea("text", row.text, "اكتب السؤال…"));
+  tr.appendChild(cellInput("answer", row.answer, "الجواب"));
 
   /* الحرف */
   const tdL = document.createElement("td");
   const sel = document.createElement("select");
-  sel.className = "pst-letter-select";
+  sel.className = "ds-select ds-select--sm";
   const optAuto = document.createElement("option");
   optAuto.value = "";
   optAuto.textContent = "تلقائي";
@@ -365,21 +368,23 @@ function buildRow(row, i) {
   /* أدوات الصف */
   const tdT = document.createElement("td");
   const box = document.createElement("div");
-  box.className = "pst-row-tools";
+  box.className = "ds-cluster ds-cluster--tight";
 
   const eye = document.createElement("button");
   eye.type = "button";
-  eye.className = "pst-icon-btn";
-  eye.textContent = "👁";
+  eye.className = "ds-btn ds-btn--icon ds-btn--sm";
+  eye.append(icon("eye"));
   eye.title = "معاينة";
+  eye.setAttribute("aria-label", eye.title);
   eye.addEventListener("click", () => showPreview(row));
   box.appendChild(eye);
 
   const del = document.createElement("button");
   del.type = "button";
-  del.className = "pst-icon-btn";
-  del.textContent = "🗑";
+  del.className = "ds-btn ds-btn--icon ds-btn--sm ds-btn--danger";
+  del.append(icon("close"));
   del.title = "حذف السؤال";
+  del.setAttribute("aria-label", del.title);
   del.addEventListener("click", () => {
     state.rows.splice(i, 1);
     markDirty();
@@ -398,7 +403,7 @@ function cellInput(field, value, ph, cls, extra) {
   const td = document.createElement("td");
   if (extra) td.className = "pst-extra";
   const input = document.createElement("input");
-  input.className = "pst-cell-input";
+  input.className = "ds-input ds-input--sm";
   input.type = "text";
   input.value = value ?? "";
   input.placeholder = ph || "";
@@ -412,7 +417,7 @@ function cellArea(field, value, ph, cls) {
   const td = document.createElement("td");
   if (cls) td.className = cls;
   const ta = document.createElement("textarea");
-  ta.className = "pst-cell-area";
+  ta.className = "ds-textarea";
   ta.rows = 2;
   ta.value = value ?? "";
   ta.placeholder = ph || "";
@@ -422,15 +427,13 @@ function cellArea(field, value, ph, cls) {
 }
 
 function paintLetter(tr, row) {
-  const sel = tr.querySelector(".pst-letter-select");
+  const sel = tr.querySelector("select");
   if (!sel) return;
   const auto = autoLetter(row);
   const opt = sel.querySelector('option[value=""]');
   if (opt) opt.textContent = auto ? `تلقائي (${auto})` : "تلقائي ؟";
-  sel.classList.remove("pst-letter-auto", "pst-letter-manual", "pst-letter-none");
-  if (row.manual) sel.classList.add("pst-letter-manual");
-  else if (auto) sel.classList.add("pst-letter-auto");
-  else sel.classList.add("pst-letter-none");
+  sel.classList.toggle("is-manual", !!row.manual);
+  sel.classList.toggle("is-warn", !row.manual && !auto);
 }
 
 /* الكتابة داخل الجدول — بلا إعادة رسم كاملة */
@@ -466,14 +469,16 @@ function showPreview(row) {
   el.previewQ.textContent = row.text || "(بلا نص)";
   el.previewAText.textContent = row.answer || "";
   el.previewA.hidden = !row.answer;
-  el.preview.classList.add("pst-open");
+  el.preview.hidden = false;
   el.preview.scrollIntoView({ behavior: "smooth", block: "center" });
   try {
     sfx.play("reveal");
   } catch {}
 }
 
-el.closePreview.addEventListener("click", () => el.preview.classList.remove("pst-open"));
+el.closePreview.addEventListener("click", () => {
+  el.preview.hidden = true;
+});
 
 /* ------------------------------------------------------------------ */
 /*  الحفظ                                                             */
@@ -596,13 +601,13 @@ function openModal(mode) {
   el.pasteText.value = "";
   el.pasteInfo.textContent = "";
   el.pasteApply.disabled = true;
-  el.pasteTitle.textContent = mode === "import" ? "⬆ استيراد مجموعة" : "📋 لصق من جدول";
-  el.pasteModal.classList.add("pst-open");
+  el.pasteTitle.textContent = mode === "import" ? "استيراد مجموعة" : "لصق من جدول";
+  el.pasteModal.classList.add("is-open");
   setTimeout(() => el.pasteText.focus(), 50);
 }
 
 function closeModal() {
-  el.pasteModal.classList.remove("pst-open");
+  el.pasteModal.classList.remove("is-open");
 }
 
 el.pasteBtn.addEventListener("click", () => openModal("paste"));
@@ -623,8 +628,8 @@ el.pasteCheck.addEventListener("click", async () => {
     state.parsed = data;
     const warn = data.warnings.filter((w) => w.type !== "override");
     el.pasteInfo.textContent =
-      `✅ ${data.total} صف صالح` +
-      (warn.length ? ` — ⚠ ${warn.length} تنبيه` : "") +
+      `${data.total} صف صالح` +
+      (warn.length ? ` — ${warn.length} تنبيه` : "") +
       (data.warnings.length ? `. أول تنبيه: ${data.warnings[0].msg}` : "");
     el.pasteApply.disabled = data.total === 0;
   } catch (err) {

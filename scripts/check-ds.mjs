@@ -25,15 +25,7 @@ const LIBRARY = new Set([
 const SKIP_DIRS = ["public/js/vendor", "public/sounds"];
 
 /** شاشات قديمة تنتظر النقل لنظام التصميم (تُحذف واحدة واحدة عند نقلها). */
-const LEGACY = new Set([
-  "public/_mobile-preview.html",
-  "public/index.html",
-  "public/presets.html",
-  "public/taboo-packs.html",
-  "public/css/base.css",
-  "public/css/presets.css",
-  "public/js/presets.js",
-]);
+const LEGACY = new Set([]);
 
 const EMOJI = /[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}\u{2B00}-\u{2BFF}\u{23E9}-\u{23FA}\u{231A}\u{231B}\u{2190}-\u{21FF}\u{FE0F}]/u;
 const COLOR = /(?<![\w&-])#(?:[0-9a-fA-F]{8}|[0-9a-fA-F]{6}|[0-9a-fA-F]{3,4})\b|\b(?:rgba?|hsla?)\(/;
@@ -98,7 +90,9 @@ for (const l of LEGACY) {
   if (!fs.existsSync(path.join(ROOT, l))) console.log(`\x1b[33m! ${l} في LEGACY لكنه غير موجود — احذفه من القائمة\x1b[0m`);
 }
 const pending = [...LEGACY].filter((l) => fs.existsSync(path.join(ROOT, l)));
-console.log(
+if (!pending.length) console.log(`
+نظام التصميم: كل الشاشات على نظام التصميم · ${files.length} ملف على القواعد الصارمة`);
+else console.log(
   `\nنظام التصميم: ${files.length - pending.length} ملف على القواعد الصارمة · ` +
     `${pending.length} شاشة قديمة تنتظر النقل (${legacyCount} مخالفة فيها)`
 );
