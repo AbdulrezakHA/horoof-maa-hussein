@@ -81,6 +81,18 @@
 
 ---
 
+## الخطوط
+
+- **العناوين والأزرار والأرقام:** بالو بهيجان (`Baloo Bhaijaan 2`) عبر `--font-display` (معتمد).
+- **النصوص:** تجوّل (`Tajawal`) عبر `--font-body`.
+- رابط التحميل الوحيد المسموح (غير حاجب للصفحة) في `<head>` كل صفحة:
+  ```html
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Baloo+Bhaijaan+2:wght@500;700;800&family=Tajawal:wght@500;700;800&display=swap"
+        rel="stylesheet" media="print" onload="this.media='all'" />
+  ```
+
 ## المقاسات
 
 كل المقاسات تكبر تلقائياً على التلفاز: `ds-tv` على `<body>` تجعل `--scale` = 1.45.

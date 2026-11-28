@@ -102,7 +102,7 @@
   --hex-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 115.47' preserveAspectRatio='none'%3E%3Cpath d='M40.47 5.50Q50 0.00 59.53 5.50L90.47 23.37Q100 28.87 100.00 39.87L100.00 75.60Q100 86.60 90.47 92.10L59.53 109.97Q50 115.47 40.47 109.97L9.53 92.10Q0 86.60 0.00 75.60L0.00 39.87Q0 28.87 9.53 23.37Z'/%3E%3C/svg%3E");
 
   /* ============ الخطوط ============ */
-  --font-display: "Baloo Bhaijaan 2", "Lalezar", "Tajawal", system-ui, sans-serif;
+  --font-display: "Baloo Bhaijaan 2", "Tajawal", system-ui, sans-serif; /* معتمد: بالو بهيجان */
   --font-body: "Tajawal", "Cairo", system-ui, sans-serif;
 
   /* ============ الحركة ============ */

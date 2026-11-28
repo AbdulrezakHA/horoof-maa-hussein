@@ -49,7 +49,6 @@ const LEGACY = new Set([
   "public/js/screen-taboo.js",
   "public/js/screen.js",
   "public/js/sfx.js",
-  "public/js/transport.js",
 ]);
 
 const EMOJI = /[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}\u{2B00}-\u{2BFF}\u{23E9}-\u{23FA}\u{231A}\u{231B}\u{2190}-\u{21FF}\u{FE0F}]/u;

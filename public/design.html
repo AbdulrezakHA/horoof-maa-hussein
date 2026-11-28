@@ -8,7 +8,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Baloo+Bhaijaan+2:wght@500;700;800&family=Lalezar&family=Reem+Kufi+Fun:wght@500;700&family=Tajawal:wght@500;700;800&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Baloo+Bhaijaan+2:wght@500;700;800&family=Tajawal:wght@500;700;800&display=swap"
       rel="stylesheet" media="print" onload="this.media='all'"
     />
     <link rel="stylesheet" href="/css/ds.css" />
@@ -456,12 +456,7 @@
       <!-- ================= الخطوط ================= -->
       <section class="dz-sec" id="type" aria-labelledby="typeH">
         <h2 id="typeH">الخطوط</h2>
-        <p class="dz-lead">اختر خط العناوين، ويتغيّر في الصفحة كلها فوراً.</p>
-        <div class="ds-seg" id="fontSeg" aria-label="خط العناوين">
-          <button type="button" data-value="Baloo Bhaijaan 2" aria-pressed="true">بالو بهيجان</button>
-          <button type="button" data-value="Lalezar" aria-pressed="false">لاله زار</button>
-          <button type="button" data-value="Reem Kufi Fun" aria-pressed="false">ريم كوفي فن</button>
-        </div>
+        <p class="dz-lead">العناوين والأزرار: بالو بهيجان (Baloo Bhaijaan 2). النصوص: تجوّل (Tajawal).</p>
         <span class="dz-label">سلّم الأحجام</span>
         <div class="dz-type-sample">
           <div class="dz-type-row"><code>--fs-hero</code><span style="font-size: var(--fs-hero)">فاز الأولاد!</span></div>
@@ -948,8 +943,6 @@
 
       // مقاس الجوال / التلفاز
       segmented($("scaleSeg"), (v) => document.body.classList.toggle("ds-tv", v === "tv"));
-      // خط العناوين
-      segmented($("fontSeg"), (v) => document.documentElement.style.setProperty("--font-display", `"${v}", "Tajawal", system-ui, sans-serif`));
 
       $("heroConfetti").onclick = () => confetti();
       $("loadBtn").onclick = (e) => {
