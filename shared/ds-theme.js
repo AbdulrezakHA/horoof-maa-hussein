@@ -132,6 +132,13 @@ export function themeVars(themeOrName = DEFAULT_THEME) {
   v["--cream-hi"] = shift(t.cream, lightCell ? 0.12 : 0.08, 0.75);
   v["--cream-side"] = shift(t.cream, -0.12);
   v["--cream-ink"] = lightCell ? shift(t.cream, -0.42, 0.9) : shift(t.cream, 0.55, 0.4);
+  // وجه لوحة السؤال (يحدّده الحكم؛ الافتراضي الورق)
+  const ps = shades(t.panel || PAPER);
+  v["--panel"] = ps.base;
+  v["--panel-hi"] = ps.hi;
+  v["--panel-side"] = ps.side;
+  v["--panel-ink"] = ps.ink;
+  v["--panel-glow"] = ps.glow;
   Object.assign(v, teamVars(t.teams));
   return v;
 }
@@ -171,6 +178,24 @@ export function cssBlock(name = DEFAULT_THEME) {
   return Object.entries(themeVars(name))
     .map(([k, val]) => `  ${k}: ${val};`)
     .join("\n");
+}
+
+/** ثيم كامل من حالة اللعبة: الثيم الأساسي + تعديلات الحكم + ألوان الفريقين. */
+export function themeFromState(state) {
+  const base = DS_THEMES[state?.theme?.ds] || DS_THEMES[DEFAULT_THEME];
+  const t = state?.theme || {};
+  return {
+    ...base,
+    cream: t.cellColor || base.cream, // خلايا الحروف الفارغة
+    sun: t.selectedColor || base.sun, // الخلية المختارة + الإجراء الأساسي
+    panel: t.bgColor || PAPER, // وجه لوحة السؤال (يعدّله الحكم)
+    teams: { a: state?.teams?.a?.color || base.teams.a, b: state?.teams?.b?.color || base.teams.b },
+  };
+}
+
+/** يطبّق كل ألوان الحالة (ينادى عند كل تحديث؛ رخيص). */
+export function applyGameColors(state, el) {
+  applyVars(themeVars(themeFromState(state)), el);
 }
 
 /** لونان عشوائيان متباعدان للفريقين (متقابلان على دائرة الألوان، بنفس السطوع). */

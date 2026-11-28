@@ -3,6 +3,7 @@
  * لا يحتوي على أي I/O ليبقى قابلاً لإعادة الاستخدام على أي منصة استضافة.
  */
 import { BASE_LETTERS, toBaseLetter } from "./letters.js";
+import { DS_THEMES } from "./ds-theme.js";
 import { createTaboo, cloneTaboo, applyTaboo } from "./taboo.js";
 
 /** الألعاب المتاحة في السهرة (المفتاح ← الاسم). */
@@ -68,11 +69,12 @@ export function createState(board) {
     rev: 0,
     phase: "idle", // idle | question | awarded | over
     teams: {
-      a: { name: board.teams.a?.name || "الفريق الأول", color: board.teams.a?.color || "#6965ae", score: 0 },
-      b: { name: board.teams.b?.name || "الفريق الثاني", color: board.teams.b?.color || "#4b9cbf", score: 0 },
+      a: { name: board.teams.a?.name || "الفريق الأول", color: board.teams.a?.color || "#19a974", score: 0 },
+      b: { name: board.teams.b?.name || "الفريق الثاني", color: board.teams.b?.color || "#e0453a", score: 0 },
     },
     theme: {
-      bgColor: "#2f6f9e", // خلفية لوحة السؤال (يمين الشاشة)
+      ds: "hussein", // الثيم الأساسي (مفتاح في DS_THEMES)
+      bgColor: "#fff8ea", // وجه لوحة السؤال (يمين الشاشة)
       bgSecondary: "#4b9cbf",
       accentBanner: "#6965ae",
       cellColor: "#ede5bb",
@@ -841,6 +843,10 @@ export function applyAction(state, board, action) {
     case "setTheme": {
       if (p && typeof p === "object") {
         for (const [key, val] of Object.entries(p)) {
+          if (key === "ds") {
+            if (typeof val === "string" && Object.hasOwn(DS_THEMES, val)) st.theme.ds = val;
+            continue;
+          }
           if (typeof val === "string" && /^#[0-9a-fA-F]{3,8}$/.test(val)) {
             st.theme[key] = val;
           }

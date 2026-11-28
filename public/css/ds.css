@@ -57,6 +57,11 @@
   --cream-hi: #f4edc7;
   --cream-side: #a9a06f;
   --cream-ink: #504920;
+  --panel: #fff8ea;
+  --panel-hi: #fdf8ed;
+  --panel-side: #c7c0b2;
+  --panel-ink: #1d1235;
+  --panel-glow: rgba(255, 255, 255, 0.55);
   --team-a: #19a974;
   --team-a-hi: #6dc399;
   --team-a-side: #007542;
@@ -1450,8 +1455,8 @@ button.ds-hex:focus-visible {
   align-items: center;
   gap: var(--sp-6);
   padding: var(--sp-6);
-  background: var(--paper);
-  color: var(--ink);
+  background: var(--panel);
+  color: var(--panel-ink);
   border: var(--line) solid var(--ink);
   border-radius: var(--r-xl);
   box-shadow: inset 0 var(--lift-sm) 0 var(--shine), 0 calc(var(--lift) * 1.6) 0 var(--ink);

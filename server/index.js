@@ -135,8 +135,8 @@ const DEFAULT_BOARD = readJson("data/board.json", {
   rows: 5,
   cols: 5,
   teams: {
-    a: { name: "الفريق الأول", color: "#6965ae", goals: [["top"], ["bottom"]] },
-    b: { name: "الفريق الثاني", color: "#4b9cbf", goals: [["left"], ["right"]] },
+    a: { name: "الفريق الأول", color: "#19a974", goals: [["top"], ["bottom"]] },
+    b: { name: "الفريق الثاني", color: "#e0453a", goals: [["left"], ["right"]] },
   },
   edges: { top: [], bottom: [], left: [], right: [] },
   cells: [],

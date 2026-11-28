@@ -691,6 +691,17 @@ async function main() {
     check("نقاط السهرة موجودة", typeof st().night?.a === "number" && typeof st().night?.b === "number");
     const nightBefore = { ...st().night };
 
+    // ثيم نظام التصميم: مفتاح ds صالح يُحفظ، وغير الصالح يُتجاهل
+    check("الثيم الافتراضي ds = hussein", st().theme.ds === "hussein", String(st().theme.ds));
+    send("setTheme", { ds: "ramadan" });
+    await sleep(150);
+    check("setTheme {ds:'ramadan'} يحفظ الثيم", st().theme.ds === "ramadan", String(st().theme.ds));
+    send("setTheme", { ds: "bogus" });
+    await sleep(150);
+    check("setTheme {ds:'bogus'} يُتجاهل", st().theme.ds === "ramadan", String(st().theme.ds));
+    send("setTheme", { ds: "hussein" });
+    await sleep(150);
+
     send("tabooConfig", { target: 3, turnSeconds: 60 });
     send("setGame", { game: "taboo" });
     await sleep(250);

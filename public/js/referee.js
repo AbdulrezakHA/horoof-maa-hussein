@@ -5,7 +5,8 @@ import { createBoard } from "/js/board.js";
 import { Transport, remainingMs } from "/js/transport.js";
 import { drawQR, getPlayUrls } from "/js/qr.js";
 import { sfx } from "/js/sfx.js";
-import { inkFor, findClashes, autoFixColors, COLOR_THEMES, COLOR_LABELS } from "/shared/colors.js";
+import { inkFor, findClashes, autoFixColors, COLOR_LABELS } from "/shared/colors.js";
+import { DS_THEMES, PAPER } from "/shared/ds-theme.js";
 import { initTaboo, renderTaboo } from "/js/referee-taboo.js";
 
 window.__appStarted = true; // انظر /js/diag.js
@@ -1197,23 +1198,21 @@ let themeChipsKey = "";
 function renderThemeChips() {
   if (!ui.themeChips || !state) return;
   const current = JSON.stringify([
-    state.teams.a.color, state.teams.b.color,
+    state.theme?.ds, state.teams.a.color, state.teams.b.color,
     state.theme?.cellColor, state.theme?.selectedColor, state.theme?.bgColor,
   ].map((c) => String(c || "").toLowerCase()));
   if (current === themeChipsKey && ui.themeChips.childElementCount) return;
   themeChipsKey = current;
 
   ui.themeChips.textContent = "";
-  for (const [id, t] of Object.entries(COLOR_THEMES)) {
+  for (const [id, t] of Object.entries(DS_THEMES)) {
     const btn = document.createElement("button");
     btn.type = "button";
     btn.className = "theme-chip";
-    const sig = JSON.stringify([t.teams.a, t.teams.b, t.theme.cellColor, t.theme.selectedColor, t.theme.bgColor]
-      .map((c) => c.toLowerCase()));
-    btn.classList.toggle("active", sig === current);
+    btn.classList.toggle("active", state.theme?.ds === id);
     const sw = document.createElement("span");
     sw.className = "theme-swatches";
-    for (const c of [t.teams.a, t.teams.b, t.theme.cellColor, t.theme.selectedColor, t.theme.bgColor]) {
+    for (const c of [t.teams.a, t.teams.b, t.cream, t.sun, t.stage]) {
       const dot = document.createElement("i");
       dot.style.background = c;
       sw.appendChild(dot);
@@ -1224,7 +1223,7 @@ function renderThemeChips() {
     btn.addEventListener("click", () => {
       act("setTeam", { team: "a", color: t.teams.a });
       act("setTeam", { team: "b", color: t.teams.b });
-      act("setTheme", { ...t.theme });
+      act("setTheme", { ds: id, cellColor: t.cream, selectedColor: t.sun, bgColor: PAPER });
       toast(`تم تطبيق قالب: ${t.name}`);
     });
     ui.themeChips.appendChild(btn);
