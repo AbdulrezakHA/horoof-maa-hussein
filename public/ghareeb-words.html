@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="" />
+    <title>مجالات «في بينا غريب»</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Baloo+Bhaijaan+2:wght@500;700;800&family=Tajawal:wght@500;700;800&display=swap"
+          rel="stylesheet" media="print" onload="this.media='all'" />
+    <link rel="stylesheet" href="/css/ds.css" />
+  </head>
+  <body class="ds ds-page">
+    <div class="ds-container ds-stack">
+      <header class="ds-cluster ds-cluster--between">
+        <h1 class="ds-title ds-title--sm"><span data-i="eye"></span> مجالات «في بينا غريب»</h1>
+        <a class="ds-btn ds-btn--sm" href="/referee"><span data-i="arrow"></span>الحكم</a>
+      </header>
+
+      <div class="ds-grid" id="fields"></div>
+      <div class="ds-cluster">
+        <button class="ds-btn ds-btn--primary" id="newBtn" type="button"><span data-i="plus"></span>مجال جديد</button>
+      </div>
+
+      <section class="ds-card ds-stack" id="editor" hidden>
+        <div class="ds-field">
+          <label class="ds-label" for="name">اسم المجال</label>
+          <input class="ds-input" id="name" maxlength="60" placeholder="اسم المجال" />
+        </div>
+        <div class="ds-field">
+          <span class="ds-label">أيقونة المجال</span>
+          <div class="ds-cluster ds-cluster--tight" id="iconPicker"></div>
+        </div>
+        <p class="ds-hint">
+          كل سطر زوج كلمات: <code>الكلمة الأساسية | الكلمة القريبة</code> — الأساسية يستلمها كل اللاعبين،
+          والقريبة يستلمها «الغريب». اجعلهما من نفس المجال لكن مختلفتين (قريبتان جداً تُصعّبان الكشف، وبعيدتان جداً تُسهّلانه).
+        </p>
+        <textarea class="ds-textarea ds-textarea--tall" id="text" spellcheck="false"></textarea>
+        <div class="ds-cluster">
+          <button class="ds-btn ds-btn--success" id="saveBtn" type="button"><span data-i="check"></span>حفظ</button>
+          <button class="ds-btn ds-btn--danger" id="deleteBtn" type="button"><span data-i="close"></span>حذف المجال</button>
+        </div>
+        <div class="ds-banner ds-banner--info ds-banner--sm" id="status" hidden>
+          <span class="ds-banner-icon"><svg class="ds-icon" id="statusIcon" aria-hidden="true"><use href="/icons.svg#info" /></svg></span>
+          <span id="statusText"></span>
+        </div>
+        <p class="ds-hint ds-hint--error" id="warn" style="white-space: pre-line"></p>
+      </section>
+    </div>
+
+    <script type="module">
+      import { icon, hydrateIcons } from "/js/ds.js";
+      const $ = (id) => document.getElementById(id);
+      hydrateIcons();
+
+      let fields = [];
+      let current = null; // اسم المجال المفتوح (null = جديد)
+      let iconIds = [];
+      let chosenIcon = "shapes";
+
+      async function api(path, body) {
+        const res = await fetch(path, body ? { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) } : undefined);
+        const data = await res.json();
+        if (!data.ok) throw new Error(data.error || "خطأ");
+        return data;
+      }
+
+      /** رسالة الحالة: ok (أخضر) | bad (أحمر) | info (أزرق) */
+      function status(text, tone = "info") {
+        $("status").hidden = !text;
+        $("statusText").textContent = text;
+        $("status").className = `ds-banner ds-banner--sm ds-banner--${tone === "ok" ? "success" : tone === "bad" ? "danger" : "info"}`;
+        $("statusIcon").querySelector("use").setAttribute("href", `/icons.svg#${tone === "ok" ? "check" : tone === "bad" ? "warning" : "info"}`);
+      }
+
+      /** أيقونات المكتبة كلها (من /icons.svg) لاختيار أيقونة المجال. */
+      async function loadIcons() {
+        const svg = await (await fetch("/icons.svg")).text();
+        iconIds = [...svg.matchAll(/<symbol id="([^"]+)"/g)].map((m) => m[1]);
+        renderPicker();
+      }
+
+      function renderPicker() {
+        const box = $("iconPicker");
+        box.replaceChildren();
+        for (const id of iconIds) {
+          const b = document.createElement("button");
+          b.type = "button";
+          b.className = "ds-btn ds-btn--icon ds-btn--sm";
+          b.title = id;
+          b.setAttribute("aria-label", id);
+          b.setAttribute("aria-pressed", String(id === chosenIcon));
+          b.appendChild(icon(id));
+          b.addEventListener("click", () => {
+            chosenIcon = id;
+            renderPicker();
+          });
+          box.appendChild(b);
+        }
+      }
+
+      async function loadList() {
+        fields = (await api("/api/ghareeb/packs")).packs;
+        const box = $("fields");
+        box.replaceChildren();
+        for (const p of fields) {
+          const b = document.createElement("button");
+          b.type = "button";
+          b.className = "ds-btn ds-btn--block";
+          b.setAttribute("aria-pressed", String(p.id === current));
+          b.append(icon(p.icon || "shapes"), document.createTextNode(`${p.name} · ${p.total} زوج${p.warnings ? ` · ${p.warnings} تنبيه` : ""}`));
+          b.addEventListener("click", () => open(p.id));
+          box.appendChild(b);
+        }
+      }
+
+      async function open(id) {
+        const data = await api(`/api/ghareeb/get?id=${encodeURIComponent(id)}`);
+        current = id;
+        $("editor").hidden = false;
+        chosenIcon = data.icon || "shapes";
+        renderPicker();
+        $("name").value = id;
+        $("text").value = data.pairs.map((p) => `${p.base} | ${p.stranger}`).join("\n");
+        $("warn").textContent = (data.warnings || []).join("\n");
+        status("");
+        loadList();
+      }
+
+      /** «الأساسية | القريبة» ← صيغة الملف (عمودان مفصولان بـ TAB). */
+      function toTsv(text) {
+        return text
+          .split(/\r?\n/)
+          .map((line) => {
+            const [base, near = ""] = line.split("|");
+            return [base.trim(), near.trim()].join("\t");
+          })
+          .filter((l) => l.replace(/\t/g, "").trim())
+          .join("\n");
+      }
+
+      $("saveBtn").addEventListener("click", async () => {
+        const name = $("name").value.trim();
+        if (!name) return status("اكتب اسم المجال", "bad");
+        try {
+          const saved = await api("/api/ghareeb/save", { id: name, icon: chosenIcon, text: toTsv($("text").value) });
+          if (current && current !== name) await api("/api/ghareeb/delete", { id: current });
+          current = name;
+          status(`حُفظ — ${saved.pairs.length} زوج`, "ok");
+          $("warn").textContent = (saved.warnings || []).join("\n");
+          loadList();
+        } catch (e) {
+          status(e.message, "bad");
+        }
+      });
+
+      $("deleteBtn").addEventListener("click", async () => {
+        if (!current || !confirm(`حذف المجال «${current}» نهائياً؟`)) return;
+        await api("/api/ghareeb/delete", { id: current });
+        current = null;
+        $("editor").hidden = true;
+        loadList();
+      });
+
+      $("newBtn").addEventListener("click", () => {
+        current = null;
+        $("editor").hidden = false;
+        chosenIcon = "shapes";
+        renderPicker();
+        $("name").value = "";
+        $("text").value = "";
+        $("warn").textContent = "";
+        status("اكتب اسم المجال ثم أزواج الكلمات، واضغط «حفظ»");
+        $("name").focus();
+      });
+
+      loadIcons();
+      loadList();
+    </script>
+  </body>
+</html>
