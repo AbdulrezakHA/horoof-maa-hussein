@@ -44,14 +44,21 @@ const ui = {
   connChip: el("connChip"),
   connText: el("connText"),
   connIcon: el("connIcon"),
+  tabs: el("tabs"),
+  nowPanel: el("nowPanel"),
+  hNow: el("hNow"),
+  nowStatus: el("nowStatus"),
+  nowBody: el("nowBody"),
+  nowActions: el("nowActions"),
+  scoreRow: el("scoreRow"),
+  backBtn: el("changeGameBtn"),
+  homeIcon: el("homeIcon"),
+  appTitle: el("appTitle"),
+  tabooCard: el("tabooCard"),
   qHex: el("qHex"),
   timerReadoutText: el("timerReadoutText"),
   buzzReadoutText: el("buzzReadoutText"),
   buzzReadoutIcon: el("buzzReadoutIcon"),
-  judgeSteps: el("judgeSteps"),
-  judgeWhoBanner: el("judgeWhoBanner"),
-  judgeWhoIcon: el("judgeWhoIcon"),
-  judgeTimerNum: el("judgeTimerNum"),
   scoreNameA: el("scoreNameA"),
   scoreNameB: el("scoreNameB"),
   scoreA: el("scoreA"),
@@ -133,15 +140,6 @@ const ui = {
   qHint: el("qHint"),
   qHintText: el("qHintText"),
   hintBtn: el("hintBtn"),
-  judgePanel: el("judgePanel"),
-  judgeStage: el("judgeStage"),
-  judgeWho: el("judgeWho"),
-  judgeTimer: el("judgeTimer"),
-  judgeHistory: el("judgeHistory"),
-  judgeRight: el("judgeRight"),
-  judgeWrong: el("judgeWrong"),
-  judgeLock: el("judgeLock"),
-  judgeNewQ: el("judgeNewQ"),
   sfxBtn: el("sfxBtn"),
   turnALabel: el("turnALabel"),
   turnBLabel: el("turnBLabel"),
@@ -355,7 +353,6 @@ function renderHub() {
   const wrap = el("hubGames");
   if (!wrap) return;
   nightBoard(el("nightBoardHub"));
-  nightBoard(el("nightBoardFoot"));
   const key = JSON.stringify([state.night, state.taboo?.phase, state.winner]);
   if (key === hubKey && wrap.childElementCount) return;
   hubKey = key;
@@ -363,7 +360,7 @@ function renderHub() {
   HUB_GAMES.forEach((g, i) => {
     const b = document.createElement("button");
     b.type = "button";
-    b.className = `ds-game-tile ds-game-tile--sm${g.tone ? ` ds-game-tile--${g.tone}` : ""}`;
+    b.className = `ds-game-tile${g.tone ? ` ds-game-tile--${g.tone}` : ""}`;
     b.style.setProperty("--i", i);
     b.disabled = !!g.soon;
     const art = document.createElement("span");
@@ -385,15 +382,11 @@ function renderHub() {
     }
     wrap.appendChild(b);
   });
-  const reset = document.createElement("button");
-  reset.type = "button";
-  reset.className = "ds-btn ds-btn--sm";
-  reset.append(icon("undo"), document.createTextNode("تصفير نقاط السهرة"));
-  reset.addEventListener("click", () => {
-    if (confirm("تصفير نقاط السهرة للفريقين؟")) act("nightReset");
-  });
-  wrap.appendChild(reset);
 }
+
+el("nightResetBtn")?.addEventListener("click", () => {
+  if (confirm("تصفير نقاط السهرة للفريقين؟")) act("nightReset");
+});
 
 /** بطاقة «متابعة» في الرئيسية عند وجود لعبة جارية، وزر إنهائها للجميع. */
 function renderContinue() {
@@ -406,13 +399,75 @@ function renderContinue() {
   el("continueBtn").replaceChildren(icon("play"), document.createTextNode(`متابعة: ${g?.name || ""}`));
 }
 
-/** الأقسام الظاهرة حسب اللعبة: data-game = none | huroof | taboo | ingame (داخل أي لعبة). */
-function applyGameVisibility(game) {
-  for (const n of document.querySelectorAll("[data-game]")) {
-    if (n === document.body || n.id === "judgePanel") continue; // لوحة الحكم تديرها renderJudge
-    const g = n.dataset.game;
-    n.hidden = !(g === game || (g === "ingame" && game !== "none"));
+/* ---------------- التبويبات (واحدة لكل سياق: رئيسية / حروف / كلمة ممنوعة) ---------------- */
+const TABS = {
+  home: [
+    ["games", "الألعاب", "gamepad", "p-games"],
+    ["teams", "الفرق واللاعبون", "users", "p-teams"],
+    ["look", "الشكل والألوان", "palette", "p-look"],
+    ["screen", "الشاشة الكبيرة", "tv", "p-screen"],
+  ],
+  huroof: [
+    ["board", "اللوحة", "hexagon", "p-board"],
+    ["question", "السؤال", "question", "p-question"],
+    ["buzz", "الأجراس", "bell", "p-buzz"],
+    ["teams", "الفرق", "users", "p-teams"],
+    ["screen", "الشاشة", "tv", "p-screen"],
+    ["log", "السجل", "scroll", "p-log"],
+  ],
+  taboo: [
+    ["settings", "الإعدادات", "sliders", "p-tsettings"],
+    ["teams", "الفرق", "users", "p-teams"],
+    ["screen", "الشاشة", "tv", "p-screen"],
+    ["log", "السجل", "scroll", "p-log"],
+  ],
+};
+const activeTab = {};
+const tabContext = () => (viewGame() === "none" ? "home" : viewGame());
+
+function applyTabs() {
+  const ctx = tabContext();
+  const list = TABS[ctx];
+  if (!list) return;
+  if (!list.some((t) => t[0] === activeTab[ctx])) activeTab[ctx] = list[0][0];
+  if (ui.tabs.dataset.ctx !== ctx) {
+    ui.tabs.dataset.ctx = ctx;
+    ui.tabs.replaceChildren();
+    for (const [id, label, ic] of list) {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "ds-tab";
+      b.setAttribute("role", "tab");
+      b.dataset.tab = id;
+      b.append(icon(ic), document.createTextNode(label));
+      b.addEventListener("click", () => showTab(id));
+      ui.tabs.appendChild(b);
+    }
   }
+  const current = list.find((t) => t[0] === activeTab[ctx]);
+  for (const b of ui.tabs.children) b.setAttribute("aria-selected", String(b.dataset.tab === activeTab[ctx]));
+  for (const p of document.querySelectorAll("#panels > .ds-tab-panel")) p.hidden = p.id !== current[3];
+  el("helpCard").hidden = ctx !== "huroof";
+}
+
+function showTab(id) {
+  activeTab[tabContext()] = id;
+  applyTabs();
+  window.scrollTo({ top: 0 });
+}
+
+/** الشريط العلوي ولوحة «الآن» حسب الصفحة (رئيسية / داخل لعبة). */
+function applyView() {
+  const game = viewGame();
+  const inGame = game !== "none";
+  document.body.dataset.game = game;
+  ui.backBtn.hidden = !inGame;
+  ui.homeIcon.hidden = inGame;
+  ui.appTitle.textContent = inGame ? HUB_GAMES.find((g) => g.id === game)?.name || "" : "لوحة الحكم";
+  ui.nowPanel.hidden = !inGame;
+  ui.scoreRow.hidden = game !== "huroof";
+  ui.tabooCard.hidden = game !== "taboo";
+  applyTabs();
 }
 
 function render() {
@@ -421,8 +476,7 @@ function render() {
   // اللعبة الحالية تحدّد الأقسام الظاهرة (data-game في الصفحة)
   if (pendingGame && state.game === pendingGame) pendingGame = null;
   if (refView === "game" && !pendingGame && (!state.game || state.game === "none")) refView = "home"; // أُنهيت اللعبة من مكان آخر
-  document.body.dataset.game = viewGame();
-  applyGameVisibility(viewGame());
+  applyView();
   renderContinue();
   applyGameColors(state);
   const stageColor = getComputedStyle(document.documentElement).getPropertyValue("--stage").trim();
@@ -432,10 +486,10 @@ function render() {
 
   syncPresetsFromState();
 
-  ui.roomLabel.textContent = state.game === "taboo"
-    ? "الكلمة الممنوعة"
-    : state.game === "huroof"
-      ? `حروف مع حسين · ${boardCfg.cells.length} خلية`
+  ui.roomLabel.textContent = viewGame() === "taboo"
+    ? "شرح بالكلام بلا كلمات ممنوعة"
+    : viewGame() === "huroof"
+      ? `${boardCfg.cells.length} خلية`
       : "قائمة الألعاب";
 
   // النقاط
@@ -684,7 +738,7 @@ const NET_WAIT = {
   off: "رابط الإنترنت مُطفأ",
 };
 
-/** رمزا دخول اللاعبين (الإنترنت + الواي فاي) كما على التلفاز. */
+/** رمزا دخول اللاعبين (الإنترنت + الواي فاي): صغيران، والضغط عليهما يكبّر في ورقة سفلية. */
 let playQrBusy = false;
 async function drawPlayQrs() {
   if (playQrBusy || !ui.playQr) return;
@@ -694,8 +748,11 @@ async function drawPlayQrs() {
     ui.playQr.replaceChildren();
     for (const kind of ["net", "lan"]) {
       const target = r[kind];
-      const box = document.createElement("div");
-      box.className = `ds-qr${target ? "" : " is-pending"}`;
+      const box = document.createElement("button");
+      box.type = "button";
+      box.className = `ds-qr ds-qr--sm${target ? "" : " is-pending"}`;
+      box.style.background = "none";
+      box.style.border = "0";
       box.dataset.route = kind;
       const frame = document.createElement("div");
       frame.className = "ds-qr-frame";
@@ -703,14 +760,20 @@ async function drawPlayQrs() {
       const wait = document.createElement("div");
       wait.className = "ds-qr-wait";
       frame.append(canvas, wait);
+      const label = kind === "net" ? "عبر الإنترنت" : "نفس الواي فاي";
       const pill = document.createElement("span");
       pill.className = `ds-pill ${kind === "net" ? "ds-pill--sun" : "ds-pill--sky"}`;
-      pill.append(icon(kind === "net" ? "globe" : "wifi"), document.createTextNode(kind === "net" ? "عبر الإنترنت" : "نفس الواي فاي"));
+      pill.append(icon(kind === "net" ? "globe" : "wifi"), document.createTextNode(label));
       box.append(frame, pill);
       ui.playQr.appendChild(box);
       if (target) {
         drawQR(target.url, canvas);
         box.title = target.url;
+        box.addEventListener("click", () => {
+          el("qrSheetTitle").textContent = label;
+          el("qrSheet").classList.add("is-open");
+          drawQR(target.url, el("qrSheetCanvas"));
+        });
       } else {
         wait.textContent = kind === "net" ? NET_WAIT[r.netStatus] || NET_WAIT.starting : "لا توجد شبكة محلية";
       }
@@ -722,6 +785,7 @@ async function drawPlayQrs() {
     playQrBusy = false;
   }
 }
+el("qrSheetClose")?.addEventListener("click", () => el("qrSheet").classList.remove("is-open"));
 transport.onMessage = (msg) => {
   if (msg.t === "net") drawPlayQrs();
 };
@@ -756,9 +820,10 @@ function renderPlayers() {
       empty.textContent = "لا أحد بعد";
       col.appendChild(empty);
     }
+    const other = state.teams[t === "a" ? "b" : "a"].name;
     for (const pl of list) {
-      const box = document.createElement("div");
-      box.className = "ds-stack ds-stack--tight";
+      const row = document.createElement("div");
+      row.className = "ds-row";
       const chip = document.createElement("span");
       chip.className = "ds-player";
       chip.classList.toggle("is-offline", !online.has(pl.id));
@@ -768,11 +833,8 @@ function renderPlayers() {
       av.textContent = [...(pl.name || "؟")][0];
       chip.append(av, document.createTextNode(pl.name));
       const stats = document.createElement("span");
-      stats.className = "ds-hint";
+      stats.className = "ds-text";
       stats.textContent = `${pl.score} نقطة${pl.fastest != null ? ` · ${(pl.fastest / 1000).toFixed(1)}ث` : ""}`;
-      const acts = document.createElement("div");
-      acts.className = "ds-cluster ds-cluster--tight";
-      const other = state.teams[t === "a" ? "b" : "a"].name;
       const move = document.createElement("button");
       move.type = "button";
       move.className = "ds-btn ds-btn--icon ds-btn--sm";
@@ -792,9 +854,8 @@ function renderPlayers() {
       kick.addEventListener("click", () => {
         if (confirm(`إخراج ${pl.name} من اللعبة؟`)) act("playerRemove", { id: pl.id });
       });
-      acts.append(move, kick);
-      box.append(chip, stats, acts);
-      col.appendChild(box);
+      row.append(chip, stats, move, kick);
+      col.appendChild(row);
     }
     ui.playersCols.appendChild(col);
   }
@@ -802,102 +863,189 @@ function renderPlayers() {
 
 /* ---------------- لوحة الحكم أثناء السؤال ---------------- */
 
-const RESULT_ICON = { wrong: "close", timeout: "timer", right: "check" };
-const JUDGE_BASE = { judgeRight: "ds-btn--success", judgeWrong: "ds-btn--danger", judgeLock: "" };
-const JUDGE_KEY = { judgeRight: "1", judgeWrong: "2", judgeLock: "3" };
+/* لوحة «ماذا أفعل الآن»: تعرض فقط الإجراءات الصالحة في اللحظة الحالية.
+   المفاتيح: 1 صح · 2 خطأ · 3 إغلاق/لم يُجب أحد · 4 سؤال آخر */
+let nowKeys = {};
+let nowSig = "";
 
-/** يضبط زراً من أزرار اللوحة: نصّه، فعله، فريقه (لون)، وظهوره. */
-function judgeButton(btn, { iconName = null, label, action, team = null, hidden = false, disabled = false }) {
-  if (!btn) return;
-  btn.hidden = hidden;
-  btn.disabled = disabled;
-  btn.dataset.act = action || "";
-  btn.classList.remove("ds-btn--success", "ds-btn--danger", "ds-btn--team", "ds-team-a", "ds-team-b");
-  if (team) btn.classList.add("ds-btn--team", `ds-team-${team}`);
-  else if (JUDGE_BASE[btn.id]) btn.classList.add(JUDGE_BASE[btn.id]);
-  btn.replaceChildren();
-  if (iconName) btn.appendChild(icon(iconName));
-  btn.appendChild(document.createTextNode(label + " "));
-  const key = document.createElement("kbd");
-  key.className = "ds-kbd";
-  key.textContent = JUDGE_KEY[btn.id] || "";
-  btn.appendChild(key);
+function nowBtn(key, { iconName, label, cls = "", team = null, run }) {
+  const b = document.createElement("button");
+  b.type = "button";
+  b.className = `ds-btn ds-btn--lg ds-btn--block ${team ? `ds-btn--team ds-team-${team}` : cls}`.trim();
+  if (iconName) b.appendChild(icon(iconName));
+  b.appendChild(document.createTextNode(label));
+  if (key) {
+    const k = document.createElement("kbd");
+    k.className = "ds-kbd";
+    k.textContent = key;
+    b.append(" ", k);
+    nowKeys[key] = run;
+  }
+  b.addEventListener("click", run);
+  return b;
+}
+
+function pickRandom() {
+  const cells = boardCfg.cells;
+  const free = cells.filter((c) => !state.cells[c.id].owner);
+  const pool = free.length ? free : cells;
+  const pick = pool[Math.floor(Math.random() * pool.length)];
+  act("select", { cellId: pick.id });
+  toast(`تم اختيار الحرف "${state.cells[pick.id].letter}"`, "dice");
 }
 
 function renderJudge() {
-  const panel = ui.judgePanel;
-  if (!panel || !state) return;
-  const c = state.current || {};
-  const b = c.buzz || {};
-  const show = state.game === "huroof" && refView === "game" && !!b.enabled && b.stage > 0 && b.phase !== "done" && b.phase !== "idle" && !c.verdict && !c.missed;
-  panel.hidden = !show;
-  document.body.classList.toggle("judging", show);
+  const box = ui.hNow;
+  if (!box || !state) return;
+  const show = state.game === "huroof" && refView === "game";
+  box.hidden = !show;
   if (!show) return;
 
+  const c = state.current || {};
+  const b = c.buzz || {};
+  const t = c.timer || {};
+  const q = c.question;
+  const cellId = c.cellId;
+  const cell = cellId ? state.cells[cellId] : null;
   const tA = state.teams.a;
   const tB = state.teams.b;
   const nameOf = (pl) => (pl?.id?.startsWith("team:") ? state.teams[pl.team]?.name : pl?.name) || "—";
-  const answering = b.phase === "answer" && b.player;
-  panel.dataset.phase = b.phase;
-
-  const t = c.timer || {};
+  const buzzOn = !!b.enabled && b.stage > 0 && ["open", "answer", "team", "all"].includes(b.phase);
   const secs = t.running ? Math.max(0, Math.ceil(remainingMs(t, transport.serverOffset) / 1000)) : null;
-  ui.judgeTimer.hidden = secs == null;
-  if (secs != null) ui.judgeTimerNum.textContent = secs;
+  const timed = (b.phase === "answer" || b.phase === "team") && t.running;
 
-  // لافتة «من يجيب»: بلون الفريق عند وجود فريق، وإلا أزرق
-  const setWho = (tone, team, ic) => {
-    ui.judgeWhoBanner.className = `ds-banner ds-banner--sm${tone ? ` ds-banner--${tone}` : ""}${team ? ` ds-banner--team ds-team-${team}` : ""}`;
-    setIcon(ui.judgeWhoIcon, ic);
+  // تحديث خفيف كل ربع ثانية: العدّاد فقط (لا نعيد بناء الأزرار كي لا تضيع النقرة)
+  const sig = JSON.stringify([cellId, c.revealed, c.answerRevealed, c.verdict?.at, !!c.missed, b.phase, b.stage, b.enabled, b.player?.id, b.allowed, answerVisible, q?.text, tA.name, tB.name, timed]);
+  if (sig === nowSig) {
+    const sp = el("nowSecs");
+    if (sp && secs != null) sp.textContent = secs;
+    const bar = box.querySelector(".ds-timebar");
+    if (bar && secs != null) {
+      bar.style.setProperty("--p", String(Math.max(0, Math.min(1, secs / Math.max(1, t.total || 1)))));
+      bar.classList.toggle("is-urgent", secs <= 3);
+    }
+    return;
+  }
+  nowSig = sig;
+  nowKeys = {};
+
+  let tone = "";
+  let team = null;
+  let ic = "hexagon";
+  let text = "";
+  const actions = [];
+  const resolved = c.verdict || c.missed;
+  const award = (tm) => () => {
+    act("award", { cellId, team: tm });
+    toast(`نقطة لـ ${state.teams[tm].name}`, "check");
   };
-  let stage = 1;
+  const another = () => {
+    act("newQuestion");
+    toast("سؤال آخر لنفس الحرف", "swap");
+  };
 
-  if (b.phase === "open") {
-    ui.judgeStage.textContent = "الجولة ١ · الأجراس";
-    ui.judgeWho.textContent = "بانتظار أول ضغطة… (بلا حدّ زمني)";
-    setWho("info", null, "bell");
-    judgeButton(ui.judgeRight, { iconName: "check", label: "صح", action: "", disabled: true });
-    judgeButton(ui.judgeWrong, { iconName: "close", label: "خطأ", action: "", disabled: true });
-    judgeButton(ui.judgeLock, { iconName: "lock", label: "إغلاق", action: "lock" });
-  } else if (answering) {
-    ui.judgeStage.textContent = "الجولة ١ · الأجراس";
-    ui.judgeWho.textContent = `${nameOf(b.player)} يجيب — ${state.teams[b.player.team].name}`;
-    setWho("", b.player.team, "bolt");
-    judgeButton(ui.judgeRight, { iconName: "check", label: "صح", action: "correct" });
-    judgeButton(ui.judgeWrong, { iconName: "close", label: "خطأ", action: "wrong" });
-    judgeButton(ui.judgeLock, { label: "إغلاق", action: "", hidden: true });
-  } else if (b.phase === "team") {
-    stage = 2;
-    const team = state.teams[b.allowed];
-    ui.judgeStage.textContent = `الجولة ٢ · دور ${team.name}`;
-    ui.judgeWho.textContent = `${team.name} يجيبون بصوت عالٍ — حتى ينتهي الوقت`;
-    setWho("", b.allowed, "users");
-    judgeButton(ui.judgeRight, { iconName: "check", label: `نقطة لـ ${team.name}`, action: "correct", team: b.allowed });
-    judgeButton(ui.judgeWrong, { label: "", action: "", hidden: true });
-    judgeButton(ui.judgeLock, { label: "", action: "", hidden: true });
-  } else if (b.phase === "all") {
-    stage = 3;
-    ui.judgeStage.textContent = "الجولة ٣ · مفتوح للجميع";
-    ui.judgeWho.textContent = "من أجاب صح؟ اختر الفريق (بلا وقت)";
-    setWho("success", null, "megaphone");
-    judgeButton(ui.judgeRight, { iconName: "check", label: tA.name, action: "correctA", team: "a" });
-    judgeButton(ui.judgeWrong, { iconName: "check", label: tB.name, action: "correctB", team: "b" });
-    judgeButton(ui.judgeLock, { iconName: "question", label: "لم يُجب أحد", action: "noPoint" });
+  if (resolved) {
+    tone = c.verdict ? "success" : "info";
+    ic = c.verdict ? "check" : "question";
+    text = c.verdict ? `نقطة لـ ${state.teams[c.verdict.team].name}` : "لم يُجب أحد";
+    actions.push(nowBtn(null, { iconName: "dice", label: "سؤال جديد", cls: "ds-btn--primary", run: pickRandom }));
+  } else if (!cell) {
+    ic = "hexagon";
+    text = "اختر حرفاً";
+    actions.push(nowBtn(null, { iconName: "dice", label: "حرف عشوائي", cls: "ds-btn--primary", run: pickRandom }));
+    actions.push(nowBtn(null, { iconName: "hexagon", label: "اختر من اللوحة", run: () => showTab("board") }));
+  } else if (!q) {
+    tone = "danger";
+    ic = "warning";
+    text = `لا يوجد سؤال للحرف ${cell.letter}`;
+    actions.push(nowBtn(null, { iconName: "type", label: "تغيير الحرف", run: () => openLetterModal(cellId) }));
+  } else if (!c.revealed) {
+    ic = "hexagon";
+    text = `الحرف ${cell.letter} — السؤال مخفي عن الشاشة`;
+    actions.push(nowBtn(null, { iconName: "tv", label: "عرض السؤال على الشاشة", cls: "ds-btn--primary", run: () => act("reveal") }));
+    actions.push(nowBtn("4", { iconName: "swap", label: "سؤال آخر", run: another }));
+  } else if (buzzOn && b.phase === "open") {
+    tone = "info";
+    ic = "bell";
+    text = "بانتظار أول ضغطة — الجولة ١";
+    actions.push(nowBtn("3", { iconName: "lock", label: "إغلاق الأجراس", run: () => { act("buzzClose"); toast("أُغلقت الأجراس", "lock"); } }));
+    actions.push(nowBtn("4", { iconName: "swap", label: "سؤال آخر", run: another }));
+  } else if (buzzOn && b.phase === "answer" && b.player) {
+    team = b.player.team;
+    ic = "bolt";
+    text = `${nameOf(b.player)} يجيب — ${state.teams[team].name}`;
+    actions.push(nowBtn("1", { iconName: "check", label: "صح", cls: "ds-btn--success", run: () => { act("buzzCorrect", { cellId }); toast(`نقطة لـ ${state.teams[team].name}`, "check"); } }));
+    actions.push(nowBtn("2", { iconName: "close", label: "خطأ — دور الفريق الآخر", cls: "ds-btn--danger", run: () => { act("buzzWrong"); toast("خطأ — دور الفريق الآخر", "close"); } }));
+  } else if (buzzOn && b.phase === "team") {
+    team = b.allowed;
+    ic = "users";
+    text = `دور ${state.teams[team].name} — جاوبوا بصوت عالٍ`;
+    actions.push(nowBtn("1", { iconName: "check", label: `صح لـ ${state.teams[team].name}`, team, run: () => { act("buzzCorrect", { cellId }); toast(`نقطة لـ ${state.teams[team].name}`, "check"); } }));
+  } else if (buzzOn && b.phase === "all") {
+    tone = "success";
+    ic = "megaphone";
+    text = "مفتوح للجميع — من أجاب؟";
+    actions.push(nowBtn("1", { iconName: "check", label: `صح لـ ${tA.name}`, team: "a", run: () => { act("buzzCorrect", { cellId, team: "a" }); toast(`نقطة لـ ${tA.name}`, "check"); } }));
+    actions.push(nowBtn("2", { iconName: "check", label: `صح لـ ${tB.name}`, team: "b", run: () => { act("buzzCorrect", { cellId, team: "b" }); toast(`نقطة لـ ${tB.name}`, "check"); } }));
+    actions.push(nowBtn("3", { iconName: "question", label: "لم يُجب أحد", run: () => { act("noPoint", { cellId }); toast("لم يُجب أحد — الجواب ظاهر على الشاشة", "question"); } }));
+  } else {
+    ic = "tv";
+    text = "السؤال ظاهر — احكم على الإجابة";
+    actions.push(nowBtn("1", { iconName: "check", label: `صح لـ ${tA.name}`, team: "a", run: award("a") }));
+    actions.push(nowBtn("2", { iconName: "check", label: `صح لـ ${tB.name}`, team: "b", run: award("b") }));
+    actions.push(nowBtn("3", { iconName: "question", label: "لم يُجب أحد", run: () => { act("noPoint", { cellId }); toast("لم يُجب أحد — الجواب ظاهر على الشاشة", "question"); } }));
+    actions.push(nowBtn("4", { iconName: "swap", label: "سؤال آخر", run: another }));
   }
 
-  for (const s of ui.judgeSteps.querySelectorAll(".ds-step")) {
-    const n = Number(s.dataset.stage);
-    s.classList.toggle("is-on", n === stage);
-    s.classList.toggle("is-done", n < stage);
+  box.className = `ds-now${tone ? ` ds-now--${tone}` : ""}${team ? ` ds-now--team ds-team-${team}` : ""}`;
+  ui.nowStatus.replaceChildren(icon(ic), Object.assign(document.createElement("span"), { textContent: text }));
+  if (timed) {
+    const tp = document.createElement("span");
+    tp.className = "ds-pill ds-pill--dark";
+    tp.append(icon("timer"), Object.assign(document.createElement("b"), { id: "nowSecs", textContent: secs ?? "" }));
+    ui.nowStatus.appendChild(tp);
   }
 
-  ui.judgeHistory.replaceChildren();
-  for (const h of b.history || []) {
-    const chip = document.createElement("span");
-    chip.className = `ds-pill ds-pill--team ds-team-${h.team}`;
-    chip.append(icon(RESULT_ICON[h.result] || "timer"), document.createTextNode(`${nameOf(h)}${h.ms != null ? ` ${(h.ms / 1000).toFixed(2)}ث` : ""}`));
-    ui.judgeHistory.appendChild(chip);
+  // الجسم: شريط الوقت + نص السؤال + الجواب (للحكم وحده)
+  const body = [];
+  if (timed) {
+    const bar = document.createElement("div");
+    bar.className = "ds-timebar";
+    bar.style.setProperty("--p", String(Math.max(0, Math.min(1, (secs ?? 0) / Math.max(1, t.total || 1)))));
+    bar.innerHTML = '<div class="ds-timebar-fill"></div>';
+    body.push(bar);
   }
+  if (q && cell && !resolved) {
+    body.push(Object.assign(document.createElement("div"), { textContent: q.text }));
+    const ans = document.createElement("span");
+    ans.className = "ds-answer";
+    ans.append(icon("eye"), document.createTextNode(q.answer || ""));
+    ans.hidden = !answerVisible;
+    const peek = document.createElement("button");
+    peek.type = "button";
+    peek.className = "ds-btn ds-btn--sm";
+    peek.textContent = answerVisible ? "إخفاء الجواب" : "إظهار الجواب";
+    peek.addEventListener("click", togglePeek);
+    const line = document.createElement("div");
+    line.className = "ds-cluster";
+    line.append(ans, peek);
+    body.push(line);
+  } else if (resolved && q) {
+    const ans = document.createElement("span");
+    ans.className = "ds-answer";
+    ans.append(icon("check"), document.createTextNode(`الجواب: ${q.answer || ""}`));
+    body.push(ans);
+  }
+  ui.nowBody.replaceChildren(...body);
+  ui.nowActions.replaceChildren(...actions);
+}
+
+function togglePeek() {
+  answerVisible = !answerVisible;
+  ui.peekBtn.textContent = answerVisible ? "إخفاء الجواب" : "إظهار الجواب";
+  ui.answerText.closest(".ds-answer").hidden = !answerVisible;
+  nowSig = "";
+  renderJudge();
 }
 
 /* ---------------- محرّر اللوحة ---------------- */
@@ -1046,54 +1194,6 @@ ui.unclaimBtn.addEventListener("click", () => {
   toast("تمت الإزالة من الفريق", "ban");
 });
 ui.clearBtn.addEventListener("click", () => act("clear"));
-/* ---------------- لوحة الحكم: صح / خطأ / إغلاق / سؤال آخر ---------------- */
-
-/** ينفّذ فعل زر من أزرار لوحة الحكم (الفعل يتغيّر حسب الجولة). */
-function judgeDo(btn) {
-  if (!state || !btn || btn.hidden || btn.disabled) return;
-  const cellId = state.current.cellId;
-  const b = state.current.buzz;
-  switch (btn.dataset.act) {
-    case "correct": {
-      const team = b.phase === "team" ? b.allowed : b.player?.team;
-      act("buzzCorrect", { cellId });
-      toast(`نقطة لـ ${team ? state.teams[team].name : "الفريق"}`, "check");
-      break;
-    }
-    case "correctA":
-    case "correctB": {
-      const team = btn.dataset.act === "correctA" ? "a" : "b";
-      act("buzzCorrect", { cellId, team });
-      toast(`نقطة لـ ${state.teams[team].name}`, "check");
-      break;
-    }
-    case "wrong":
-      act("buzzWrong");
-      toast("خطأ — دور الفريق الآخر", "close");
-      break;
-    case "lock":
-      act("buzzClose");
-      toast("أُغلقت الأجراس", "lock");
-      break;
-    case "noPoint":
-      act("noPoint", { cellId });
-      toast("لم يُجب أحد — الجواب ظاهر على الشاشة", "question");
-      break;
-  }
-}
-const judgeRight = () => judgeDo(ui.judgeRight);
-const judgeWrong = () => judgeDo(ui.judgeWrong);
-const judgeLock = () => judgeDo(ui.judgeLock);
-function judgeNewQ() {
-  if (!state?.current?.cellId) return;
-  act("newQuestion");
-  toast("سؤال آخر لنفس الحرف", "swap");
-}
-ui.judgeRight?.addEventListener("click", judgeRight);
-ui.judgeWrong?.addEventListener("click", judgeWrong);
-ui.judgeLock?.addEventListener("click", judgeLock);
-ui.judgeNewQ?.addEventListener("click", judgeNewQ);
-
 ui.undoBtn?.addEventListener("click", () => {
   act("undo");
   toast("تراجع عن آخر قرار", "undo");
@@ -1122,10 +1222,7 @@ document.addEventListener("keydown", (e) => {
   }
   if (e.ctrlKey || e.metaKey || e.altKey) return;
   if (state?.game !== "huroof" || refView !== "game") return;
-  if (e.key === "1") judgeRight();
-  else if (e.key === "2") judgeWrong();
-  else if (e.key === "3") judgeLock();
-  else if (e.key === "4") judgeNewQ();
+  nowKeys[e.key]?.();
 });
 
 // «العودة للألعاب»: عند الحكم فقط، لا تغيّر ما على التلفاز والجوالات
@@ -1216,14 +1313,7 @@ ui.turnOpen.addEventListener("click", () => {
 });
 ui.stopTimer.addEventListener("click", () => act("stopTimer"));
 
-ui.randomBtn.addEventListener("click", () => {
-  const cells = boardCfg.cells;
-  const free = cells.filter((c) => !state.cells[c.id].owner);
-  const pool = free.length ? free : cells;
-  const pick = pool[Math.floor(Math.random() * pool.length)];
-  act("select", { cellId: pick.id });
-  toast(`تم اختيار الحرف "${state.cells[pick.id].letter}"`, "dice");
-});
+ui.randomBtn.addEventListener("click", pickRandom);
 
 ui.resetBtn.addEventListener("click", () => {
   if (confirm("بدء جولة جديدة؟ سيتم مسح كل النقاط والخلايا المملوكة.")) {
@@ -1232,11 +1322,7 @@ ui.resetBtn.addEventListener("click", () => {
   }
 });
 
-ui.peekBtn.addEventListener("click", () => {
-  answerVisible = !answerVisible;
-  ui.peekBtn.textContent = answerVisible ? "إخفاء الجواب" : "إظهار الجواب";
-  ui.answerText.closest(".ds-answer").hidden = !answerVisible;
-});
+ui.peekBtn.addEventListener("click", togglePeek);
 
 ui.nameA.addEventListener("change", () => act("setTeam", { team: "a", name: ui.nameA.value }));
 ui.nameB.addEventListener("change", () => act("setTeam", { team: "b", name: ui.nameB.value }));
