@@ -8,7 +8,10 @@
 
 # Instructions for the implementing model (read fully before touching anything)
 
-You are migrating every screen of an Arabic (RTL) party-game web app onto its new design system.
+You are migrating **every** screen of an Arabic (RTL) party-game web app onto its new design system —
+all games (letters game, taboo game, game menu) on all devices (TV, referee phone, player phones), plus admin
+pages and every piece of UI text. **Appendix C is the complete inventory: every item there must be done and
+ticked.** Nothing that the user can see is out of scope.
 The design system already exists and is **finished and approved by the user**. Your job is to make
 every game screen use it, **without changing game behavior**. Work phase by phase, in order.
 After each phase: run the checks in §2.3, verify in a browser, commit. Never skip the checks.
@@ -169,7 +172,7 @@ Goal: one function gives every page its colors from game state; pages can load t
 
 ---
 
-## Phase 2 — Player phone (`/play`, `/buzzer`)
+## Phase 2 — Player phone (`/play`, `/buzzer`) — inventory: Appendix C.1, C.5
 
 Files: `public/buzzer.html`, `public/js/buzzer.js`, `public/js/phone-taboo.js`, `public/css/buzzer.css`.
 Remove from LEGACY at the end: `public/buzzer.html`, `public/js/buzzer.js`, `public/js/phone-taboo.js`,
@@ -217,7 +220,7 @@ Behavior checklist (all must work exactly as before):
 
 ---
 
-## Phase 3 — TV screen (`/screen`)
+## Phase 3 — TV screen (`/screen`) — inventory: Appendix C.2, C.5
 
 Files: `public/screen.html`, `public/js/screen.js`, `public/js/screen-taboo.js`, `public/css/screen.css`,
 `public/css/base.css` (shared with referee — only delete when Phase 4 is done), `scripts/gen-screen-html.mjs`.
@@ -277,7 +280,7 @@ team color change recolors live. Check 1920×1080 and 1366×768.
 
 ---
 
-## Phase 4 — Referee (`/referee`)
+## Phase 4 — Referee (`/referee`) — inventory: Appendix C.3, C.6
 
 Files: `public/referee.html`, `public/js/referee.js`, `public/js/referee-taboo.js`, `public/js/board.js`,
 `public/css/referee.css`, then `public/css/base.css` (now unused → delete), plus `presets.css` only if the
@@ -321,7 +324,7 @@ night points reset. Keyboard shortcuts. Phone 390×844 and desktop 1366×768.
 
 ---
 
-## Phase 5 — Admin and misc pages
+## Phase 5 — Admin and misc pages — inventory: Appendix C.4, C.5, C.6
 
 Files: `public/presets.html` + `public/js/presets.js` + `public/css/presets.css` (question sets editor),
 `public/taboo-packs.html` (taboo topics editor), `public/index.html` (home links), `public/_mobile-preview.html`,
@@ -340,7 +343,7 @@ Files: `public/presets.html` + `public/js/presets.js` + `public/css/presets.css`
 
 ---
 
-## Phase 6 — Finish
+## Phase 6 — Finish — inventory: Appendix C.6, C.7 (sign-off matrix)
 
 1. `grep -rn "base.css\|buzzer.css\|referee.css\|screen.css\|presets.css" public` → nothing. Delete unused CSS files.
 2. `npm run ds:check` → 0 legacy files, 0 violations. Full tests pass on a fresh server.
@@ -418,3 +421,140 @@ holds an emoji today). Replace that mechanism: map each topic to an icon id (add
 house, briefcase, map-pin, ball, paw, film, chip, calendar/gift, cube) and store `# أيقونة: <icon-id>` in the TSV
 files; update `server/taboo-packs.js` to accept icon ids (validate against ids in `icons.svg`) and the UIs to render
 `icon(id)`. The topic editor (`taboo-packs.html`) offers an icon picker (grid of icons) instead of an emoji field.
+
+---
+
+## Appendix C — FULL coverage inventory (mandatory checklist)
+
+**Everything that exists in the app is listed here. Every line must be migrated (design system, no emoji)
+and verified. Tick each item in your phase report. Nothing is "out of scope".** All games are covered on all
+three devices: TV, referee phone and player phones — the letters game («حروف مع حسين»), the taboo game
+(«الكلمة الممنوعة») and the game menu/night («سهرة الألعاب»).
+
+### C.1 Player phone — `/play` (and legacy `/buzzer?team=a|b`) — Phase 2
+Files: `buzzer.html`, `buzzer.js`, `phone-taboo.js`, `buzzer.css`.
+- [ ] Top bar: `#teamChip` (`#teamColorDot`, `#teamName`), `#sfxBtn` (sound toggle), `#connState` (`#connDot`, `#connText`) — connected / reconnecting / offline states.
+- [ ] Join screen `#joinView`: `#joinForm`, `#joinName`, team choice `#joinTeams`, `#joinNote` (errors: empty name; duplicate names get a number).
+- [ ] Re-join «adopt» flow (same name from the other route: the page reloads as the old player) still works.
+- [ ] Kicked state (`msg.t === "kicked"`): a clear message screen, styled with the library.
+- [ ] Letters game — **every** `body[data-view]` value produced by the view function (`buzzer.js` ~lines 240–380),
+      each with its title/sub/note and an **icon instead of the emoji** used there today:
+      `off` (loading → `timer`; buzzers stopped → `volume-off`), `idle` (waiting for the referee to pick a game →
+      `gamepad`; waiting for a question), `arm` (press now → `bell`; «let others press first» → `hand`), `mine`
+      (I pressed first → `bolt`, with the 3 s timer `#bzRing`/`#ringNum`/`#ringSub`), `rival` (someone else is
+      answering → `users`), `correct` (my answer is correct → `check` + `confetti()`), `rivalPoint` (other team
+      scored), `expired` (nobody answered → `question`; question settled → `timer`), `over` (game over/winner → `trophy`).
+- [ ] Stage 2 (other team answers out loud, 10 s countdown) and stage 3 (open to all, no timer) phone views.
+- [ ] Letter bar `#letterBar`/`#letterBarValue`; question box `#bzQuestion` (`#qLetter`, `#qText`) when shown;
+      the answer note after a point or «لم يُجب أحد».
+- [ ] Buzz pad `#buzzPad` (`#hitIcon`, `#hitLabel`), `#buzzNote`, center block `#bzCenter` (`#centerIcon`,
+      `#centerTitle`, `#centerSub`), personal stats `#myStats`, flash `#bzFlash`, confetti `#confetti`.
+- [ ] Vibration and sounds unchanged.
+- [ ] Taboo phone `#tabooPhone` — every phase for every role: `setup`, `rules` (full rule sentences), `ready`
+      (describer «أنت الشارح» / teammates / opponents), `turn` and `paused` (describer: topic, word, forbidden words,
+      skip button with count, or no count when unlimited; teammates: guess screen; opponents: forbidden words +
+      shout reminder), `turnEnd` (foul reason, turn chips including `pass`), `over` (won / lost). Score bar + target line.
+- [ ] Legacy team buzzer page `/buzzer?team=a|b` (same file, team mode) works and looks right.
+- [ ] `diag.js` failure overlay (old phones) — stays ES5, no emoji, colors via `var(--…)` inside its inline styles.
+- [ ] `<title>` without emoji.
+
+### C.2 TV — `/screen` — Phase 3
+Files: `screen.html`, `screen.js`, `screen-taboo.js`, `screen.css`, `base.css`, `scripts/gen-screen-html.mjs`.
+- [ ] Connection badge `#connBadge` (`#connBadgeDot`, `#connBadgeText`): referee connected / waiting.
+- [ ] Lobby `#lobby`: title/badge, referee card `#qrCardRef` (shrinks after the referee connects), players card,
+      4 QR routes (`#qrRefNet`, `#qrRefLan`, `#qrPlayNet`, `#qrPlayLan` + their `…Wait` placeholders: preparing /
+      unavailable / no Wi-Fi), hint text, live team lists (`#lobbyTeamNameA/B`, `#lobbyPlayersA/B`), pair code
+      `#lobbyPairCode`, status `#lobbyStatusText`. The referee can hide one route; both always show without a referee.
+- [ ] Game menu `#hubScreen` + night points `#hubNight`.
+- [ ] Letters board SVG `#gameSvg` (cells, selected cell, owned cells, goal zones `#polyTop`/`#polyBottom`,
+      backgrounds `#bgLeft`/`#bgRight`), selected letter hex `#selectedHexGroup` (`#selectedHexPath`, `#selectedHexText`),
+      question `#qText`, answer card `#qAnswerBox`/`#qAnswerValue`, team scores `#scoreGroupA/B` (`#scoreHexPathA/B`,
+      `#scoreTextA/B`), cell-claim animation, win-path highlight.
+- [ ] Timer `#timerOverlay`/`#timerBadge` (`#timerDot`, `#timerNum`, `#timerTurn`) for stage 1 (3 s) and stage 2 (10 s).
+- [ ] Buzz banner `#buzzBanner` (`#buzzBannerIcon`, `#buzzBannerText`, `#buzzBannerSub`, `#buzzBannerTimer`) for every
+      stage: waiting, player pressed first, wrong then other team, stage 3 open, correct, no answer.
+- [ ] Winner overlay `#winnerOverlay` (`#winnerName`, `#winnerStats`: best player, fastest press) + confetti `#confetti`.
+- [ ] Taboo TV `#tabooScreen` — phases `setup`, `rules` (**auto-advancing slides**), `ready` (team + describer),
+      `turn`/`paused` (ring, describer, topic, tally, chips — never the word or the forbidden words), `turnEnd` (foul
+      banner, chips, next team), `over` (winner). Skip dots including unlimited (∞ is a math symbol, allowed) and 0.
+- [ ] Sound-unlock button created by **`sfx.js`** (class `sfx-unlock`, text «اضغط لتشغيل الصوت» with a speaker emoji
+      today) → `ds-btn ds-btn--primary` + `volume` icon. It appears on every page that uses `sfx.js`.
+- [ ] Game-switch animation, mouse cursor visible, `<title>` keeps ` [port]`, no emoji anywhere.
+
+### C.3 Referee — `/referee` — Phase 4
+Files: `referee.html`, `referee.js`, `referee-taboo.js`, `board.js`, `referee.css`.
+- [ ] Pairing gate `#pairingGate` (`#pairingForm`, `#pairCodeInput`, `#pairingNote`: invalid / checking).
+- [ ] Header: `#roomLabel`, `#undoBtn`, `#sfxBtn`, `#connChip`/`#connText`.
+- [ ] Buzz banner `#buzzBanner` (`#buzzBannerIco`, `#buzzBannerText`) + vibration.
+- [ ] Judge panel `#judgePanel`: `#judgeStage`, `#judgeWho`, `#judgeTimer`, `#judgeHistory`, buttons `#judgeRight`,
+      `#judgeWrong`, `#judgeLock`, `#judgeNewQ` — for each stage (1/2/3) exactly as today.
+- [ ] Game menu card `#hubCard` (`#hubGames`, `#nightBoardHub`), change-game button `#changeGameBtn`, footer night
+      board `#nightBoardFoot`.
+- [ ] Mini board `#board` (via `board.js`), scores `#scoreNameA/B`, `#scoreA/B`.
+- [ ] TV control card `#screenCard`: `#screenHint`, `#lobbyToggleBtn`, `#screenSoundBtn`, `#screenFullBtn`,
+      QR route choice `#qrRouteSeg`, status line `#netStatusLine`.
+- [ ] Question card `#qCard`: `#qLetter`, `#qStatus`, `#qOwner`, `#qCategory`, `#qText`, hint (`#qHint`, `#qHintText`,
+      `#hintBtn`), answer (`#answerBox`, `#peekBtn`, `#answerText`, `#revealBtn`, `#hideBtn`, `#revealAnswerBtn`,
+      `#hideAnswerBtn`), `#newQBtn`, `#letterBtn`, award (`#awardA/B` + labels), `#noPointBtn`, `#unclaimBtn`,
+      `#clearBtn`, turn (`#turnA/B` + labels, `#turnOpen`), `#stopTimer`, `#timerReadout`, `#randomBtn`,
+      `#shuffleBtn`, `#resetBtn`.
+- [ ] Buzzer settings card `#buzzCard`: `#buzzEnabled`, `#buzzAuto`, `#buzzSeconds`, `#buzzOtherSeconds`,
+      `#buzzNoRepeat`, `#buzzOpenBtn`, `#buzzResetBtn`, `#buzzReadout`.
+- [ ] Players card `#playersCard`: `#playersHint`, `#playersCols` (move / kick buttons → icons `swap` / `close`), and
+      the players QR `#playQr` — **show both routes** (internet + Wi-Fi) using `getRoutes()` from `qr.js`, like the TV.
+- [ ] Settings card `#settingsCard`: theme chips `#themeChips` (5 themes from `DS_THEMES`), team names `#nameA/B`,
+      team colors `#colorA/B`, cell color `#cellColor`, selected color `#selectedColor`, question panel color
+      `#bgColor` (now drives `--panel`), clash warning `#colorWarn`/`#colorWarnList`/`#colorFixBtn`, board letters
+      editor `#boardEditor`, declare winner `#declareA/B`/`#declareNone`.
+- [ ] Presets card `#presetsCard`: `#presetList`, `#managePresets`, `#reloadPresets`, `#presetReadout`.
+- [ ] Log card `#logCard`/`#logList` (its lines come from the engine — see C.6).
+- [ ] Help card `#helpCard`.
+- [ ] Letter modal `#letterModal` (`#letterModalTitle`, `#letterModalClose`, `#letterGrid`, `#letterModalNote`).
+- [ ] Taboo referee `#tabooCard` + settings `#tabooSettings` (`#tabooTarget`, `#tabooSeconds`, `#tabooSkips`,
+      `#tabooPacks`, `#tabooPacksReadout`, `#tabooNewBtn`) — every phase: setup, rules, ready (describer, warning
+      when the team has fewer than 2 online players, **card preview + «كلمة أخرى»**, draw again, start),
+      turn/paused (timer, word, forbidden words, tally, right / foul / team skip / free swap / pause, foul-reason grid),
+      turnEnd (summary, next turn), over.
+- [ ] Toast `#toast` → `toast()` from `ds.js`.
+- [ ] Keyboard shortcuts (letters: 1–4, Ctrl+Z; taboo: 1–4, Space) unchanged.
+
+### C.4 Admin and other pages — Phase 5
+- [ ] `/` `index.html` (home links).
+- [ ] `/presets` `presets.html` + `presets.js` + `presets.css` (question sets: list, create, edit, paste from Sheets,
+      validate, preview, delete) — all states including errors and empty lists.
+- [ ] `/taboo-packs` `taboo-packs.html` (topics: list, edit cards, icon picker instead of emoji, save, delete).
+- [ ] `/design` stays the reference; add a demo for every new library component you create.
+- [ ] `_mobile-preview.html` (dev helper): migrate, or delete if nothing references it.
+
+### C.5 Shared UI produced by JS modules
+- [ ] `sfx.js` sound-unlock overlay (see C.2) — affects all pages.
+- [ ] `qr.js` QR drawing colors → tokens; labels without emoji.
+- [ ] `diag.js` overlay (see C.1).
+- [ ] Confetti everywhere → `confetti()` from `ds.js`.
+
+### C.6 Text the user sees that comes from the server/engine (also NO emoji)
+These strings are rendered on screens, so the no-emoji rule applies to them too. Replace the emoji with words,
+or better with an **icon key** that the UI turns into an icon: add an optional `icon` field next to `text`
+(e.g. `{ text, tone, icon: "check" }`) and render it with `icon()`.
+- [ ] Engine log lines (`shared/engine.js` `pushLog`, and `shared/taboo.js` which returns `{ text, tone }`): join,
+      describer draw, turn start, skip, foul, timeout, win, manual adjust, undo, free swap, etc.
+      **Text-only change**: do not change game logic; update only tests that match these exact strings.
+- [ ] Taboo rule sentences `TABOO_RULES` and foul labels `TABOO_FOULS` (check for emoji).
+- [ ] Taboo topic icons in `presets/الكلمة_الممنوعة/*.tsv` (`# أيقونة:` line) → icon ids (see Appendix B note).
+- [ ] Server console window (`server/index.js` `console.log`) — Phase 6.
+- [ ] Docs the user reads: `دليل-الاستخدام.md`, `README.md`, `scripts/setup-readme-ar.txt` — Phase 6.
+
+### C.7 Every game on every device — final sign-off matrix (Phase 6)
+| | TV | Referee | Player phone |
+|---|---|---|---|
+| Lobby / pairing / join | [ ] | [ ] | [ ] |
+| Game menu + night points | [ ] | [ ] | [ ] (waiting view) |
+| «حروف مع حسين» full round + winner | [ ] | [ ] | [ ] |
+| «الكلمة الممنوعة» full game + winner | [ ] | [ ] | [ ] (all 3 roles) |
+| Theme switch (5 themes) + team colors | [ ] | [ ] | [ ] |
+| Sound unlock / mute | [ ] | [ ] | [ ] |
+| Disconnect, then reconnect | [ ] | [ ] | [ ] |
+
+### C.8 Future games
+Any new game (photo challenge, drawing, etc.) is built **only** from the library, follows `DESIGN.md`, and gets its
+own section on `/design` before its screens are built. Add its screens to this inventory in the same format.
