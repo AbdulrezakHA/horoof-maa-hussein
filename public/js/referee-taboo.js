@@ -80,7 +80,7 @@ export function initTaboo(context) {
   // اختصارات لوحة المفاتيح أثناء الدور: 1 صح · 2 مخالفة · 3 تخطّي · 4 كلمة أخرى · مسافة إيقاف/استئناف
   document.addEventListener("keydown", (e) => {
     const st = ctx.getState();
-    if (st?.game !== "taboo") return;
+    if (st?.game !== "taboo" || !ctx.inGameView()) return;
     const tag = (e.target?.tagName || "").toLowerCase();
     if (tag === "input" || tag === "textarea" || tag === "select" || e.ctrlKey || e.metaKey || e.altKey) return;
     const t = st.taboo;

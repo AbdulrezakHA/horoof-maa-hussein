@@ -177,7 +177,32 @@ const CONN = {
   offline: ["ds-pill--coral", "warning", "منقطع — إعادة المحاولة…"],
   other: ["ds-pill--dark", "timer", "جارٍ الاتصال…"],
 };
+/* ---------------- التنقّل المحلي عند الحكم (منفصل عن state.game) ---------------- */
+// "home" = الصفحة الرئيسية للسهرة · "game" = داخل لعبة. يبدأ دائماً بـ home (بعد الاقتران وعند كل تحميل أو إعادة اتصال).
+let refView = "home";
+let pendingGame = null; // لعبة اخترتها وننتظر وصول التأكيد من الخادم
+let wasOnline = false;
+/** اللعبة المعروضة الآن عند الحكم: none في الرئيسية، وإلا اللعبة الجارية. */
+const viewGame = () => (refView === "home" || !state ? "none" : state.game || "none");
+function goHome() {
+  refView = "home";
+  pendingGame = null;
+  window.scrollTo({ top: 0 });
+  if (state) render();
+}
+function enterGame(id) {
+  refView = "game";
+  pendingGame = state?.game === id ? null : id;
+  window.scrollTo({ top: 0 });
+  if (state) render();
+}
+
 transport.onStatus = (s) => {
+  if (s === "online" && wasOnline === false) wasOnline = true;
+  else if (s !== "online" && wasOnline) {
+    wasOnline = false;
+    goHome(); // إعادة الاتصال تبدأ دائماً من الرئيسية
+  }
   const [cls, ic, text] = CONN[s] || CONN.other;
   ui.connChip.className = `ds-pill ${cls}`;
   setIcon(ui.connIcon, ic);
@@ -353,9 +378,9 @@ function renderHub() {
     b.append(art, name, desc);
     if (!g.soon) {
       b.addEventListener("click", () => {
-        act("setGame", { game: g.id });
+        if (state.game !== g.id) act("setGame", { game: g.id }); // تنتقل الشاشة والجوالات
+        enterGame(g.id); // وإن كانت جارية فقط ندخلها بلا تصفير
         toast(g.name, g.icon);
-        window.scrollTo({ top: 0, behavior: "smooth" });
       });
     }
     wrap.appendChild(b);
@@ -368,6 +393,17 @@ function renderHub() {
     if (confirm("تصفير نقاط السهرة للفريقين؟")) act("nightReset");
   });
   wrap.appendChild(reset);
+}
+
+/** بطاقة «متابعة» في الرئيسية عند وجود لعبة جارية، وزر إنهائها للجميع. */
+function renderContinue() {
+  const box = el("continueCard");
+  if (!box || !state) return;
+  const running = state.game && state.game !== "none";
+  box.hidden = !running;
+  if (!running) return;
+  const g = HUB_GAMES.find((x) => x.id === state.game);
+  el("continueBtn").replaceChildren(icon("play"), document.createTextNode(`متابعة: ${g?.name || ""}`));
 }
 
 /** الأقسام الظاهرة حسب اللعبة: data-game = none | huroof | taboo | ingame (داخل أي لعبة). */
@@ -383,8 +419,11 @@ function render() {
   if (!state) return;
 
   // اللعبة الحالية تحدّد الأقسام الظاهرة (data-game في الصفحة)
-  document.body.dataset.game = state.game || "none";
-  applyGameVisibility(state.game || "none");
+  if (pendingGame && state.game === pendingGame) pendingGame = null;
+  if (refView === "game" && !pendingGame && (!state.game || state.game === "none")) refView = "home"; // أُنهيت اللعبة من مكان آخر
+  document.body.dataset.game = viewGame();
+  applyGameVisibility(viewGame());
+  renderContinue();
   applyGameColors(state);
   const stageColor = getComputedStyle(document.documentElement).getPropertyValue("--stage").trim();
   if (stageColor) document.querySelector('meta[name="theme-color"]')?.setAttribute("content", stageColor);
@@ -790,7 +829,7 @@ function renderJudge() {
   if (!panel || !state) return;
   const c = state.current || {};
   const b = c.buzz || {};
-  const show = state.game === "huroof" && !!b.enabled && b.stage > 0 && b.phase !== "done" && b.phase !== "idle" && !c.verdict && !c.missed;
+  const show = state.game === "huroof" && refView === "game" && !!b.enabled && b.stage > 0 && b.phase !== "done" && b.phase !== "idle" && !c.verdict && !c.missed;
   panel.hidden = !show;
   document.body.classList.toggle("judging", show);
   if (!show) return;
@@ -1082,24 +1121,33 @@ document.addEventListener("keydown", (e) => {
     return;
   }
   if (e.ctrlKey || e.metaKey || e.altKey) return;
-  if (state?.game !== "huroof") return;
+  if (state?.game !== "huroof" || refView !== "game") return;
   if (e.key === "1") judgeRight();
   else if (e.key === "2") judgeWrong();
   else if (e.key === "3") judgeLock();
   else if (e.key === "4") judgeNewQ();
 });
 
-el("changeGameBtn")?.addEventListener("click", () => {
-  if (confirm("العودة إلى قائمة الألعاب؟ اللعبة الحالية تبقى محفوظة كما هي.")) {
-    act("setGame", { game: null });
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  }
+// «العودة للألعاب»: عند الحكم فقط، لا تغيّر ما على التلفاز والجوالات
+el("changeGameBtn")?.addEventListener("click", goHome);
+el("continueBtn")?.addEventListener("click", () => {
+  if (state?.game && state.game !== "none") enterGame(state.game);
+});
+// «إنهاء اللعبة والعودة للقائمة على التلفاز»: يغيّر state.game للجميع بعد التأكيد
+el("endGameBtn")?.addEventListener("click", () => el("endGameModal").classList.add("is-open"));
+el("endGameNo")?.addEventListener("click", () => el("endGameModal").classList.remove("is-open"));
+el("endGameYes")?.addEventListener("click", () => {
+  el("endGameModal").classList.remove("is-open");
+  act("setGame", { game: null });
+  goHome();
+  toast("عادت قائمة الألعاب على التلفاز", "gamepad");
 });
 
 initTaboo({
   act,
   toast,
   getState: () => state,
+  inGameView: () => refView === "game",
   getPeers: () => peers,
   remainingMs: (t) => remainingMs(t, transport.serverOffset),
 });
