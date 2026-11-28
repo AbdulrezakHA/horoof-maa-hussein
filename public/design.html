@@ -14,8 +14,8 @@
     <link rel="stylesheet" href="/css/ds.css" />
     <style>
       /* Hallmark · custom direction: sticker cartoon reference page · genre playful · scope app
-         critique: the page demos ds.css components live; captions above mockups are demo labels, not eyebrows.
-         waive 30a (emoji as icon): the game's established visual language. waive 54: demo captions. */
+         critique: the page demos ds.css components live; every icon is an SVG symbol from /icons.svg, never emoji.
+         waive 54: captions above mockups are demo labels, not eyebrows. */
       /* صفحة المرجع فقط: كل الألوان من متغيّرات ds.css */
       html,
       body {
@@ -245,7 +245,12 @@
         gap: 0.6cqw;
       }
       .dz-hub-tiles .ds-game-tile-art {
-        font-size: 7cqw;
+        font-size: 4cqw;
+        border-width: 0.35cqw;
+      }
+      .dz-hub-tiles .ds-game-tile {
+        aspect-ratio: auto;
+        padding: 2.2cqw 1.6cqw 3.4cqw;
       }
       .dz-hub-tiles .ds-game-tile-name {
         font-size: 2.6cqw;
@@ -402,19 +407,130 @@
         font-weight: 700;
         font-size: var(--fs-sm);
       }
+
+      /* ---- إضافات: الأيقونات ودرجات الألوان ---- */
+      .dz-logo .ds-icon,
+      .dz-tv h3 .ds-icon {
+        vertical-align: -0.15em;
+      }
+      .dz-swatch-3 {
+        display: grid;
+        grid-template-rows: 1fr 1.4fr 0.8fr;
+      }
+      .dz-swatch-3 span {
+        display: block;
+      }
+      .dz-icons {
+        display: grid;
+        gap: var(--gap-2);
+        grid-template-columns: repeat(auto-fill, minmax(min(96px, 100%), 1fr));
+      }
+      .dz-icon-cell {
+        display: grid;
+        justify-items: center;
+        gap: 0.35rem;
+        padding: 0.8rem 0.4rem 0.6rem;
+        background: var(--paper);
+        color: var(--ink);
+        border: var(--line) solid var(--ink);
+        border-radius: var(--r-md);
+        box-shadow: 0 4px 0 var(--ink);
+        transition: transform var(--dur-2) var(--ease-pop);
+      }
+      .dz-icon-cell:hover {
+        transform: translateY(-3px) rotate(-3deg);
+      }
+      .dz-icon-cell .ds-icon {
+        width: 34px;
+        height: 34px;
+      }
+      .dz-icon-cell code {
+        font-size: var(--fs-xs);
+        color: var(--ink-soft);
+      }
+      .dz-principles .ds-badge-icon {
+        margin-bottom: 0.5rem;
+      }
+      .dz-p {
+        margin: 0;
+        font-weight: 700;
+      }
+      .dz-dim {
+        color: var(--on-stage-dim);
+      }
+      .dz-label--ink {
+        color: var(--ink-soft);
+      }
+      .dz-pill-sun {
+        background: var(--sun);
+      }
+      .dz-pill-sky {
+        background: var(--sky);
+      }
+      .ds-pill .ds-icon,
+      .ds-chip .ds-icon,
+      .ds-team-meta .ds-icon {
+        width: 1.05em;
+        height: 1.05em;
+        stroke-width: 2.8;
+      }
+      .dz-phone--paper {
+        background: var(--paper);
+      }
+      .dz-big-badge {
+        width: 4.2rem;
+        height: 4.2rem;
+      }
+      .dz-big-badge .ds-icon {
+        width: 2.2rem;
+        height: 2.2rem;
+      }
+      .dz-motion-card {
+        cursor: pointer;
+        font: inherit;
+      }
+      .dz-motion-demo .ds-icon {
+        width: 30px;
+        height: 30px;
+      }
+      .dz-rule-icon {
+        display: grid;
+        place-items: center;
+        width: 9cqw;
+        height: 9cqw;
+        border-radius: 50%;
+        background: var(--sun);
+        border: 0.4cqw solid var(--ink);
+        box-shadow: 0 0.5cqw 0 var(--ink);
+      }
+      .dz-rule-icon .ds-icon {
+        width: 5cqw;
+        height: 5cqw;
+      }
+      .dz-rule-foul .dz-rule-icon {
+        background: var(--paper);
+      }
+      .dz-trophy .ds-icon {
+        width: 12cqw;
+        height: 12cqw;
+        color: var(--sun);
+        stroke-width: 2;
+        filter: drop-shadow(0 0.6cqw 0 var(--ink));
+      }
     </style>
   </head>
   <body class="ds ds-page">
     <header class="dz-bar">
       <div class="dz-bar-in">
-        <div class="dz-logo">🎨 نظام تصميم سهرة الألعاب</div>
+        <div class="dz-logo"><span data-i="palette"></span> نظام تصميم سهرة الألعاب</div>
         <div class="ds-seg" id="scaleSeg" aria-label="المقاس">
-          <button type="button" data-value="phone" aria-pressed="true">📱 جوال</button>
-          <button type="button" data-value="tv" aria-pressed="false">📺 تلفاز</button>
+          <button type="button" data-value="phone" aria-pressed="true"><span data-i="phone"></span>جوال</button>
+          <button type="button" data-value="tv" aria-pressed="false"><span data-i="tv"></span>تلفاز</button>
         </div>
         <nav class="dz-nav" aria-label="الأقسام">
           <a href="#colors">الألوان</a>
           <a href="#type">الخطوط</a>
+          <a href="#icons">الأيقونات</a>
           <a href="#buttons">الأزرار</a>
           <a href="#cards">البطاقات</a>
           <a href="#teams">الفرق والنقاط</a>
@@ -432,27 +548,27 @@
     <main class="dz-wrap">
       <section class="dz-hero">
         <h1 class="ds-pop-in">سهرة الألعاب</h1>
-        <p class="ds-rise-in" style="--i: 2">مرجع واحد لكل شاشة: ملصقات كرتونية، حدود سميكة، وحركة قصيرة نابضة.</p>
+        <p class="ds-rise-in" style="--i: 2">مرجع واحد لكل شاشة: ملصقات كرتونية، أزرار كقطع الحلوى، وحركة قصيرة نابضة.</p>
         <div class="dz-row ds-rise-in" style="--i: 3">
-          <a class="ds-btn ds-btn--primary ds-btn--lg" href="#screens">🎮 نماذج الشاشات</a>
-          <button class="ds-btn" type="button" id="heroConfetti">🎉 احتفال</button>
+          <a class="ds-btn ds-btn--primary ds-btn--lg" href="#screens"><span data-i="gamepad"></span>نماذج الشاشات</a>
+          <button class="ds-btn" type="button" id="heroConfetti"><span data-i="party"></span>احتفال</button>
         </div>
       </section>
 
       <section class="dz-sec" aria-labelledby="pr">
         <h2 id="pr">المبادئ</h2>
         <div class="dz-principles">
-          <div class="ds-card ds-pop-in" style="--i: 0"><b>✏️ حبر سميك</b><p>كل عنصر محاط بحدّ داكن، كأنه ملصق.</p></div>
-          <div class="ds-card ds-pop-in" style="--i: 1"><b>🧱 ظل صلب</b><p>الظل إزاحة صلبة لأسفل، لا ضباب.</p></div>
-          <div class="ds-card ds-pop-in" style="--i: 2"><b>🫧 حركة نابضة</b><p>قصيرة ومرنة، ولا تشتّت عن اللعب.</p></div>
-          <div class="ds-card ds-pop-in" style="--i: 3"><b>🎨 ألوان الفرق</b><p>كل ما يخصّ الفريق يأخذ لونه تلقائياً.</p></div>
+          <div class="ds-card ds-pop-in" style="--i: 0"><span class="ds-badge-icon"><span data-i="pen"></span></span><b>حبر سميك</b><p>كل عنصر محاط بحدّ داكن، كأنه ملصق.</p></div>
+          <div class="ds-card ds-pop-in" style="--i: 1"><span class="ds-badge-icon"><span data-i="shapes"></span></span><b>عمق ملموس</b><p>الأزرار لها جدار ولمعة، وتنضغط فعلاً.</p></div>
+          <div class="ds-card ds-pop-in" style="--i: 2"><span class="ds-badge-icon"><span data-i="sparkle"></span></span><b>حركة نابضة</b><p>قصيرة ومرنة، ولا تشتّت عن اللعب.</p></div>
+          <div class="ds-card ds-pop-in" style="--i: 3"><span class="ds-badge-icon"><span data-i="star"></span></span><b>رموز لا إيموجي</b><p>كل أيقونة رمز مرسوم بنفس الخط.</p></div>
         </div>
       </section>
 
       <!-- ================= الألوان ================= -->
       <section class="dz-sec" id="colors" aria-labelledby="colorsH">
         <h2 id="colorsH">الألوان</h2>
-        <p class="dz-lead">ألوان اللعب للإجراءات، والمسرح للخلفيات، والحبر للحدود.</p>
+        <p class="dz-lead">لكل لون ثلاث درجات: لمعة، ووجه، وجدار.</p>
         <div class="dz-swatches" id="swatches"></div>
       </section>
 
@@ -476,28 +592,37 @@
         </div>
       </section>
 
+      <!-- ================= الأيقونات ================= -->
+      <section class="dz-sec" id="icons" aria-labelledby="iconsH">
+        <h2 id="iconsH">الأيقونات</h2>
+        <p class="dz-lead">رموز مرسومة فقط، بخط واحد مستدير. لا إيموجي في أي مكان.</p>
+        <div class="dz-icons" id="iconGrid"></div>
+      </section>
+
       <!-- ================= الأزرار ================= -->
       <section class="dz-sec" id="buttons" aria-labelledby="btnH">
         <h2 id="btnH">الأزرار</h2>
-        <p class="dz-lead">اضغط عليها: الزر ينزل ويختفي ظلّه كزر حقيقي.</p>
+        <p class="dz-lead">مرّر فوقها ثم اضغط: تلمع، وتنزل على جدارها كزر حقيقي.</p>
         <span class="dz-label">الأنواع</span>
         <div class="dz-row">
-          <button class="ds-btn ds-btn--primary" type="button">▶️ ابدأ الدور</button>
-          <button class="ds-btn ds-btn--success" type="button">✅ صح</button>
-          <button class="ds-btn ds-btn--danger" type="button">🚫 مخالفة</button>
-          <button class="ds-btn ds-btn--info" type="button">🔄 كلمة أخرى</button>
-          <button class="ds-btn" type="button">⏸ إيقاف</button>
+          <button class="ds-btn ds-btn--primary" type="button"><span data-i="play"></span>ابدأ الدور</button>
+          <button class="ds-btn ds-btn--success" type="button"><span data-i="check"></span>صح</button>
+          <button class="ds-btn ds-btn--danger" type="button"><span data-i="ban"></span>مخالفة</button>
+          <button class="ds-btn ds-btn--info" type="button"><span data-i="swap"></span>كلمة أخرى</button>
+          <button class="ds-btn ds-btn--grape" type="button"><span data-i="dice"></span>قرعة</button>
+          <button class="ds-btn" type="button"><span data-i="pause"></span>إيقاف</button>
+          <button class="ds-btn ds-btn--team" type="button" style="--team: var(--team-a); --team-ink: var(--paper)"><span data-i="users"></span>فريق الأولاد</button>
           <button class="ds-btn ds-btn--ghost" type="button">إلغاء</button>
-          <button class="ds-btn ds-btn--team" type="button" style="--team: var(--team-a); --team-ink: var(--paper)">فريق الأولاد</button>
         </div>
         <span class="dz-label">الأحجام والحالات</span>
         <div class="dz-row">
           <button class="ds-btn ds-btn--primary ds-btn--sm" type="button">صغير</button>
           <button class="ds-btn ds-btn--primary" type="button">عادي</button>
-          <button class="ds-btn ds-btn--primary ds-btn--lg" type="button">كبير</button>
-          <button class="ds-btn ds-btn--icon" type="button" aria-label="الصوت">🔊</button>
-          <button class="ds-btn ds-btn--primary" type="button" disabled>معطّل</button>
-          <button class="ds-btn ds-btn--primary" type="button" id="loadBtn">جارٍ الحفظ؟</button>
+          <button class="ds-btn ds-btn--primary ds-btn--lg" type="button"><span data-i="play"></span>كبير</button>
+          <button class="ds-btn ds-btn--icon" type="button" aria-label="الصوت"><span data-i="volume"></span></button>
+          <button class="ds-btn ds-btn--icon ds-btn--info" type="button" aria-label="ملء الشاشة"><span data-i="fullscreen"></span></button>
+          <button class="ds-btn ds-btn--primary" type="button" disabled><span data-i="skip"></span>معطّل</button>
+          <button class="ds-btn ds-btn--success" type="button" id="loadBtn"><span class="ds-spinner"></span><span data-i="check"></span>احفظ</button>
         </div>
         <span class="dz-label">الجرس الكبير</span>
         <div class="dz-row">
@@ -510,21 +635,21 @@
         <h2 id="cardsH">البطاقات</h2>
         <p class="dz-lead">بطاقات الألعاب تتمايل بلطف، وتقفز عند التمرير.</p>
         <div class="dz-grid">
-          <button class="ds-game-tile" type="button" style="--tile: var(--sun); --i: 0">
-            <span class="ds-game-tile-art">🔤</span><span class="ds-game-tile-name">حروف مع حسين</span><span class="ds-game-tile-tag">أسئلة وأجراس</span>
+          <button class="ds-game-tile" type="button" style="--i: 0">
+            <span class="ds-game-tile-art"><span data-i="hexagon"></span></span><span class="ds-game-tile-name">حروف مع حسين</span><span class="ds-game-tile-tag">أسئلة وأجراس</span>
           </button>
-          <button class="ds-game-tile" type="button" style="--tile: var(--coral); --i: 1">
-            <span class="ds-game-tile-art">🤐</span><span class="ds-game-tile-name">الكلمة الممنوعة</span><span class="ds-game-tile-tag">شرح بالكلام</span>
+          <button class="ds-game-tile ds-game-tile--coral" type="button" style="--i: 1">
+            <span class="ds-game-tile-art"><span data-i="hush"></span></span><span class="ds-game-tile-name">الكلمة الممنوعة</span><span class="ds-game-tile-tag">شرح بالكلام</span>
           </button>
-          <button class="ds-game-tile" type="button" style="--tile: var(--sky); --i: 2">
-            <span class="ds-game-tile-art">✨</span><span class="ds-game-tile-name">لعبة قادمة</span><span class="ds-game-tile-tag">قريباً</span>
+          <button class="ds-game-tile ds-game-tile--sky" type="button" style="--i: 2">
+            <span class="ds-game-tile-art"><span data-i="sparkle"></span></span><span class="ds-game-tile-name">لعبة قادمة</span><span class="ds-game-tile-tag">قريباً</span>
           </button>
         </div>
         <span class="dz-label">بطاقات المحتوى</span>
         <div class="dz-grid">
-          <div class="ds-card"><div class="ds-card-title">بطاقة فاتحة</div><p style="margin: 0; font-weight: 700">للإعدادات والقوائم والمحتوى.</p></div>
-          <div class="ds-card ds-card--stage"><div class="ds-card-title">بطاقة المسرح</div><p style="margin: 0; font-weight: 700">على الخلفيات الداكنة.</p></div>
-          <div class="ds-card ds-card--team" style="--team: var(--team-a); --team-ink: var(--paper)"><div class="ds-card-title">بطاقة الفريق</div><p style="margin: 0; font-weight: 700">تأخذ لون الفريق تلقائياً.</p></div>
+          <div class="ds-card"><div class="ds-card-title">بطاقة فاتحة</div><p class="dz-p">للإعدادات والقوائم والمحتوى.</p></div>
+          <div class="ds-card ds-card--stage"><div class="ds-card-title">بطاقة المسرح</div><p class="dz-p">على الخلفيات الداكنة.</p></div>
+          <div class="ds-card ds-card--team" style="--team: var(--team-a); --team-ink: var(--paper)"><div class="ds-card-title">بطاقة الفريق</div><p class="dz-p">تأخذ لون الفريق تلقائياً.</p></div>
         </div>
       </section>
 
@@ -534,25 +659,25 @@
         <p class="dz-lead">الفريق صاحب الدور يكبر قليلاً، والآخر يخفت.</p>
         <div class="dz-grid">
           <div class="ds-team is-turn" id="teamA" style="--team: var(--team-a); --team-ink: var(--paper)">
-            <div><div class="ds-team-name">الأولاد</div><div class="ds-team-meta">⏭ <span class="ds-dots"><span class="ds-dot"></span><span class="ds-dot is-used"></span></span></div></div>
+            <div><div class="ds-team-name">الأولاد</div><div class="ds-team-meta"><span data-i="skip"></span> <span class="ds-dots"><span class="ds-dot"></span><span class="ds-dot is-used"></span></span></div></div>
             <div class="ds-score" id="scoreA">3</div>
           </div>
           <div class="ds-team is-waiting" id="teamB" style="--team: var(--team-b); --team-ink: var(--paper)">
-            <div><div class="ds-team-name">البنات</div><div class="ds-team-meta">⏭ <span class="ds-dots"><span class="ds-dot"></span><span class="ds-dot"></span></span></div></div>
+            <div><div class="ds-team-name">البنات</div><div class="ds-team-meta"><span data-i="skip"></span> <span class="ds-dots"><span class="ds-dot"></span><span class="ds-dot"></span></span></div></div>
             <div class="ds-score" id="scoreB">5</div>
           </div>
         </div>
         <div class="dz-row" style="margin-top: 1rem">
-          <button class="ds-btn ds-btn--success ds-btn--sm" type="button" id="plusA">+1 للأولاد</button>
-          <button class="ds-btn ds-btn--success ds-btn--sm" type="button" id="plusB">+1 للبنات</button>
-          <button class="ds-btn ds-btn--sm" type="button" id="swapTurn">↔ تبديل الدور</button>
+          <button class="ds-btn ds-btn--success ds-btn--sm" type="button" id="plusA"><span data-i="plus"></span>للأولاد</button>
+          <button class="ds-btn ds-btn--success ds-btn--sm" type="button" id="plusB"><span data-i="plus"></span>للبنات</button>
+          <button class="ds-btn ds-btn--sm" type="button" id="swapTurn"><span data-i="swap"></span>تبديل الدور</button>
         </div>
         <span class="dz-label">شارات</span>
         <div class="dz-row">
-          <span class="ds-pill">🎯 الهدف 10</span>
-          <span class="ds-pill ds-pill--team" style="--team: var(--team-a); --team-ink: var(--paper)">🏆 الأولاد 2</span>
-          <span class="ds-pill ds-pill--dark">⏱ 60 ثانية</span>
-          <span class="ds-pill">⏭ ∞</span>
+          <span class="ds-pill"><span data-i="target"></span>الهدف 10</span>
+          <span class="ds-pill ds-pill--team" style="--team: var(--team-a); --team-ink: var(--paper)"><span data-i="trophy"></span>الأولاد 2</span>
+          <span class="ds-pill ds-pill--dark"><span data-i="timer"></span>60 ثانية</span>
+          <span class="ds-pill"><span data-i="skip"></span>بلا حدّ</span>
         </div>
       </section>
 
@@ -565,7 +690,7 @@
             <svg viewBox="0 0 100 100" aria-hidden="true"><circle class="ds-ring-bg" cx="50" cy="50" r="46" /><circle class="ds-ring-fg" cx="50" cy="50" r="46" /></svg>
             <span class="ds-ring-num">10</span>
           </div>
-          <button class="ds-btn ds-btn--primary" type="button" id="ringStart">▶️ عدّ ١٠ ثوانٍ</button>
+          <button class="ds-btn ds-btn--primary" type="button" id="ringStart"><span data-i="play"></span>عدّ ١٠ ثوانٍ</button>
         </div>
       </section>
 
@@ -574,15 +699,15 @@
         <h2 id="alertsH">اللافتات والتنبيهات</h2>
         <p class="dz-lead">اللافتة للحدث المهم على الشاشة، والرسالة القصيرة للتأكيد.</p>
         <div class="dz-grid">
-          <div class="ds-banner"><span class="ds-banner-icon">⚡</span>سامر ضغط أولاً!</div>
-          <div class="ds-banner ds-banner--success"><span class="ds-banner-icon">✅</span>صح! +1 للأولاد</div>
-          <div class="ds-banner ds-banner--danger" id="foulBanner"><span class="ds-banner-icon">🚫</span>ممنوع: ذكر حرفاً</div>
-          <div class="ds-banner ds-banner--info"><span class="ds-banner-icon">⏱</span>دور الفريق الآخر</div>
+          <div class="ds-banner"><span class="ds-banner-icon"><span data-i="bolt"></span></span>سامر ضغط أولاً!</div>
+          <div class="ds-banner ds-banner--success"><span class="ds-banner-icon"><span data-i="check"></span></span>صح! نقطة للأولاد</div>
+          <div class="ds-banner ds-banner--danger" id="foulBanner"><span class="ds-banner-icon"><span data-i="ban"></span></span>ممنوع: ذكر حرفاً</div>
+          <div class="ds-banner ds-banner--info"><span class="ds-banner-icon"><span data-i="timer"></span></span>دور الفريق الآخر</div>
         </div>
         <div class="dz-row" style="margin-top: 1rem">
-          <button class="ds-btn ds-btn--sm" type="button" id="toastBtn">💬 رسالة قصيرة</button>
-          <button class="ds-btn ds-btn--danger ds-btn--sm" type="button" id="shakeBtn">🚫 هزّة المخالفة</button>
-          <button class="ds-btn ds-btn--info ds-btn--sm" type="button" id="modalBtn">🪟 نافذة منبثقة</button>
+          <button class="ds-btn ds-btn--sm" type="button" id="toastBtn"><span data-i="chat"></span>رسالة قصيرة</button>
+          <button class="ds-btn ds-btn--danger ds-btn--sm" type="button" id="shakeBtn"><span data-i="ban"></span>هزّة المخالفة</button>
+          <button class="ds-btn ds-btn--info ds-btn--sm" type="button" id="modalBtn"><span data-i="info"></span>نافذة منبثقة</button>
         </div>
       </section>
 
@@ -591,10 +716,10 @@
         <h2 id="chipsH">الرقائق واللاعبون</h2>
         <p class="dz-lead">سجلّ الدور، والكلمات الممنوعة، واللاعبون بلون فريقهم.</p>
         <div class="dz-row">
-          <span class="ds-chip ds-chip--right">✅ مطار</span>
-          <span class="ds-chip ds-chip--skip">⏭ ساعة</span>
-          <span class="ds-chip ds-chip--pass">🔄 بركان</span>
-          <span class="ds-chip ds-chip--foul">🚫 قمر</span>
+          <span class="ds-chip ds-chip--right"><span data-i="check"></span>مطار</span>
+          <span class="ds-chip ds-chip--skip"><span data-i="skip"></span>ساعة</span>
+          <span class="ds-chip ds-chip--pass"><span data-i="swap"></span>بركان</span>
+          <span class="ds-chip ds-chip--foul"><span data-i="ban"></span>قمر</span>
           <span class="ds-chip ds-chip--forbidden">طائرة</span>
           <span class="ds-chip ds-chip--forbidden">سفر</span>
         </div>
@@ -614,7 +739,7 @@
               <span class="ds-hint" id="nameHint">يظهر على التلفاز تحت فريقك.</span>
             </div>
             <div class="dz-row" style="margin-top: 0.8rem">
-              <button class="ds-btn ds-btn--primary" type="button" id="joinDemo">دخول</button>
+              <button class="ds-btn ds-btn--primary" type="button" id="joinDemo"><span data-i="arrow"></span>دخول</button>
             </div>
           </div>
           <div class="ds-card">
@@ -622,17 +747,17 @@
               <label class="ds-label" for="sw1">صوت الشاشة</label>
               <input class="ds-switch" type="checkbox" id="sw1" checked />
             </div>
-            <span class="dz-label" style="color: var(--ink-soft)">رموز الدخول</span>
+            <span class="dz-label dz-label--ink">رموز الدخول</span>
             <div class="ds-seg" id="demoSeg">
               <button type="button" data-value="both" aria-pressed="true">الاثنان</button>
-              <button type="button" data-value="net" aria-pressed="false">🌐 إنترنت</button>
-              <button type="button" data-value="lan" aria-pressed="false">📶 واي فاي</button>
+              <button type="button" data-value="net" aria-pressed="false"><span data-i="globe"></span>إنترنت</button>
+              <button type="button" data-value="lan" aria-pressed="false"><span data-i="wifi"></span>واي فاي</button>
             </div>
-            <span class="dz-label" style="color: var(--ink-soft)">التخطّيات لكل فريق</span>
+            <span class="dz-label dz-label--ink">التخطّيات لكل فريق</span>
             <div class="ds-stepper">
-              <button class="ds-btn ds-btn--icon ds-btn--sm" type="button" id="stepMinus" aria-label="أقل">−</button>
+              <button class="ds-btn ds-btn--icon ds-btn--sm" type="button" id="stepMinus" aria-label="أقل"><span data-i="minus"></span></button>
               <span class="ds-stepper-value" id="stepVal">2</span>
-              <button class="ds-btn ds-btn--icon ds-btn--sm" type="button" id="stepPlus" aria-label="أكثر">+</button>
+              <button class="ds-btn ds-btn--icon ds-btn--sm" type="button" id="stepPlus" aria-label="أكثر"><span data-i="plus"></span></button>
             </div>
           </div>
         </div>
@@ -645,11 +770,11 @@
         <div class="dz-row" style="gap: var(--gap-5)">
           <div class="ds-qr">
             <div class="ds-qr-frame"><canvas id="qrNet"></canvas></div>
-            <span class="ds-pill" style="background: var(--sun)">🌐 عبر الإنترنت</span>
+            <span class="ds-pill dz-pill-sun"><span data-i="globe"></span>عبر الإنترنت</span>
           </div>
           <div class="ds-qr">
             <div class="ds-qr-frame"><canvas id="qrLan"></canvas></div>
-            <span class="ds-pill" style="background: var(--sky)">📶 نفس الواي فاي</span>
+            <span class="ds-pill dz-pill-sky"><span data-i="wifi"></span>نفس الواي فاي</span>
           </div>
         </div>
       </section>
@@ -666,58 +791,58 @@
         <h2 id="screensH">نماذج الشاشات</h2>
         <p class="dz-lead">كيف ستبدو الشاشات بعد إعادة التصميم.</p>
 
-        <span class="dz-label">📺 قائمة الألعاب على التلفاز</span>
+        <span class="dz-label">قائمة الألعاب على التلفاز</span>
         <div class="dz-tv ds-stage">
           <div class="dz-tv-in">
-            <h3>🎮 سهرة الألعاب</h3>
+            <h3><span data-i="gamepad"></span> سهرة الألعاب</h3>
             <div class="dz-hub-tiles">
-              <div class="ds-game-tile" style="--tile: var(--sun); --i: 0"><span class="ds-game-tile-art">🔤</span><span class="ds-game-tile-name">حروف مع حسين</span><span class="ds-game-tile-tag">أسئلة وأجراس</span></div>
-              <div class="ds-game-tile is-active" style="--tile: var(--coral); --i: 1"><span class="ds-game-tile-art">🤐</span><span class="ds-game-tile-name">الكلمة الممنوعة</span><span class="ds-game-tile-tag">شرح بالكلام</span></div>
-              <div class="ds-game-tile" style="--tile: var(--sky); --i: 2"><span class="ds-game-tile-art">✨</span><span class="ds-game-tile-name">قريباً</span><span class="ds-game-tile-tag">لعبة جديدة</span></div>
+              <div class="ds-game-tile" style="--i: 0"><span class="ds-game-tile-art"><span data-i="hexagon"></span></span><span class="ds-game-tile-name">حروف مع حسين</span><span class="ds-game-tile-tag">أسئلة وأجراس</span></div>
+              <div class="ds-game-tile ds-game-tile--coral is-active" style="--i: 1"><span class="ds-game-tile-art"><span data-i="hush"></span></span><span class="ds-game-tile-name">الكلمة الممنوعة</span><span class="ds-game-tile-tag">شرح بالكلام</span></div>
+              <div class="ds-game-tile ds-game-tile--sky" style="--i: 2"><span class="ds-game-tile-art"><span data-i="sparkle"></span></span><span class="ds-game-tile-name">قريباً</span><span class="ds-game-tile-tag">لعبة جديدة</span></div>
             </div>
             <div class="dz-night">
-              <span class="ds-pill ds-pill--team" style="--team: var(--team-a); --team-ink: var(--paper)">🏆 الأولاد 1</span>
-              <span class="ds-pill ds-pill--team" style="--team: var(--team-b); --team-ink: var(--paper)">🏆 البنات 2</span>
+              <span class="ds-pill ds-pill--team" style="--team: var(--team-a); --team-ink: var(--paper)"><span data-i="trophy"></span>الأولاد 1</span>
+              <span class="ds-pill ds-pill--team" style="--team: var(--team-b); --team-ink: var(--paper)"><span data-i="trophy"></span>البنات 2</span>
             </div>
           </div>
         </div>
 
-        <span class="dz-label">📺 قوانين الكلمة الممنوعة: شرائح تتبدّل وحدها</span>
+        <span class="dz-label">قوانين الكلمة الممنوعة: شرائح تتبدّل وحدها</span>
         <div class="dz-tv ds-stage">
           <div class="dz-tv-in">
-            <h3 class="dz-rules-title">📜 القوانين</h3>
+            <h3 class="dz-rules-title"><span data-i="scroll"></span> القوانين</h3>
             <div class="dz-rules" id="rulesSlide"></div>
             <div class="dz-dots-nav" id="rulesDots"></div>
           </div>
         </div>
 
-        <span class="dz-label">📺 شاشة الفوز</span>
+        <span class="dz-label">شاشة الفوز</span>
         <div class="dz-tv ds-stage">
           <div class="dz-tv-in" id="winStage">
-            <div class="dz-trophy ds-float">🏆</div>
+            <div class="dz-trophy ds-float"><span data-i="trophy"></span></div>
             <h3 class="dz-winner ds-pop-in">فاز الأولاد!</h3>
-            <div class="dz-night"><span class="ds-pill">10 : 7</span><span class="ds-pill ds-pill--dark">+1 لنقاط السهرة</span></div>
+            <div class="dz-night"><span class="ds-pill">10 : 7</span><span class="ds-pill ds-pill--dark"><span data-i="star"></span>نقطة للسهرة</span></div>
           </div>
         </div>
-        <div class="dz-row" style="margin-top: 0.8rem"><button class="ds-btn ds-btn--primary ds-btn--sm" type="button" id="winReplay">🎉 أعد الاحتفال</button></div>
+        <div class="dz-row" style="margin-top: 0.8rem"><button class="ds-btn ds-btn--primary ds-btn--sm" type="button" id="winReplay"><span data-i="party"></span>أعد الاحتفال</button></div>
 
-        <span class="dz-label">📱 الجوالات أثناء دور «الكلمة الممنوعة»</span>
+        <span class="dz-label">الجوالات أثناء دور «الكلمة الممنوعة»</span>
         <div class="dz-phones">
           <div>
-            <div class="dz-phone" style="background: var(--paper)">
+            <div class="dz-phone dz-phone--paper">
               <div class="dz-phone-in">
                 <div class="dz-row" style="justify-content: space-between">
                   <span class="ds-pill ds-pill--team" style="--team: var(--team-a); --team-ink: var(--paper)">الأولاد 3</span>
-                  <span class="ds-pill ds-pill--dark">⏱ 42</span>
+                  <span class="ds-pill ds-pill--dark"><span data-i="timer"></span>42</span>
                 </div>
                 <div class="dz-center">
-                  <span class="ds-chip">🍽️ أكل وشرب</span>
+                  <span class="ds-chip"><span data-i="food"></span>أكل وشرب</span>
                   <div class="dz-word">كنافة</div>
                   <div class="dz-row" style="justify-content: center">
                     <span class="ds-chip ds-chip--forbidden">حلوى</span><span class="ds-chip ds-chip--forbidden">جبن</span><span class="ds-chip ds-chip--forbidden">نابلس</span><span class="ds-chip ds-chip--forbidden">قطر</span>
                   </div>
                 </div>
-                <button class="ds-btn ds-btn--block" type="button">⏭ تخطّي (1 متبقٍ)</button>
+                <button class="ds-btn ds-btn--block" type="button"><span data-i="skip"></span>تخطّي (1 متبقٍ)</button>
               </div>
             </div>
             <div class="dz-phone-cap">الشارح</div>
@@ -726,9 +851,9 @@
             <div class="dz-phone ds-stage">
               <div class="dz-phone-in">
                 <div class="dz-center" style="margin-top: 3rem">
-                  <div style="font-size: 4rem" class="ds-float">🤔</div>
+                  <span class="ds-badge-icon ds-float dz-big-badge"><span data-i="question"></span></span>
                   <h3 style="font-size: var(--fs-xl)">سامر يشرح</h3>
-                  <p style="margin: 0; font-weight: 700; color: var(--on-stage-dim)">خمّنوا بصوت عالٍ!</p>
+                  <p class="dz-p dz-dim">خمّنوا بصوت عالٍ!</p>
                   <span class="ds-pill ds-pill--team" style="--team: var(--team-a); --team-ink: var(--paper)">هذا الدور +2</span>
                 </div>
               </div>
@@ -739,11 +864,11 @@
             <div class="dz-phone ds-stage">
               <div class="dz-phone-in">
                 <div class="dz-center" style="margin-top: 1.4rem">
-                  <h3 style="font-size: var(--fs-xl)">👀 راقبوا سامر</h3>
+                  <h3 style="font-size: var(--fs-xl)"><span data-i="eye"></span> راقبوا سامر</h3>
                   <div class="dz-row" style="justify-content: center">
                     <span class="ds-chip ds-chip--forbidden">حلوى</span><span class="ds-chip ds-chip--forbidden">جبن</span><span class="ds-chip ds-chip--forbidden">نابلس</span><span class="ds-chip ds-chip--forbidden">قطر</span>
                   </div>
-                  <div class="ds-banner ds-banner--danger" style="font-size: var(--fs-md)"><span class="ds-banner-icon">📣</span>قال كلمة منها؟ اصرخوا: ممنوع!</div>
+                  <div class="ds-banner ds-banner--danger" style="font-size: var(--fs-md)"><span class="ds-banner-icon"><span data-i="megaphone"></span></span>قال كلمة منها؟ اصرخوا: ممنوع!</div>
                 </div>
               </div>
             </div>
@@ -752,15 +877,15 @@
         </div>
       </section>
 
-      <p class="dz-foot">الملفات: <code>/css/ds.css</code> للأشكال والمتغيّرات، و<code>/js/ds.js</code> للحركات.</p>
+      <p class="dz-foot">الملفات: <code>/css/ds.css</code> للأشكال والمتغيّرات، و<code>/icons.svg</code> للرموز، و<code>/js/ds.js</code> للحركات.</p>
     </main>
 
     <div class="ds-modal" id="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
       <div class="ds-card">
-        <div class="ds-card-title" id="modalTitle">🔁 لعبة جديدة؟</div>
-        <p style="margin: 0 0 1rem; font-weight: 700">تُصفَّر النقاط وتتجدّد التخطّيات.</p>
+        <div class="ds-card-title" id="modalTitle"><span data-i="undo"></span> لعبة جديدة؟</div>
+        <p class="dz-p" style="margin-bottom: 1rem">تُصفَّر النقاط وتتجدّد التخطّيات.</p>
         <div class="dz-row">
-          <button class="ds-btn ds-btn--primary" type="button" data-close>نعم، ابدأ</button>
+          <button class="ds-btn ds-btn--primary" type="button" data-close><span data-i="check"></span>نعم، ابدأ</button>
           <button class="ds-btn" type="button" data-close>إلغاء</button>
         </div>
       </div>
@@ -768,24 +893,40 @@
 
     <script src="/js/vendor/qrcode.js"></script>
     <script type="module">
-      import { toast, bump, replay, confetti, ring, segmented } from "/js/ds.js";
+      import { toast, bump, replay, confetti, ring, segmented, hydrateIcons, iconHTML } from "/js/ds.js";
       import { drawQR } from "/js/qr.js";
 
       const $ = (id) => document.getElementById(id);
       const css = getComputedStyle(document.documentElement);
 
-      // الألوان
+      // الألوان: لمعة / وجه / جدار
       const SW = [
-        ["--sun", "الإجراء الأساسي"], ["--mint", "صح / نجاح"], ["--coral", "مخالفة / خطر"], ["--sky", "معلومة"],
-        ["--grape", "زينة"], ["--bubble", "زينة"], ["--ink", "الحبر"], ["--paper", "الورق"],
-        ["--stage", "المسرح"], ["--stage-2", "المسرح ٢"], ["--stage-3", "المسرح ٣"], ["--team-a", "فريق (مثال)"],
+        ["sun", "الإجراء الأساسي"], ["mint", "صح ونجاح"], ["coral", "مخالفة وخطر"], ["sky", "معلومة"], ["grape", "قرعة وزينة"],
       ];
       for (const [v, use] of SW) {
+        const d = document.createElement("div");
+        d.className = "dz-swatch";
+        d.innerHTML = `<div class="dz-swatch-color dz-swatch-3"><span style="background: var(--${v}-hi)"></span><span style="background: var(--${v})"></span><span style="background: var(--${v}-side)"></span></div><div class="dz-swatch-info"><b>${use}</b><span dir="ltr">--${v}<br>${css.getPropertyValue("--" + v).trim()}</span></div>`;
+        $("swatches").appendChild(d);
+      }
+      for (const [v, use] of [["--ink", "الحبر"], ["--paper", "الورق"], ["--stage", "المسرح"], ["--stage-2", "المسرح ٢"], ["--stage-3", "المسرح ٣"], ["--bubble", "زينة"]]) {
         const d = document.createElement("div");
         d.className = "dz-swatch";
         d.innerHTML = `<div class="dz-swatch-color" style="background: var(${v})"></div><div class="dz-swatch-info"><b>${use}</b><span dir="ltr">${v}<br>${css.getPropertyValue(v).trim()}</span></div>`;
         $("swatches").appendChild(d);
       }
+
+      // كل الأيقونات من الملف نفسه
+      const sprite = await (await fetch("/icons.svg")).text();
+      const ids = [...sprite.matchAll(/<symbol id="([^"]+)"/g)].map((m) => m[1]);
+      for (const id of ids) {
+        const c = document.createElement("div");
+        c.className = "dz-icon-cell";
+        c.innerHTML = `${iconHTML(id)}<code dir="ltr">${id}</code>`;
+        $("iconGrid").appendChild(c);
+      }
+
+      hydrateIcons();
 
       // مقاس الجوال / التلفاز
       segmented($("scaleSeg"), (v) => document.body.classList.toggle("ds-tv", v === "tv"));
@@ -794,8 +935,12 @@
 
       $("heroConfetti").onclick = () => confetti();
       $("loadBtn").onclick = (e) => {
-        e.currentTarget.classList.add("is-loading");
-        setTimeout(() => e.currentTarget.classList.remove("is-loading"), 1400);
+        const b = e.currentTarget;
+        b.classList.add("is-loading");
+        setTimeout(() => {
+          b.classList.remove("is-loading");
+          toast("تم الحفظ", "check");
+        }, 1400);
       };
 
       // الفرق
@@ -808,10 +953,10 @@
       // العدّاد
       const r1 = ring($("ring1"));
       r1.set(10, 10);
-      $("ringStart").onclick = () => r1.start(10, () => toast("⏰ انتهى الوقت"));
+      $("ringStart").onclick = () => r1.start(10, () => toast("انتهى الوقت", "timer"));
 
       // التنبيهات
-      $("toastBtn").onclick = () => toast("✅ صح +1، الكلمة التالية");
+      $("toastBtn").onclick = () => toast("صح +1، الكلمة التالية", "check");
       $("shakeBtn").onclick = () => replay($("foulBanner"), "ds-shake");
       $("modalBtn").onclick = () => $("modal").classList.add("is-open");
       $("modal").addEventListener("click", (e) => {
@@ -835,9 +980,9 @@
         const ok = $("nameIn").value.trim().length > 0;
         $("nameIn").classList.toggle("is-invalid", !ok);
         if (!ok) replay($("nameIn"), "ds-shake");
-        $("nameHint").textContent = ok ? "أهلاً! 👋" : "اكتب اسمك أولاً";
+        $("nameHint").textContent = ok ? "أهلاً بك!" : "اكتب اسمك أولاً";
         $("nameHint").classList.toggle("ds-hint--error", !ok);
-        if (ok) toast(`👋 أهلاً ${$("nameIn").value.trim()}`);
+        if (ok) toast(`أهلاً ${$("nameIn").value.trim()}`, "user");
       };
       segmented($("demoSeg"));
       let steps = 2;
@@ -851,27 +996,25 @@
 
       // الحركة
       const MOTION = [
-        ["ds-pop-in", "🎈", "ظهور"], ["ds-rise-in", "⬆️", "صعود"], ["ds-squash", "🟡", "ضغط"],
-        ["ds-wiggle", "🔔", "اهتزاز"], ["ds-shake", "🚫", "مخالفة"], ["ds-flip-in", "🃏", "قلب البطاقة"],
-        ["is-bump", "7", "نقطة"],
+        ["ds-pop-in", "sparkle", "ظهور"], ["ds-rise-in", "arrow", "صعود"], ["ds-squash", "shapes", "ضغط"],
+        ["ds-wiggle", "bell", "اهتزاز"], ["ds-shake", "ban", "مخالفة"], ["ds-flip-in", "swap", "قلب البطاقة"],
+        ["is-bump", null, "نقطة"],
       ];
-      for (const [cls, icon, name] of MOTION) {
+      for (const [cls, ic, name] of MOTION) {
         const c = document.createElement("button");
         c.type = "button";
-        c.className = "ds-card";
-        c.style.cursor = "pointer";
-        c.style.font = "inherit";
-        c.innerHTML = `<div class="dz-motion-demo ${cls === "is-bump" ? "ds-score" : ""}" style="${cls === "is-bump" ? "font-size: 2rem" : ""}">${icon}</div><b>${name}</b><code dir="ltr">${cls}</code>`;
+        c.className = "ds-card dz-motion-card";
+        c.innerHTML = `<div class="dz-motion-demo ${cls === "is-bump" ? "ds-score" : ""}">${ic ? iconHTML(ic) : "7"}</div><b>${name}</b><code dir="ltr">${cls}</code>`;
         c.onclick = () => (cls === "is-bump" ? bump(c.firstElementChild) : replay(c.firstElementChild, cls));
         $("motionGrid").appendChild(c);
       }
 
       // شرائح القوانين (٣ في كل شريحة، تتبدّل وحدها)
       const RULES = [
-        ["🗣️", "لا تقل الكلمة"], ["🚫", "لا الممنوعة"], ["🔤", "لا حروف"],
-        ["🔢", "لا أعداد"], ["🎵", "لا قافية"], ["🌐", "لا ترجمة"],
-        ["🤚", "لا إشارات"], ["🐱", "لا أصوات"], ["✍️", "لا كتابة"],
-        ["📱", "لا تُرِ جوالك"], ["⚠️", "المخالفة: ⁦-1⁩ وينتهي الدور", true], ["⏭", "تخطّيات محدودة"],
+        ["hush", "لا تقل الكلمة"], ["ban", "لا الممنوعة"], ["no-letters", "لا حروف"],
+        ["hash", "لا أعداد"], ["music", "لا قافية"], ["translate", "لا ترجمة"],
+        ["hand", "لا إشارات"], ["wave", "لا أصوات"], ["pen", "لا كتابة"],
+        ["phone", "لا تُرِ جوالك"], ["warning", "المخالفة: ⁦-1⁩ وينتهي الدور", true], ["skip", "تخطّيات محدودة"],
       ];
       const pages = Math.ceil(RULES.length / 3);
       let page = 0;
@@ -882,7 +1025,7 @@
           const d = document.createElement("div");
           d.className = "dz-rule ds-pop-in" + (foul ? " dz-rule-foul" : "");
           d.style.setProperty("--i", i);
-          d.innerHTML = `<span class="dz-rule-icon">${ic}</span><span class="dz-rule-text">${tx}</span>`;
+          d.innerHTML = `<span class="dz-rule-icon">${iconHTML(ic)}</span><span class="dz-rule-text">${tx}</span>`;
           $("rulesSlide").appendChild(d);
         });
         [...$("rulesDots").children].forEach((s, i) => s.classList.toggle("on", i === page));

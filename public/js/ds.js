@@ -29,8 +29,8 @@ export function bump(scoreEl, label = "+1") {
   f.addEventListener("animationend", () => f.remove(), { once: true });
 }
 
-/** رسالة قصيرة أسفل الشاشة. */
-export function toast(text, ms = 2200) {
+/** رسالة قصيرة أسفل الشاشة، مع أيقونة اختيارية: toast("صح +1", "check") */
+export function toast(text, iconName = null, ms = 2200) {
   let host = document.querySelector(".ds-toasts");
   if (!host) {
     host = document.createElement("div");
@@ -41,7 +41,8 @@ export function toast(text, ms = 2200) {
   }
   const t = document.createElement("div");
   t.className = "ds-toast";
-  t.textContent = text;
+  if (iconName) t.appendChild(icon(iconName));
+  t.appendChild(document.createTextNode(text));
   host.appendChild(t);
   setTimeout(() => {
     t.classList.add("is-leaving");
@@ -116,4 +117,25 @@ export function segmented(root, onChange) {
     for (const x of root.querySelectorAll("button[data-value]")) x.setAttribute("aria-pressed", String(x === b));
     onChange?.(b.dataset.value);
   });
+}
+
+/** أيقونة SVG من /icons.svg — لا إيموجي أبداً. */
+export function icon(name, cls = "") {
+  const NS = "http://www.w3.org/2000/svg";
+  const svg = document.createElementNS(NS, "svg");
+  svg.setAttribute("class", `ds-icon ${cls}`.trim());
+  svg.setAttribute("aria-hidden", "true");
+  const use = document.createElementNS(NS, "use");
+  use.setAttribute("href", `/icons.svg#${name}`);
+  svg.appendChild(use);
+  return svg;
+}
+
+/** نص SVG لأيقونة (للاستعمال داخل innerHTML). */
+export const iconHTML = (name, cls = "") =>
+  `<svg class="ds-icon ${cls}" aria-hidden="true"><use href="/icons.svg#${name}"/></svg>`;
+
+/** يحوّل كل <span data-i="play"></span> في الصفحة إلى أيقونة SVG. */
+export function hydrateIcons(root = document) {
+  for (const el of root.querySelectorAll("[data-i]:not(svg)")) el.replaceWith(icon(el.dataset.i, el.className));
 }

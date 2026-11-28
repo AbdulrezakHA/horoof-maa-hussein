@@ -1,6 +1,5 @@
 /* Hallmark · custom direction: "sticker cartoon" game-night system · genre playful · scope app (design system reference)
-   critique: thick ink outlines + hard offset shadows carry the cartoon feel; motion is short, springy, transform/opacity only.
-   waive 30a (emoji as icon): emoji are the game's established, user-approved visual language on TV and phones.
+   critique: thick ink outlines, candy-like 3D buttons (colored side wall + gloss), hard offset shadows; motion is short, springy, transform/opacity only. Icons are SVG symbols only, never emoji.
    waive 12 (overshoot easing): the springy pop is the requested cartoon feel; inputs use ease-out.
    waive 7b (pure white): QR frames need white to scan; inputs stay white for legibility.
    ==================================================================
@@ -21,6 +20,8 @@
   --ink: #1d1235; /* الحدود والظلال والنص على الفاتح */
   --ink-soft: #4a3f66;
   --paper: #fff8ea; /* البطاقات الفاتحة */
+  --paper-hi: #ffffff;
+  --paper-side: #d8c6a2;
   --paper-2: #f3e9d4;
   --white: #ffffff;
 
@@ -41,6 +42,18 @@
   --grape: #a86cf0;
   --bubble: #ff8fc8;
   --ink-on-color: #1d1235;
+
+  /* درجات الأزرار ثلاثية الأبعاد: -hi أعلى الوجه، -side الجدار السفلي */
+  --sun-hi: #ffe98a;
+  --sun-side: #d99a00;
+  --mint-hi: #8ef3cf;
+  --mint-side: #14966c;
+  --coral-hi: #ffa293;
+  --coral-side: #c2311c;
+  --sky-hi: #a6e8fa;
+  --sky-side: #1d8ab0;
+  --grape-hi: #caa2f7;
+  --grape-side: #7440bd;
 
   /* ألوان الفريقين — تُستبدل من حالة اللعبة */
   --team-a: #19a974;
@@ -91,7 +104,7 @@
   --focus: #4cc9f0;
 
   /* شفافيات (لمعة، ظلال، ستارة) */
-  --shine: rgba(255, 255, 255, 0.5);
+  --shine: rgba(255, 255, 255, 0.55);
   --ink-35: rgba(29, 18, 53, 0.35);
   --ink-12: rgba(29, 18, 53, 0.12);
   --scrim: rgba(20, 10, 40, 0.6);
@@ -166,71 +179,181 @@
 }
 
 /* ================================================================
-   الأزرار — «تنضغط» كزر حقيقي: الظل يقصر والزر ينزل
+   الأيقونات — رموز SVG فقط (لا إيموجي): <svg class="ds-icon"><use href="/icons.svg#play"/></svg>
+   ================================================================ */
+.ds-icon {
+  width: 1.25em;
+  height: 1.25em;
+  flex: none;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  vertical-align: -0.22em;
+}
+.ds-icon--lg {
+  width: 1.7em;
+  height: 1.7em;
+}
+/* أيقونة داخل «ملصق» دائري */
+.ds-badge-icon {
+  display: inline-grid;
+  place-items: center;
+  width: 2.2em;
+  height: 2.2em;
+  flex: none;
+  border-radius: 50%;
+  background: var(--paper);
+  color: var(--ink);
+  border: var(--line) solid var(--ink);
+  box-shadow: inset 0 -0.18em 0 var(--ink-12), 0 3px 0 var(--ink);
+}
+
+/* ================================================================
+   الأزرار — قطع حلوى ثلاثية الأبعاد:
+     جدار ملوّن سفلي (سماكة الزر) + حدّ حبر + لمعة علوية + ظل أرضي ناعم.
+     عند الضغط: الزر ينزل على جداره ويختفي الجدار.
+   كل لون له ثلاث درجات: --btn-hi (أعلى) / --btn-bg (الوجه) / --btn-side (الجدار).
    ================================================================ */
 .ds-btn {
+  --btn-hi: var(--paper-hi);
   --btn-bg: var(--paper);
+  --btn-side: var(--paper-side);
   --btn-ink: var(--ink);
+  --depth: calc(var(--lift) + 1px);
   position: relative;
+  isolation: isolate;
+  overflow: hidden;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 0.5em;
   min-height: 2.9em;
-  padding: 0.55em 1.25em;
+  padding: 0.5em 1.3em 0.6em;
   font-family: var(--font-display);
   font-weight: 800;
   font-size: var(--fs-md);
   line-height: 1.1;
   color: var(--btn-ink);
-  background: var(--btn-bg);
+  text-decoration: none;
+  text-shadow: 0 1px 0 var(--btn-text-shine, var(--shine));
+  background: linear-gradient(180deg, var(--btn-hi) 0%, var(--btn-bg) 52%, var(--btn-bg) 100%);
   border: var(--line) solid var(--ink);
   border-radius: var(--r-md);
-  box-shadow: var(--shadow);
+  box-shadow:
+    inset 0 -0.3em 0 var(--ink-12),
+    inset 0 0.14em 0 var(--shine),
+    0 var(--depth) 0 0 var(--btn-side),
+    0 var(--depth) 0 var(--line) var(--ink),
+    0 calc(var(--depth) + 8px) 16px var(--glow-dark);
+  margin-bottom: calc(var(--depth) + var(--line));
   cursor: pointer;
   user-select: none;
-  text-decoration: none;
   -webkit-tap-highlight-color: transparent;
   transition:
     transform var(--dur-1) var(--ease-out),
     box-shadow var(--dur-1) var(--ease-out),
     filter var(--dur-2) var(--ease-out);
 }
+/* لمعة علوية على شكل كبسولة */
+.ds-btn::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  inset-inline: 0.7em;
+  top: 0.22em;
+  height: 0.55em;
+  border-radius: var(--r-pill);
+  background: linear-gradient(180deg, var(--shine) 0%, transparent 100%);
+  pointer-events: none;
+}
+/* بريق يعبر الزر عند التمرير */
+.ds-btn::after {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  top: -20%;
+  bottom: -20%;
+  width: 34%;
+  inset-inline-start: -45%;
+  background: linear-gradient(90deg, transparent, var(--shine), transparent);
+  transform: skewX(-18deg) translateX(0);
+  opacity: 0;
+  pointer-events: none;
+}
 .ds-btn:hover {
   transform: translateY(-2px);
-  box-shadow: 0 calc(var(--lift) + 2px) 0 var(--ink);
-  filter: brightness(1.04);
+  filter: brightness(1.05) saturate(1.05);
+  box-shadow:
+    inset 0 -0.3em 0 var(--ink-12),
+    inset 0 0.14em 0 var(--shine),
+    0 calc(var(--depth) + 2px) 0 0 var(--btn-side),
+    0 calc(var(--depth) + 2px) 0 var(--line) var(--ink),
+    0 calc(var(--depth) + 12px) 20px var(--glow-dark);
+}
+.ds-btn:hover::after {
+  opacity: 1;
+  transform: skewX(-18deg) translateX(-420%);
+  transition: transform 650ms var(--ease-out), opacity 120ms;
 }
 .ds-btn:active,
 .ds-btn.is-pressed {
-  transform: translateY(var(--lift)) scale(0.98, 0.96);
-  box-shadow: 0 0 0 var(--ink);
+  transform: translateY(var(--depth));
+  filter: brightness(0.97);
+  box-shadow:
+    inset 0 -0.15em 0 var(--ink-12),
+    inset 0 0.25em 0 var(--ink-12),
+    0 0 0 0 var(--btn-side),
+    0 0 0 var(--line) var(--ink),
+    0 2px 6px var(--glow-dark);
 }
 .ds-btn:focus-visible {
   outline: 4px solid var(--focus);
-  outline-offset: 3px;
+  outline-offset: 4px;
+}
+.ds-btn .ds-icon {
+  width: 1.3em;
+  height: 1.3em;
+  stroke-width: 2.8;
+  filter: drop-shadow(0 1px 0 var(--btn-text-shine, var(--shine)));
 }
 .ds-btn:disabled,
 .ds-btn[aria-disabled="true"] {
   cursor: not-allowed;
-  transform: none;
-  box-shadow: 0 2px 0 var(--ink);
-  filter: grayscale(0.7) brightness(0.9);
-  opacity: 0.55;
+  transform: translateY(calc(var(--depth) - 2px));
+  filter: grayscale(0.85);
+  opacity: 0.6;
+  box-shadow:
+    inset 0 -0.2em 0 var(--ink-12),
+    0 2px 0 0 var(--btn-side),
+    0 2px 0 var(--line) var(--ink);
+}
+.ds-btn:disabled::after {
+  display: none;
 }
 .ds-btn.is-loading {
   pointer-events: none;
   color: transparent;
+  text-shadow: none;
 }
-.ds-btn.is-loading::after {
-  content: "";
+.ds-btn.is-loading .ds-icon {
+  visibility: hidden;
+}
+/* مؤشّر التحميل: <span class="ds-spinner"></span> داخل الزر */
+.ds-spinner {
   position: absolute;
-  width: 1.1em;
-  height: 1.1em;
+  inset: 0;
+  margin: auto;
+  width: 1.15em;
+  height: 1.15em;
   border-radius: 50%;
-  border: var(--line) solid var(--btn-ink);
+  border: var(--line) solid var(--btn-ink, var(--ink));
   border-inline-end-color: transparent;
   animation: dsSpin 0.7s linear infinite;
+}
+.ds-btn:not(.is-loading) .ds-spinner {
+  display: none;
 }
 @keyframes dsSpin {
   to {
@@ -238,42 +361,83 @@
   }
 }
 
+/* الألوان */
 .ds-btn--primary {
+  --btn-hi: var(--sun-hi);
   --btn-bg: var(--sun);
+  --btn-side: var(--sun-side);
 }
 .ds-btn--success {
+  --btn-hi: var(--mint-hi);
   --btn-bg: var(--mint);
+  --btn-side: var(--mint-side);
 }
 .ds-btn--danger {
+  --btn-hi: var(--coral-hi);
   --btn-bg: var(--coral);
+  --btn-side: var(--coral-side);
 }
 .ds-btn--info {
+  --btn-hi: var(--sky-hi);
   --btn-bg: var(--sky);
+  --btn-side: var(--sky-side);
 }
+.ds-btn--grape {
+  --btn-hi: var(--grape-hi);
+  --btn-bg: var(--grape);
+  --btn-side: var(--grape-side);
+  --btn-ink: var(--paper);
+  --btn-text-shine: var(--ink-35);
+}
+/* زر الفريق: الدرجات تُشتقّ من لون الفريق (المتصفحات القديمة: لون واحد) */
 .ds-btn--team {
+  --btn-hi: var(--team);
   --btn-bg: var(--team);
+  --btn-side: var(--team-side, var(--ink-soft));
   --btn-ink: var(--team-ink);
+  --btn-text-shine: var(--ink-35);
 }
+@supports (color: color-mix(in srgb, red 50%, blue)) {
+  .ds-btn--team {
+    --btn-hi: color-mix(in srgb, var(--team) 70%, white);
+    --btn-side: color-mix(in srgb, var(--team) 62%, black);
+  }
+}
+/* شفاف: على المسرح (إلغاء، رجوع) */
 .ds-btn--ghost {
-  --btn-bg: transparent;
   --btn-ink: var(--on-stage);
+  background: transparent;
   border-color: var(--on-stage-dim);
   box-shadow: none;
+  margin-bottom: 0;
+  text-shadow: none;
+}
+.ds-btn--ghost::before,
+.ds-btn--ghost::after {
+  display: none;
 }
 .ds-btn--ghost:hover {
   box-shadow: none;
   background: var(--paper-08);
 }
+.ds-btn--ghost:active {
+  box-shadow: none;
+  transform: scale(0.97);
+}
+
+/* الأحجام */
 .ds-btn--sm {
+  --depth: calc(var(--lift) - 1px);
   font-size: var(--fs-sm);
-  min-height: 2.4em;
-  padding: 0.35em 0.9em;
+  min-height: 2.5em;
+  padding: 0.35em 0.95em 0.45em;
   border-radius: var(--r-sm);
 }
 .ds-btn--lg {
+  --depth: calc(var(--lift) + 3px);
   font-size: var(--fs-lg);
-  min-height: 3.2em;
-  padding-inline: 1.6em;
+  min-height: 3.1em;
+  padding-inline: 1.7em;
   border-radius: var(--r-lg);
 }
 .ds-btn--block {
@@ -281,39 +445,66 @@
 }
 .ds-btn--icon {
   width: 2.9em;
+  min-height: 2.9em;
   padding: 0;
-  border-radius: var(--r-pill);
+  border-radius: 50%;
+}
+.ds-btn--icon::before {
+  inset-inline: 0.55em;
+}
+.ds-btn--icon.ds-btn--sm {
+  width: 2.5em;
+  min-height: 2.5em;
 }
 
-/* الجرس الكبير (أجراس اللاعبين) */
+/* الجرس الكبير (أجراس اللاعبين): كرة لامعة على قاعدة */
 .ds-buzzer {
   --size: min(62vw, 280px);
+  --b-hi: var(--team);
+  --b-side: var(--ink-soft);
+  position: relative;
   width: var(--size);
   height: var(--size);
   border-radius: 50%;
   border: calc(var(--line) + 2px) solid var(--ink);
   background:
-    radial-gradient(circle at 35% 28%, var(--shine) 0 12%, transparent 13%),
-    var(--team);
+    radial-gradient(ellipse 42% 26% at 50% 20%, var(--shine) 0 60%, transparent 62%),
+    radial-gradient(circle at 50% 30%, var(--b-hi) 0%, var(--team) 55%, var(--team) 100%);
   color: var(--team-ink);
   font-family: var(--font-display);
   font-weight: 800;
   font-size: var(--fs-2xl);
-  box-shadow: 0 14px 0 var(--ink);
+  text-shadow: 0 2px 0 var(--ink-35);
+  box-shadow:
+    inset 0 -0.35em 0 var(--ink-12),
+    0 14px 0 0 var(--b-side),
+    0 14px 0 calc(var(--line) + 2px) var(--ink),
+    0 30px 30px var(--glow-dark);
+  margin-bottom: 20px;
   cursor: pointer;
   transition:
     transform var(--dur-1) var(--ease-out),
     box-shadow var(--dur-1) var(--ease-out);
   animation: dsBreathe 2.6s ease-in-out infinite;
 }
+@supports (color: color-mix(in srgb, red 50%, blue)) {
+  .ds-buzzer {
+    --b-hi: color-mix(in srgb, var(--team) 60%, white);
+    --b-side: color-mix(in srgb, var(--team) 58%, black);
+  }
+}
 .ds-buzzer:active {
-  transform: translateY(12px) scale(0.97, 0.94);
-  box-shadow: 0 2px 0 var(--ink);
+  transform: translateY(13px);
+  box-shadow:
+    inset 0 0.3em 0 var(--ink-12),
+    0 1px 0 0 var(--b-side),
+    0 1px 0 calc(var(--line) + 2px) var(--ink),
+    0 6px 10px var(--glow-dark);
   animation: none;
 }
 .ds-buzzer:focus-visible {
   outline: 5px solid var(--focus);
-  outline-offset: 5px;
+  outline-offset: 6px;
 }
 @keyframes dsBreathe {
   50% {
@@ -350,19 +541,29 @@
 /* بطاقة لعبة في القائمة الرئيسية: تتمايل بلطف، وتقفز عند التمرير */
 .ds-game-tile {
   --tile: var(--sun);
+  --tile-side: var(--sun-side);
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
   display: grid;
   justify-items: center;
   align-content: center;
   gap: var(--gap-2);
   aspect-ratio: 4 / 3.4;
-  padding: var(--gap-3);
+  padding: var(--gap-3) var(--gap-3) calc(var(--gap-3) + 0.6em);
   background:
-    radial-gradient(circle at 50% 38%, var(--shine) 0 26%, transparent 27%),
+    radial-gradient(ellipse 70% 45% at 50% 0%, var(--shine) 0%, transparent 70%),
     var(--tile);
   color: var(--ink);
   border: var(--line) solid var(--ink);
   border-radius: var(--r-xl);
-  box-shadow: var(--shadow-lg);
+  box-shadow:
+    inset 0 -0.5em 0 var(--ink-12),
+    inset 0 0.2em 0 var(--shine),
+    0 calc(var(--lift) * 1.6) 0 0 var(--tile-side),
+    0 calc(var(--lift) * 1.6) 0 var(--line) var(--ink),
+    0 calc(var(--lift) * 1.6 + 14px) 24px var(--glow-dark);
+  margin-bottom: calc(var(--lift) * 1.6 + var(--line));
   cursor: pointer;
   text-align: center;
   font: inherit;
@@ -372,24 +573,51 @@
   animation: dsFloat 5s ease-in-out infinite;
   animation-delay: calc(var(--i, 0) * -1.3s);
 }
+.ds-game-tile--coral {
+  --tile: var(--coral);
+  --tile-side: var(--coral-side);
+}
+.ds-game-tile--sky {
+  --tile: var(--sky);
+  --tile-side: var(--sky-side);
+}
+.ds-game-tile--mint {
+  --tile: var(--mint);
+  --tile-side: var(--mint-side);
+}
 .ds-game-tile:hover,
 .ds-game-tile.is-active {
   transform: translateY(-8px) rotate(-1.5deg) scale(1.03);
-  box-shadow: 0 calc(var(--lift) * 2.4) 0 var(--ink);
   animation-play-state: paused;
 }
 .ds-game-tile:active {
-  transform: translateY(var(--lift)) scale(0.98);
-  box-shadow: 0 0 0 var(--ink);
+  transform: translateY(calc(var(--lift) * 1.6)) scale(0.99);
+  box-shadow:
+    inset 0 0.3em 0 var(--ink-12),
+    0 0 0 0 var(--tile-side),
+    0 0 0 var(--line) var(--ink),
+    0 4px 8px var(--glow-dark);
 }
 .ds-game-tile:focus-visible {
   outline: 5px solid var(--focus);
   outline-offset: 5px;
 }
+/* الأيقونة داخل دائرة ورقية */
 .ds-game-tile-art {
-  font-size: var(--fs-3xl);
-  line-height: 1;
-  filter: drop-shadow(0 4px 0 var(--ink-35));
+  display: grid;
+  place-items: center;
+  width: 2.1em;
+  height: 2.1em;
+  font-size: var(--fs-2xl);
+  border-radius: 50%;
+  background: var(--paper);
+  border: var(--line) solid var(--ink);
+  box-shadow: inset 0 -0.12em 0 var(--ink-12), 0 4px 0 var(--ink);
+}
+.ds-game-tile-art .ds-icon {
+  width: 1.15em;
+  height: 1.15em;
+  stroke-width: 2.2;
 }
 .ds-game-tile-name {
   font-family: var(--font-display);
@@ -671,8 +899,21 @@
   font-size: var(--fs-lg);
 }
 .ds-banner-icon {
-  font-size: 1.6em;
-  line-height: 1;
+  display: inline-grid;
+  place-items: center;
+  width: 1.9em;
+  height: 1.9em;
+  flex: none;
+  border-radius: 50%;
+  background: var(--paper);
+  color: var(--ink);
+  border: var(--line) solid var(--ink);
+  box-shadow: 0 3px 0 var(--ink);
+}
+.ds-banner-icon .ds-icon {
+  width: 1.15em;
+  height: 1.15em;
+  stroke-width: 2.6;
 }
 .ds-banner--success {
   --banner: var(--mint);
@@ -699,6 +940,9 @@
   z-index: 200;
 }
 .ds-toast {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5em;
   padding: 0.6em 1.2em;
   background: var(--ink);
   color: var(--paper);
@@ -814,7 +1058,7 @@
   display: inline-flex;
   flex-wrap: wrap;
   max-width: 100%;
-  padding: 4px;
+  padding: 4px 4px 8px;
   gap: 4px;
   background: var(--paper-2);
   border: var(--line) solid var(--ink);
@@ -832,9 +1076,13 @@
   transition: background-color var(--dur-2) var(--ease-out), transform var(--dur-2) var(--ease-out);
 }
 .ds-seg button[aria-pressed="true"] {
-  background: var(--sun);
+  background: linear-gradient(180deg, var(--sun-hi), var(--sun) 55%);
   border-color: var(--ink);
-  transform: scale(1.04);
+  box-shadow: inset 0 -0.18em 0 var(--ink-12), 0 3px 0 0 var(--sun-side), 0 3px 0 2px var(--ink);
+  transform: translateY(-2px);
+}
+.ds-seg button .ds-icon {
+  margin-inline-end: 0.3em;
 }
 .ds-seg button:focus-visible {
   outline: 3px solid var(--focus);
