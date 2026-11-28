@@ -8,6 +8,7 @@ import { sfx } from "/js/sfx.js";
 import { applyGameColors } from "/shared/ds-theme.js";
 import { icon, replay, bump, confetti, ring, fitScale } from "/js/ds.js";
 import { initTabooScreen, renderTabooScreen } from "/js/screen-taboo.js";
+import { renderGhareebScreen } from "/js/screen-ghareeb.js";
 
 const params = new URLSearchParams(location.search);
 const room = params.get("room") || "main";
@@ -18,6 +19,7 @@ const el = {
   huroof: $("huroofLayer"),
   hub: $("hubScreen"),
   taboo: $("tabooScreen"),
+  ghareeb: $("ghareebScreen"),
   selHex: $("selectedHexGroup"),
   selHexText: $("selectedHexText"),
   qPanel: $("qPanel"),
@@ -412,14 +414,16 @@ function render() {
   const game = state.game || "none";
   if (document.body.dataset.game !== game) {
     document.body.dataset.game = game;
-    const layer = game === "huroof" ? el.huroof : game === "taboo" ? el.taboo : el.hub;
+    const layer = game === "huroof" ? el.huroof : game === "taboo" ? el.taboo : game === "ghareeb" ? el.ghareeb : el.hub;
     el.huroof.hidden = game !== "huroof";
     el.taboo.hidden = game !== "taboo";
+    el.ghareeb.hidden = game !== "ghareeb";
     el.hub.hidden = game !== "none";
     replay(layer, "ds-pop-in");
   }
   if (game === "none") renderHubScreen();
   if (game === "taboo") renderTabooScreen(state);
+  if (game === "ghareeb") renderGhareebScreen(state);
   if (game !== "huroof") return;
 
   // تحديث خلايا اللوحة الـ 25 (مع اكتشاف ما تغيّر لتشغيل الحركات المناسبة)

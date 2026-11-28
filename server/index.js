@@ -29,6 +29,8 @@ import { WsServer } from "./ws.js";
 import { pickDescriber } from "../shared/taboo.js";
 import { startTunnel } from "./tunnel.js";
 import { listTabooPacks, loadTaboo, saveTaboo, deleteTaboo, buildTabooDeck, parseTaboo } from "./taboo-packs.js";
+import { listGhareebFields, loadGhareeb, saveGhareeb, deleteGhareeb, buildGhareebPairs, parseGhareeb } from "./ghareeb-words.js";
+import { createGhareeb, ghareebPickTurn } from "../shared/ghareeb.js";
 import {
   createState,
   applyAction,
@@ -98,6 +100,8 @@ const PATHS = {
   "/buzzer.html": "public/buzzer.html",
   "/presets": "public/presets.html",
   "/taboo-packs": "public/taboo-packs.html",
+  "/ghareeb-words": "public/ghareeb-words.html",
+  "/ghareeb-words.html": "public/ghareeb-words.html",
   "/design": "public/design.html",
   "/presets.html": "public/presets.html",
 };
@@ -201,6 +205,7 @@ function loadSavedState(board) {
     st.players = saved.players || {};
     st.night = { a: 0, b: 0, ...(saved.night || {}) };
     st.taboo = { ...fresh.taboo, ...(saved.taboo || {}) };
+    st.ghareeb = { ...fresh.ghareeb, ...(saved.ghareeb || {}) };
     // دور «الكلمة الممنوعة» كان جارياً: يُستأنف موقوفاً بما تبقّى من وقته
     if (st.taboo.phase === "turn" && st.taboo.timer?.endsAt) {
       const savedAt = Number(JSON.parse(fs.readFileSync(STATE_FILE, "utf8"))?.savedAt) || Date.now();
@@ -267,11 +272,66 @@ function tabooFor(st, client) {
   return { ...t, card };
 }
 
+/**
+ * سرّية «في بينا غريب»:
+ *  - الهوية (من الغريب) وكلمته تصل للحكم وحده — لا للشاشة ولا للاعبين ولا حتى للغريب نفسه.
+ *  - أوراق التصويت وسجلها لا تُكشف أثناء اللعب؛ الكشف الكامل عند نهاية اللعبة فقط.
+ */
+function ghareebFor(st, client) {
+  const g = st.ghareeb;
+  if (!g) return g;
+  const role = client?.meta?.role || "";
+  if (role === "referee") return g;
+  if (g.phase === "over") return g;
+
+  const pid = client?.meta?.playerId || null;
+  const me = pid ? st.players?.[pid] : null;
+  const team = me?.team === "a" || me?.team === "b" ? me.team : null;
+
+  // كلمة كل لاعب على حدة: الغريب يرى كلمته المختلفة ويظنّها هي الكلمة المشتركة،
+  // ولا أحد — ولا الغريب نفسه — يعرف أنه الغريب؛ الحكم وحده يرى ذلك.
+  let myWord = "";
+  if (me && g.word) {
+    const oddId = g.mode === "ffa" ? g.odd?.a : team ? g.odd?.[team] : null;
+    const oddWord = g.mode === "ffa" ? g.oddWord?.a : team ? g.oddWord?.[team] : "";
+    myWord = oddId && oddId === pid && oddWord ? oddWord : g.word;
+  }
+
+  const myVote =
+    (g.phase === "p2" ? (team && g.ballots?.[team]?.[pid]) || "" : g.ballots?.all?.[pid] || "") ||
+    (team ? g.ballots?.[team]?.[pid] || "" : "");
+
+  return {
+    ...g,
+    // الكلمة الأساسية وهويات الغريب لا تُرسل لأي جهاز غير جهاز الحكم.
+    word: "",
+    odd: { a: null, b: null },
+    oddWord: { a: "", b: "" },
+    ballots: { a: {}, b: {}, all: {} },
+    voted: {
+      a: Object.keys(g.ballots?.a || {}),
+      b: Object.keys(g.ballots?.b || {}),
+      all: Object.keys(g.ballots?.all || {}),
+    },
+    rounds: (g.rounds || []).map((r) => ({ n: r.n, winner: r.winner, reason: r.reason })),
+    history: [],
+    myWord,
+    myTeam: team,
+    myVote,
+    lastResult: g.lastResult
+      ? { ...g.lastResult, word: "", odd: { a: null, b: null }, oddWord: { a: "", b: "" } }
+      : null,
+  };
+}
+
 /** نسخة الحالة المرسلة لجهاز معيّن (بحسب دوره). */
 function stateFor(room, client) {
   const st0 = room.state;
   const taboo = tabooFor(st0, client);
-  if (taboo !== st0.taboo) return stateForHuroof({ ...st0, taboo }, client);
+  const ghareeb = ghareebFor(st0, client);
+  if (taboo !== st0.taboo || ghareeb !== st0.ghareeb) {
+    return stateForHuroof({ ...st0, taboo, ghareeb }, client);
+  }
   return stateForHuroof(st0, client);
 }
 
@@ -456,6 +516,11 @@ function handleAction(room, action) {
     action = { ...action, payload: prepareTaboo(room, type, payload) };
   }
 
+  // «في بينا غريب»: الكلمات والغريب والدور التالي
+  if (typeof type === "string" && type.startsWith("ghareeb")) {
+    action = { ...action, payload: prepareGhareeb(room, type, payload) };
+  }
+
   // قرارات الأجراس تحتاج معرفة من هو متصل الآن (فريق بلا متصلين تُتخطّى جولته)
   if (["playerBuzz", "buzzWrong", "buzzCorrect", "timerEnd"].includes(type)) {
     action = { ...action, payload: { ...payload, online: onlinePlayerIds(room) } };
@@ -565,6 +630,86 @@ async function handleTabooApi(req, res, pathname, url) {
     if (pathname === "/api/taboo/delete") {
       deleteTaboo(body.id);
       for (const room of rooms.values()) room.tabooDeck = null;
+      return json(res, 200, { ok: true });
+    }
+    return json(res, 404, { ok: false, error: "غير موجود" });
+  } catch (err) {
+    return json(res, 400, { ok: false, error: err.message });
+  }
+}
+
+/** يجهّز عشوائية «في بينا غريب»: زوج الكلمات، هوية الغريب، والدور التالي (عادل وغير مكشوف). */
+function prepareGhareeb(room, type, payload = {}) {
+  const st = room.state;
+  const g = st.ghareeb;
+  if (!g) return payload;
+
+  if (type === "ghareebDeal") {
+    // تُبنى المجموعة من المجالات المختارة حالياً (وتُصفَّر عند تغيير الإعدادات)
+    if (!room.ghareebPairs || room.ghareebPairsFields !== (g.fields || []).join(",")) {
+      room.ghareebPairs = buildGhareebPairs(g.fields);
+      room.ghareebPairsFields = (g.fields || []).join(",");
+    }
+    const pairs = room.ghareebPairs;
+    if (!pairs.length) return payload;
+    const pick = pairs[Math.floor(Math.random() * pairs.length)];
+    const players = Object.values(st.players || {}).filter((p) => !p.pseudo);
+    if (!players.length) return payload;
+    const rnd = (arr) => (arr.length ? arr[Math.floor(Math.random() * arr.length)] : null);
+
+    // وضع فردي: غريب واحد فقط
+    if (g.mode === "ffa") {
+      const odd = rnd(players);
+      return { ...payload, word: pick.base, oddWordA: pick.stranger, oddA: odd?.id || null, oddB: null, fieldName: pick.field };
+    }
+    // وضع فرقي: غريب واحد داخل كل فريق (ولا أحد يعرف)
+    const oddA = rnd(players.filter((p) => p.team === "a"));
+    const oddB = rnd(players.filter((p) => p.team === "b"));
+    return {
+      ...payload,
+      word: pick.base,
+      oddWordA: pick.stranger,
+      oddWordB: pick.stranger,
+      oddA: oddA?.id || null,
+      oddB: oddB?.id || null,
+      fieldName: pick.field,
+    };
+  }
+
+  if (type === "ghareebNew" || type === "ghareebReset") {
+    room.ghareebPairs = null;
+    room.ghareebPairsFields = "";
+    return payload;
+  }
+
+  if (type === "ghareebBegin" || type === "ghareebNextTurn") {
+    const t = ghareebPickTurn(st);
+    return t ? { ...payload, ...t } : payload;
+  }
+
+  return payload;
+}
+
+/** مجالات «في بينا غريب»: قائمة، قراءة، حفظ، حذف. */
+async function handleGhareebApi(req, res, pathname, url) {
+  try {
+    if (pathname === "/api/ghareeb/packs" && req.method === "GET") {
+      return json(res, 200, { ok: true, packs: listGhareebFields() });
+    }
+    if (pathname === "/api/ghareeb/get" && req.method === "GET") {
+      return json(res, 200, { ok: true, ...loadGhareeb(url.searchParams.get("id") || "") });
+    }
+    if (req.method !== "POST") return json(res, 405, { ok: false, error: "POST فقط" });
+    const body = JSON.parse((await readBody(req)) || "{}");
+    if (pathname === "/api/ghareeb/save") {
+      const data = typeof body.text === "string" ? parseGhareeb(body.text) : { icon: body.icon, pairs: body.pairs || [] };
+      const saved = saveGhareeb(body.id, { icon: body.icon ?? data.icon, pairs: data.pairs });
+      for (const room of rooms.values()) room.ghareebPairs = null; // إعادة بناء الأزواج
+      return json(res, 200, { ok: true, ...saved });
+    }
+    if (pathname === "/api/ghareeb/delete") {
+      deleteGhareeb(body.id);
+      for (const room of rooms.values()) room.ghareebPairs = null;
       return json(res, 200, { ok: true });
     }
     return json(res, 404, { ok: false, error: "غير موجود" });
@@ -751,6 +896,11 @@ const server = http.createServer((req, res) => {
     return;
   }
 
+  if (pathname.startsWith("/api/ghareeb")) {
+    handleGhareebApi(req, res, pathname, new URL(req.url, "http://x"));
+    return;
+  }
+
   if (pathname === "/api/health") {
     res.writeHead(200, { "Content-Type": MIME[".json"] });
     return res.end(JSON.stringify({ ok: true, app: "horoof-maa-hussein", port: ACTIVE_PORT, rooms: rooms.size, uptime: process.uptime() }));
@@ -929,6 +1079,28 @@ wss.onconnection = (conn) => {
         if (!room || conn.meta.role !== "player") return;
         if (room.state.game !== "taboo" || room.state.taboo?.describer?.id !== conn.meta.playerId) return;
         handleAction(room, { type: "tabooSkip" });
+        break;
+      }
+
+      // 🗳 تصويت لاعب في «في بينا غريب» — سري تماماً: الخادم لا يبثّ اختيار أحد
+      case "ghareebVote": {
+        if (!room || conn.meta.role !== "player") return;
+        if (room.state.game !== "ghareeb" || room.state.ghareeb?.phase !== "vote") return;
+        handleAction(room, {
+          type: "ghareebVote",
+          payload: { playerId: conn.meta.playerId, targetId: String(msg.targetId || "") },
+        });
+        break;
+      }
+
+      // 🗳 تصويت المرحلة الثانية — داخل فريق اللاعب نفسه
+      case "ghareebP2Vote": {
+        if (!room || conn.meta.role !== "player") return;
+        if (room.state.game !== "ghareeb" || room.state.ghareeb?.phase !== "p2") return;
+        handleAction(room, {
+          type: "ghareebP2Vote",
+          payload: { playerId: conn.meta.playerId, targetId: String(msg.targetId || "") },
+        });
         break;
       }
 

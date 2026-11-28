@@ -9,6 +9,7 @@ import { findClashes, autoFixColors, COLOR_LABELS } from "/shared/colors.js";
 import { DS_THEMES, PAPER, applyGameColors } from "/shared/ds-theme.js";
 import { icon, hydrateIcons, toast as dsToast, replay } from "/js/ds.js";
 import { initTaboo, renderTaboo } from "/js/referee-taboo.js";
+import { initGhareeb, renderGhareeb } from "/js/referee-ghareeb.js";
 
 window.__appStarted = true; // انظر /js/diag.js
 
@@ -16,8 +17,8 @@ window.__appStarted = true; // انظر /js/diag.js
 const HUB_GAMES = [
   { id: "huroof", icon: "hexagon", name: "حروف مع حسين", desc: "لوحة الحروف والأجراس" },
   { id: "taboo", icon: "hush", name: "الكلمة الممنوعة", desc: "اشرح دون الكلمات الممنوعة", tone: "coral" },
+  { id: "ghareeb", icon: "eye", name: "في بينا غريب", desc: "كلمة واحدة… وغريب بينكم", tone: "mint" },
   { id: null, icon: "shapes", name: "تحدّي الصور", desc: "قريباً", tone: "sky", soon: true },
-  { id: null, icon: "sparkle", name: "إيموجي", desc: "قريباً", tone: "mint", soon: true },
 ];
 
 const params = new URLSearchParams(location.search);
@@ -55,6 +56,7 @@ const ui = {
   homeIcon: el("homeIcon"),
   appTitle: el("appTitle"),
   tabooCard: el("tabooCard"),
+  ghareebCard: el("ghareebCard"),
   qHex: el("qHex"),
   timerReadoutText: el("timerReadoutText"),
   buzzReadoutText: el("buzzReadoutText"),
@@ -421,6 +423,12 @@ const TABS = {
     ["screen", "الشاشة", "tv", "p-screen"],
     ["log", "السجل", "scroll", "p-log"],
   ],
+  ghareeb: [
+    ["settings", "الإعدادات", "sliders", "p-gsettings"],
+    ["teams", "الفرق", "users", "p-teams"],
+    ["screen", "الشاشة", "tv", "p-screen"],
+    ["log", "السجل", "scroll", "p-log"],
+  ],
 };
 const activeTab = {};
 const tabContext = () => (viewGame() === "none" ? "home" : viewGame());
@@ -467,6 +475,7 @@ function applyView() {
   ui.nowPanel.hidden = !inGame;
   ui.scoreRow.hidden = game !== "huroof";
   ui.tabooCard.hidden = game !== "taboo";
+  ui.ghareebCard.hidden = game !== "ghareeb";
   applyTabs();
 }
 
@@ -483,6 +492,7 @@ function render() {
   if (stageColor) document.querySelector('meta[name="theme-color"]')?.setAttribute("content", stageColor);
   renderHub();
   renderTaboo();
+  renderGhareeb();
 
   syncPresetsFromState();
 
@@ -1245,6 +1255,16 @@ initTaboo({
   toast,
   getState: () => state,
   inGameView: () => refView === "game",
+  getPeers: () => peers,
+  remainingMs: (t) => remainingMs(t, transport.serverOffset),
+});
+
+initGhareeb({
+  act,
+  toast,
+  getState: () => state,
+  inGameView: () => refView === "game",
+  goHome,
   getPeers: () => peers,
   remainingMs: (t) => remainingMs(t, transport.serverOffset),
 });

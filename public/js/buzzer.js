@@ -17,6 +17,7 @@ import { sfx } from "/js/sfx.js";
 import { applyGameColors } from "/shared/ds-theme.js";
 import { icon, hydrateIcons, confetti, replay, ring } from "/js/ds.js";
 import { initTabooPhone, renderTabooPhone } from "/js/phone-taboo.js";
+import { initGhareebPhone, renderGhareebPhone } from "/js/phone-ghareeb.js";
 
 window.__appStarted = true; // انظر /js/diag.js
 
@@ -86,6 +87,7 @@ const el = {
   joinNote: document.getElementById("joinNote"),
   stats: document.getElementById("myStats"),
   taboo: document.getElementById("tabooPhone"),
+  ghareeb: document.getElementById("ghareebPhone"),
 };
 const ringCtl = ring(el.ring);
 
@@ -94,6 +96,15 @@ const link = PLAYER_MODE
   : new Transport("buzzer", room, "", { team: LEGACY_TEAM });
 
 initTabooPhone({
+  me: ME,
+  myTeam: () => myTeam(),
+  sendRaw: (m) => link.sendRaw(m),
+  sfx,
+  getState: () => snap?.state,
+  remainingMs: (t) => remainingMs(t, link.serverOffset),
+});
+
+initGhareebPhone({
   me: ME,
   myTeam: () => myTeam(),
   sendRaw: (m) => link.sendRaw(m),
@@ -505,7 +516,7 @@ function render() {
 
   renderJoin();
 
-  // اللعبة الحالية: «الكلمة الممنوعة» لها واجهتها الخاصة على الجوال
+  // اللعبة الحالية: «الكلمة الممنوعة» و«في بينا غريب» لهما واجهتهما الخاصة على الجوال
   const game = state?.game || null;
   const inJoin = el.join && !el.join.hidden;
   const tabooOn = game === "taboo" && !inJoin && joined();
@@ -513,6 +524,14 @@ function render() {
   if (tabooOn) {
     show(el.stage, false);
     renderTabooPhone(state);
+    return;
+  }
+
+  const ghareebOn = game === "ghareeb" && !inJoin && joined();
+  show(el.ghareeb, ghareebOn);
+  if (ghareebOn) {
+    show(el.stage, false);
+    renderGhareebPhone(state);
     return;
   }
 

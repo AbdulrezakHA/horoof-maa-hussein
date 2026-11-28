@@ -5,11 +5,13 @@
 import { BASE_LETTERS, toBaseLetter } from "./letters.js";
 import { DS_THEMES } from "./ds-theme.js";
 import { createTaboo, cloneTaboo, applyTaboo } from "./taboo.js";
+import { createGhareeb, cloneGhareeb, applyGhareeb } from "./ghareeb.js";
 
 /** الألعاب المتاحة في السهرة (المفتاح ← الاسم). */
 export const GAMES = {
   huroof: "حروف مع حسين",
   taboo: "الكلمة الممنوعة",
+  ghareeb: "في بينا غريب",
 };
 
 export const TEAM_IDS = ["a", "b"];
@@ -135,6 +137,7 @@ export function createState(board) {
     game: null,
     night: { a: 0, b: 0 },
     taboo: createTaboo(),
+    ghareeb: createGhareeb(),
     lastFirst: null, // أول من ضغط في السؤال السابق (لخيار «لا ضغط أول مرتين متتاليتين»)
     winner: null, // 'a' | 'b'
     log: [],
@@ -172,6 +175,7 @@ function clone(state) {
     players: Object.fromEntries(Object.entries(state.players || {}).map(([k, v]) => [k, { ...v }])),
     night: { a: 0, b: 0, ...(state.night || {}) },
     taboo: cloneTaboo(state.taboo),
+    ghareeb: cloneGhareeb(state.ghareeb),
     log: [...state.log],
   };
 }
@@ -478,6 +482,11 @@ export function applyAction(state, board, action) {
     if (st.game === "taboo" && (st.taboo.phase === "setup") && p.startTeam) {
       applyTaboo(st, "tabooNew", { startTeam: p.startTeam });
     }
+    // أول دخول لـ«في بينا غريب»: تبقى اللعبة على شاشة الإعداد حتى يختار الحكم
+    // الوضع والمجالات ثم يوزّع الكلمات بنفسه.
+    if (st.game === "ghareeb" && st.ghareeb.phase === "over") {
+      applyGhareeb(st, "ghareebReset");
+    }
     pushLog(st, st.game ? `اللعبة الآن: ${GAMES[st.game]}` : "العودة إلى قائمة الألعاب", "info", "gamepad");
     st.rev = state.rev + 1;
     return st;
@@ -493,6 +502,25 @@ export function applyAction(state, board, action) {
     const log = applyTaboo(st, type, p);
     const w = st.taboo.winner;
     if (w && w !== before) st.night[w] = (st.night[w] || 0) + 1;
+    if (log) pushLog(st, log.text, log.tone, log.icon || null);
+    st.rev = state.rev + 1;
+    return st;
+  }
+  if (typeof type === "string" && type.startsWith("ghareeb")) {
+    const before = st.ghareeb?.rounds.length || 0;
+    const log = applyGhareeb(st, type, p);
+    // نقاط السهرة في الوضع الفريقي: نقطة لكل جولة محسومة، والتعادل نقطة لكل فريق.
+    // الوضع الفردي للمتعة فقط ولا يمنح نقاط سهرة.
+    if (st.ghareeb.mode === "teams") {
+      for (const r of st.ghareeb.rounds.slice(before)) {
+        if (r.winner === "a" || r.winner === "b") {
+          st.night[r.winner] = (st.night[r.winner] || 0) + 1;
+        } else if (r.winner === "draw") {
+          st.night.a = (st.night.a || 0) + 1;
+          st.night.b = (st.night.b || 0) + 1;
+        }
+      }
+    }
     if (log) pushLog(st, log.text, log.tone, log.icon || null);
     st.rev = state.rev + 1;
     return st;
