@@ -174,7 +174,7 @@ function saveStateSoon(room) {
       fs.writeFileSync(STATE_FILE + ".tmp", JSON.stringify({ savedAt: Date.now(), state: room.state }));
       fs.renameSync(STATE_FILE + ".tmp", STATE_FILE);
     } catch (err) {
-      console.log("  ⚠️  تعذّر حفظ اللعبة:", err.message);
+      console.log("  [!]  تعذّر حفظ اللعبة:", err.message);
     }
   }, 250);
 }
@@ -219,7 +219,7 @@ function getRoom(id = "main") {
     // كل غرفة تبدأ بلوحة عشوائية: ٢٥ حرفاً من الحروف الأساسية الـ٢٨ (بلا تكرار) في مواقع عشوائية.
     const board = randomBoardLetters(normalizeBoardLetters(structuredClone(DEFAULT_BOARD)));
     const saved = id === "main" ? loadSavedState(board) : null;
-    if (saved) console.log("  💾 استُؤنفت آخر لعبة محفوظة (اللوحة والنقاط واللاعبون).");
+    if (saved) console.log("  [OK] استُؤنفت آخر لعبة محفوظة (اللوحة والنقاط واللاعبون).");
     rooms.set(id, {
       id,
       board,
@@ -347,7 +347,7 @@ function scheduleTimer(room) {
   }, delay + 60);
 }
 
-/** القرارات التي يمكن التراجع عنها بزر ↩️ عند الحكم. */
+/** القرارات التي يمكن التراجع عنها بزر التراجع عند الحكم. */
 const UNDOABLE = new Set([
   "award", "unclaim", "noPoint", "buzzCorrect", "buzzWrong", "clear",
   "reset", "shuffle", "declareWinner", "setLetter", "playerRemove", "playerSetTeam",
@@ -768,8 +768,8 @@ const server = http.createServer((req, res) => {
         const ip = (req.socket.remoteAddress || "").replace(/^::ffff:/, "");
         const dev = shortDevice(String(m.ua || ""));
         const page = String(m.page || "").slice(0, 40);
-        if (m.kind === "open") console.log(`  📱 فتح ${page} — ${dev} (${ip})`);
-        else console.log(`  \x1b[31m⚠️  ${m.kind === "stuck" ? "لم تعمل اللعبة" : "خطأ"} على ${dev} (${ip}) ${page}: ${String(m.msg || "").slice(0, 600)}\x1b[0m`);
+        if (m.kind === "open") console.log(`  [PHONE] فتح ${page} — ${dev} (${ip})`);
+        else console.log(`  \x1b[31m[!]  ${m.kind === "stuck" ? "لم تعمل اللعبة" : "خطأ"} على ${dev} (${ip}) ${page}: ${String(m.msg || "").slice(0, 600)}\x1b[0m`);
       } catch {}
       res.writeHead(204);
       res.end();
@@ -1050,11 +1050,11 @@ function openScreen(port) {
       { stdio: "ignore", windowsHide: true }
     );
     child.on("error", () => {
-      console.log(`  ⚠️  تعذّر فتح الشاشة تلقائياً — افتح: http://127.0.0.1:${port}/screen`);
+      console.log(`  [!]  تعذّر فتح الشاشة تلقائياً — افتح: http://127.0.0.1:${port}/screen`);
     });
     child.unref();
   } catch (err) {
-    console.log(`  ⚠️  تعذّر فتح الشاشة تلقائياً — افتح: http://127.0.0.1:${port}/screen`);
+    console.log(`  [!]  تعذّر فتح الشاشة تلقائياً — افتح: http://127.0.0.1:${port}/screen`);
   }
 }
 
@@ -1113,33 +1113,33 @@ async function startServer(port) {
     const totalQuestions = Object.values(BANK).reduce((s, v) => s + v.length, 0);
 
     console.log("\n\x1b[35m╔══════════════════════════════════════════════╗\x1b[0m");
-    console.log("\x1b[35m║     🔤  حروف مع حسين — الخادم يعمل الآن      ║\x1b[0m");
+    console.log("\x1b[35m║       حروف مع حسين — الخادم يعمل الآن      ║\x1b[0m");
     console.log("\x1b[35m╚══════════════════════════════════════════════╝\x1b[0m\n");
-    console.log(`  📺  الشاشة الكبيرة : \x1b[36mhttp://127.0.0.1:${port}/screen\x1b[0m`);
-    console.log(`  📱  واجهة الحكم   : \x1b[36mhttp://127.0.0.1:${port}/referee\x1b[0m`);
-    console.log(`  🔔  أجراس اللاعبين: \x1b[36mhttp://127.0.0.1:${port}/buzzer?team=a\x1b[0m  (أو team=b)`);
-    console.log(`  🏠  الصفحة الرئيسية: \x1b[36mhttp://127.0.0.1:${port}/\x1b[0m`);
+    console.log(`  [TV]  الشاشة الكبيرة : \x1b[36mhttp://127.0.0.1:${port}/screen\x1b[0m`);
+    console.log(`  [REF]  واجهة الحكم   : \x1b[36mhttp://127.0.0.1:${port}/referee\x1b[0m`);
+    console.log(`  [PLAY]  جوال اللاعب    : \x1b[36mhttp://127.0.0.1:${port}/play\x1b[0m`);
+    console.log(`  [HOME]  الصفحة الرئيسية: \x1b[36mhttp://127.0.0.1:${port}/\x1b[0m`);
 
     if (addrs.length) {
-      console.log("\n  📡  للهاتف على نفس شبكة الواي-فاي:");
+      console.log("\n  [WIFI]  للهاتف على نفس شبكة الواي-فاي:");
       for (const a of addrs) {
         console.log(`      \x1b[32mhttp://${a.address}:${port}\x1b[0m   (${a.name})`);
       }
     } else {
-      console.log("\n  ⚠️  لم يُعثر على عنوان شبكة — الهاتف لن يستطيع الاتصال.");
+      console.log("\n  [!]  لم يُعثر على عنوان شبكة — الهاتف لن يستطيع الاتصال.");
     }
 
     console.log(
       USE_TUNNEL
-        ? "\n  🌐  رابط الإنترنت: جارٍ التجهيز… (يظهر هنا وعلى التلفاز عند جاهزيته)"
+        ? "\n  [NET]  رابط الإنترنت: جارٍ التجهيز… (يظهر هنا وعلى التلفاز عند جاهزيته)"
         : PUBLIC_URL
-          ? `\n  🌐  رابط الإنترنت: ${PUBLIC_URL}`
-          : "\n  🌐  رابط الإنترنت: مُطفأ (--no-tunnel)"
+          ? `\n  [NET]  رابط الإنترنت: ${PUBLIC_URL}`
+          : "\n  [NET]  رابط الإنترنت: مُطفأ (--no-tunnel)"
     );
     console.log(
-      `\n  📚 بنك الأسئلة: ${Object.keys(BANK).length} حرف / ${totalQuestions} سؤال`
+      `\n  [Q] بنك الأسئلة: ${Object.keys(BANK).length} حرف / ${totalQuestions} سؤال`
     );
-    console.log(`  🗂️  الخلايا: ${DEFAULT_BOARD.cells.length}\n`);
+    console.log(`  [GRID]  الخلايا: ${DEFAULT_BOARD.cells.length}\n`);
   });
 }
 

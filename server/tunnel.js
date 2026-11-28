@@ -149,7 +149,7 @@ export function startTunnel({ port, rootDir, onChange, log = console.log }) {
     const asset = assetName();
     if (!asset) throw new Error("cloudflared غير مثبّت على هذا الجهاز");
     set({ status: "downloading", error: null });
-    log("  🌐 تحميل برنامج رابط الإنترنت (مرة واحدة فقط)…");
+    log("  [NET] تحميل برنامج رابط الإنترنت (مرة واحدة فقط)…");
     fs.mkdirSync(path.dirname(local), { recursive: true });
     await download(RELEASES + asset, local);
     return local;
@@ -172,7 +172,7 @@ export function startTunnel({ port, rootDir, onChange, log = console.log }) {
     try {
       exe = await binary();
     } catch (e) {
-      log(`  ⚠️  رابط الإنترنت غير متاح: ${e.message} — اللعبة تعمل على الشبكة المحلية.`);
+      log(`  [!]  رابط الإنترنت غير متاح: ${e.message} — اللعبة تعمل على الشبكة المحلية.`);
       return scheduleRestart(e.message);
     }
     if (stopped) return;
@@ -210,7 +210,7 @@ export function startTunnel({ port, rootDir, onChange, log = console.log }) {
       if (metricsPort ? await ready(metricsPort) : i >= 4) {
         failures = 0;
         set({ status: "ok", url, error: null });
-        log(`  🌐 رابط الإنترنت جاهز: \x1b[32m${url}\x1b[0m`);
+        log(`  [NET] رابط الإنترنت جاهز: \x1b[32m${url}\x1b[0m`);
         return;
       }
       await new Promise((r) => setTimeout(r, 1500));
@@ -219,7 +219,7 @@ export function startTunnel({ port, rootDir, onChange, log = console.log }) {
   }
 
   function restart(reason) {
-    log(`  ⚠️  رابط الإنترنت: ${reason} — جارٍ صنع رابط جديد…`);
+    log(`  [!]  رابط الإنترنت: ${reason} — جارٍ صنع رابط جديد…`);
     if (child) {
       const c = child;
       child = null;
