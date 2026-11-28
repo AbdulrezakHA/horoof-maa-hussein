@@ -134,3 +134,44 @@ export async function setupRefereeQR(canvas, room = "main") {
 export async function getPlayUrls(room = "main") {
   return resolveUrls(room, "play");
 }
+
+/**
+ * الطريقان معاً لصفحة معيّنة (referee / play):
+ *   net — رابط الإنترنت (Cloudflare) إن كان جاهزاً، وإلا null مع netStatus
+ *   lan — رابط الشبكة المحلية (عنوان الواي فاي للكمبيوتر)
+ * يعمل أينما فُتحت الشاشة: من الكمبيوتر نفسه، أو من الشبكة المحلية، أو من رابط الإنترنت.
+ * @param {string} room
+ * @param {string} path
+ * @returns {Promise<{net: {url: string, host: string}|null, lan: {url: string, host: string}|null, netStatus: string}>}
+ */
+export async function getRoutes(room = "main", path = "play") {
+  const qs = new URLSearchParams({ room }).toString();
+  const out = { net: null, lan: null, netStatus: "off" };
+  let info = null;
+  try {
+    info = await (await fetch("/api/network", { cache: "no-store" })).json();
+  } catch {
+    /* بلا معلومات: نستعمل عنوان الصفحة نفسها */
+  }
+  const host = location.hostname;
+  const isLocal = ["localhost", "127.0.0.1", "::1", ""].includes(host);
+  const isTunnel = location.protocol === "https:";
+
+  // 🌐 الإنترنت
+  const pub = info?.publicUrl || (isTunnel ? location.origin : null);
+  out.netStatus = info?.tunnel?.status || (pub ? "ok" : "off");
+  if (pub) {
+    out.net = { url: `${pub}/${path}?${qs}`, host: new URL(pub).host };
+    out.netStatus = "ok";
+  }
+
+  // 📶 الشبكة المحلية
+  if (!isLocal && !isTunnel) {
+    out.lan = { url: `${location.origin}/${path}?${qs}`, host: location.host };
+  } else if (info?.addresses?.length) {
+    const port = isLocal && location.port ? location.port : String(info.port || "");
+    const addr = info.addresses[0].address;
+    out.lan = { url: `http://${addr}:${port}/${path}?${qs}`, host: `${addr}:${port}` };
+  }
+  return out;
+}

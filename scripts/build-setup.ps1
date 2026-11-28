@@ -57,6 +57,9 @@ Get-ChildItem -LiteralPath $root -File | Where-Object {
 
 New-Item -ItemType Directory -Path (Join-Path $top 'runtime') -Force | Out-Null
 Copy-Item -LiteralPath $runtime -Destination (Join-Path $top 'runtime\node.exe') -Force
+# Internet link (Cloudflare): bundled when present, otherwise the game downloads it on first run
+$cf = Join-Path $root 'runtime\cloudflared.exe'
+if (Test-Path -LiteralPath $cf) { Copy-Item -LiteralPath $cf -Destination (Join-Path $top 'runtime\cloudflared.exe') -Force }
 
 # readme for the friend: Arabic, saved as UTF-8 WITH BOM so Notepad shows it correctly
 $readmeSrc = Join-Path $root 'scripts\setup-readme-ar.txt'

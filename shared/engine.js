@@ -125,7 +125,7 @@ export function createState(board) {
     // مجموعات الأسئلة المختارة (فارغة = كل المجموعات الموجودة على القرص)
     presets: { active: [] },
     // ما يظهر على الشاشة الكبيرة — يتحكّم به الحكم من جواله
-    screen: { lobby: true, sound: true },
+    screen: { lobby: true, sound: true, qr: "both" }, // qr: both | net | lan (أي رمز QR يظهر على التلفاز)
     // اللاعبون: { [id]: { id, name, team, score, correct, buzzes, fastest, pseudo? } }
     // (pseudo = جرس فريق كامل من الرابط القديم /buzzer?team=a — لا يظهر في قائمة اللاعبين)
     players: {},
@@ -166,7 +166,7 @@ function clone(state) {
       question: state.current.question ? { ...state.current.question } : null,
     },
     presets: { active: [...(state.presets?.active || [])] },
-    screen: { lobby: true, sound: true, ...(state.screen || {}) },
+    screen: { lobby: true, sound: true, qr: "both", ...(state.screen || {}) },
     players: Object.fromEntries(Object.entries(state.players || {}).map(([k, v]) => [k, { ...v }])),
     night: { a: 0, b: 0, ...(state.night || {}) },
     taboo: cloneTaboo(state.taboo),
@@ -594,9 +594,10 @@ export function applyAction(state, board, action) {
 
     // التحكم بالشاشة الكبيرة من جوال الحكم: قائمة البداية (رموز QR) وصوت الشاشة
     case "screen": {
-      const scr = { lobby: true, sound: true, ...(st.screen || {}) };
+      const scr = { lobby: true, sound: true, qr: "both", ...(st.screen || {}) };
       if (typeof p.lobby === "boolean") scr.lobby = p.lobby;
       if (typeof p.sound === "boolean") scr.sound = p.sound;
+      if (["both", "net", "lan"].includes(p.qr)) scr.qr = p.qr;
       st.screen = scr;
       break;
     }

@@ -91,6 +91,15 @@
           <label for="tabooSeconds">مدة الدور (ثوانٍ)</label>
           <input id="tabooSeconds" type="number" class="setting-number" min="20" max="180" step="5" value="60" />
         </div>
+        <div class="setting-row">
+          <label for="tabooSkips">التخطّيات لكل فريق (طوال اللعبة)</label>
+          <select id="tabooSkips" class="setting-number">
+            <option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option>
+            <option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option>
+            <option value="8">8</option><option value="9">9</option><option value="10">10</option>
+            <option value="-1">∞ بلا حدّ</option>
+          </select>
+        </div>
         <div class="section-title section-sub">📚 المواضيع</div>
         <div class="pst-list" id="tabooPacks"></div>
         <p class="tiny" id="tabooPacksReadout"></p>
@@ -132,6 +141,13 @@
         <div class="btn-row">
           <button class="btn" id="screenFullBtn" type="button">⛶ ملء الشاشة على التلفاز</button>
         </div>
+        <div class="section-title section-sub">🔗 رموز الدخول على التلفاز</div>
+        <div class="seg" id="qrRouteSeg">
+          <button class="btn" type="button" data-qr="both">🌐 + 📶 الاثنان</button>
+          <button class="btn" type="button" data-qr="net">🌐 الإنترنت فقط</button>
+          <button class="btn" type="button" data-qr="lan">📶 الواي فاي فقط</button>
+        </div>
+        <p class="tiny" id="netStatusLine">—</p>
       </section>
 
       <!-- ============ السؤال ============ -->

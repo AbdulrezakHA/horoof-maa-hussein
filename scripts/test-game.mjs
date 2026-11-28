@@ -694,9 +694,20 @@ async function main() {
     check("الدور الأول للفريق البادئ مع شارح من الفريق نفسه",
       t.phase === "ready" && T === t.startTeam && t.describer && st().players[t.describer.id]?.team === T);
 
+    // 👁️ الحكم يرى بطاقة الدور القادم قبل البدء، ولا يراها غيره
+    const preview1 = last(ref2).state.taboo.card;
+    check("👁️ الحكم يرى أول كلمة قبل بدء الدور", !!preview1?.word && preview1.forbidden?.length > 0);
+    check("🔒 قبل الدور: الشاشة والجوالات لا تصلها البطاقة",
+      !last(screen).state.taboo.card && Object.values(phones).every((ws) => !last(ws).state.taboo.card));
+    send("tabooSwap");
+    await sleep(250);
+    const preview2 = last(ref2).state.taboo.card;
+    check("🔄 الحكم يبدّل الكلمة قبل الدور", preview2?.word && preview2.word !== preview1.word, `${preview1.word} → ${preview2?.word}`);
+
     send("tabooStartTurn");
     await sleep(300);
     t = st().taboo;
+    check("▶️ الدور يبدأ بالكلمة التي اختارها الحكم", t.card?.word === preview2.word);
     check("بدء الدور: بطاقة فيها كلمة وكلمات ممنوعة والعدّاد يعمل",
       t.phase === "turn" && !!t.card?.word && t.card.forbidden.length >= 3 && t.timer.running === true);
 
@@ -725,6 +736,14 @@ async function main() {
     phones[descId].send(JSON.stringify({ t: "tabooSkip" }));
     await sleep(250);
     check("⏭ الشارح يتخطّى من جواله (بقي واحد)", st().taboo.skips[T] === 1);
+
+    // 🔄 تبديل مجاني من الحكم: كلمة جديدة ولا يُحسب على الفريق
+    const beforePass = st().taboo.card.word;
+    send("tabooPass");
+    await sleep(250);
+    check("🔄 التبديل المجاني يغيّر الكلمة ولا ينقص التخطّيات",
+      st().taboo.card.word !== beforePass && st().taboo.skips[T] === 1 &&
+      st().taboo.turnLog.some((l) => l.result === "pass" && l.word === beforePass));
 
     // 🚫 مخالفة → ‎-1 وينتهي الدور
     send("tabooFoul", { reason: "letter" });
@@ -772,6 +791,34 @@ async function main() {
     check("لعبة جديدة: النقاط صفر والتخطّيات تتجدّد ونقاط السهرة تبقى",
       st().taboo.score.a === 0 && st().taboo.score.b === 0 && st().taboo.skips[T] === 2 && st().night[T] === nightBefore[T] + 1);
 
+    // ⏭ عدد التخطّيات يحدّده الحكم (٠–١٠ أو بلا حدّ)
+    send("tabooConfig", { skipsPerGame: 5 });
+    await sleep(150);
+    check("⏭ الحكم يغيّر عدد التخطّيات إلى ٥", st().taboo.skipsPerGame === 5 && st().taboo.skips.a === 5 && st().taboo.skips.b === 5);
+    send("tabooConfig", { skipsPerGame: -1 });
+    await sleep(150);
+    check("⏭ خيار «بلا حدّ»", st().taboo.skipsPerGame === -1 && st().taboo.skips.a === -1);
+    send("tabooBegin");
+    await sleep(200);
+    send("tabooStartTurn");
+    await sleep(200);
+    const T2 = st().taboo.turnTeam;
+    for (let i = 0; i < 4; i++) {
+      send("tabooSkip");
+      await sleep(120);
+    }
+    check("⏭ بلا حدّ: التخطّي يعمل مراراً", st().taboo.turnLog.filter((l) => l.result === "skip").length === 4 && st().taboo.phase === "turn");
+    send("tabooConfig", { skipsPerGame: 6 });
+    await sleep(150);
+    check("⏭ تغيير العدد أثناء اللعبة يحتسب ما استُهلك", st().taboo.skips[T2] === 2 && st().taboo.skips[T2 === "a" ? "b" : "a"] === 6,
+      JSON.stringify(st().taboo.skips));
+    send("tabooConfig", { skipsPerGame: 2 });
+    await sleep(150);
+    check("⏭ لا يصبح المتبقّي سالباً", st().taboo.skips[T2] === 0);
+    send("tabooConfig", { skipsPerGame: 2 });
+    send("tabooNew");
+    await sleep(200);
+
     send("setGame", { game: "huroof" });
     await sleep(200);
     pa1.close(); pa2.close(); pb1.close(); pb2.close();
@@ -788,6 +835,11 @@ async function main() {
     await sleep(200);
     check("الحكم يكتم صوت الشاشة دون تغيير القائمة",
       last(screen).state.screen.sound === false && last(screen).state.screen.lobby === false);
+    ref2.send(JSON.stringify({ t: "action", action: { type: "screen", payload: { qr: "net" } } }));
+    await sleep(200);
+    check("🔗 الحكم يختار رموز الإنترنت فقط على التلفاز", last(screen).state.screen.qr === "net");
+    ref2.send(JSON.stringify({ t: "action", action: { type: "screen", payload: { qr: "both" } } }));
+    await sleep(150);
     // الشاشة لا تستطيع إرسال أوامر (للعرض فقط)
     screen.send(JSON.stringify({ t: "action", action: { type: "screen", payload: { lobby: true, sound: true } } }));
     await sleep(200);

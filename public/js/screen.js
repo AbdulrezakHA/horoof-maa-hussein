@@ -2,7 +2,7 @@
    منطق الشاشة الكبيرة — مطابق لملف حروف مع حسين layout.svg بمقاس 1920x1080
    ================================================================== */
 import { Transport, remainingMs } from "/js/transport.js";
-import { drawQR, getRefereeUrls, getPlayUrls } from "/js/qr.js";
+import { drawQR, getRoutes } from "/js/qr.js";
 import { sfx } from "/js/sfx.js";
 import { inkFor, isLight, mix } from "/shared/colors.js";
 import { initTabooScreen, renderTabooScreen } from "/js/screen-taboo.js";
@@ -286,6 +286,7 @@ function applyScreenControls() {
   const scr = state?.screen || {};
   const showLobby = !refereeConnected || scr.lobby !== false;
   if (el.lobby) el.lobby.classList.toggle("lobby-off", !showLobby);
+  applyRouteVisibility();
   sfx.setMuted(scr.sound === false, { persist: false });
 
   renderLobbyPlayers();
@@ -324,28 +325,62 @@ function renderLobbyPlayers() {
   }
 }
 
+/**
+ * رموز الدخول — طريقان دائماً:
+ *   🌐 الإنترنت (Cloudflare): أي جوال فيه إنترنت من أي شبكة
+ *   📶 الشبكة المحلية: الجوالات على نفس الواي فاي، بدون إنترنت
+ * إن فشل أحدهما يبقى الآخر. يُعاد الرسم كلما تغيّر رابط الإنترنت (رسالة net من الخادم).
+ */
+const NET_WAIT = {
+  starting: "⏳ جارٍ تجهيز رابط الإنترنت…",
+  downloading: "⏳ تجهيز رابط الإنترنت لأول مرة…",
+  error: "⚠️ رابط الإنترنت غير متاح الآن — جارٍ المحاولة",
+  off: "رابط الإنترنت مُطفأ",
+};
+let routes = { net: null, lan: null, netStatus: "starting" };
+
 async function initLobby() {
-  try {
-    const options = await getRefereeUrls(room);
-    if (options && options.length > 0) {
-      showRefereeUrl(options[0]);
+  for (const [path, prefix] of [["referee", "Ref"], ["play", "Play"]]) {
+    let r;
+    try {
+      r = await getRoutes(room, path);
+    } catch {
+      continue;
     }
-  } catch (err) {
-    if (el.lobbyUrl) el.lobbyUrl.textContent = `${location.origin}/referee`;
+    if (path === "play") routes = r;
+    for (const kind of ["net", "lan"]) {
+      const id = `qr${prefix}${kind === "net" ? "Net" : "Lan"}`;
+      const canvas = document.getElementById(id);
+      const wait = document.getElementById(`${id}Wait`);
+      const box = canvas?.closest(".qr-route");
+      if (!canvas || !box) continue;
+      const target = r[kind];
+      box.classList.toggle("qr-pending", !target);
+      if (target) {
+        drawQR(target.url, canvas);
+        box.title = target.url;
+        if (wait) wait.textContent = "";
+      } else if (wait) {
+        wait.textContent = kind === "net" ? NET_WAIT[r.netStatus] || NET_WAIT.starting : "⚠️ لا توجد شبكة محلية";
+      }
+    }
   }
-  // رمز واحد لكل اللاعبين: يكتب اسمه ويختار فريقه
-  try {
-    const options = await getPlayUrls(room);
-    if (options?.[0] && el.qrCanvasPlay) drawQR(options[0].url, el.qrCanvasPlay);
-  } catch {
-    /* نتجاهل: يظهر الرمز عند توفر الرابط */
-  }
+  applyRouteVisibility();
 }
 
-function showRefereeUrl(option) {
-  if (el.lobbyUrl) el.lobbyUrl.textContent = option.url;
-  if (el.qrCanvas) drawQR(option.url, el.qrCanvas);
+/** الحكم يستطيع إخفاء أحد الطريقين؛ بدون حكم متصل يظهر الاثنان دائماً. */
+function applyRouteVisibility() {
+  const want = refereeConnected ? state?.screen?.qr || "both" : "both";
+  for (const box of document.querySelectorAll(".qr-route")) {
+    const kind = box.dataset.route;
+    box.hidden = want !== "both" && want !== kind;
+  }
+  document.getElementById("qrCardRef")?.classList.toggle("qr-card-done", refereeConnected);
 }
+
+transport.onMessage = (msg) => {
+  if (msg.t === "net") initLobby();
+};
 
 
 initLobby();

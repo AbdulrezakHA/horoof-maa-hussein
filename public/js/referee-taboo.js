@@ -3,7 +3,17 @@
    تُرسم داخل #tabooCard حسب مرحلة اللعبة:
      rules → ready → turn ⇄ paused → turnEnd → ready … → over
    ================================================================== */
-import { TABOO_FOULS, TABOO_RULES } from "/shared/taboo.js";
+import { TABOO_FOULS, TABOO_RULES, UNLIMITED, skipsLeft } from "/shared/taboo.js";
+
+/** نص التخطّيات المتبقّية: ●●○ أو ∞ */
+export function skipDots(t, k) {
+  if (t.skipsPerGame === UNLIMITED) return "⏭ ∞";
+  if (!t.skipsPerGame) return "⏭ 0";
+  const left = skipsLeft(t, k);
+  return `⏭ ${"●".repeat(left)}${"○".repeat(Math.max(0, t.skipsPerGame - left))}`;
+}
+export const skipsRule = (t) =>
+  t.skipsPerGame === UNLIMITED ? "التخطّي بلا حدّ" : !t.skipsPerGame ? "لا تخطّي في هذه اللعبة" : `لكل فريق ${t.skipsPerGame} تخطّي طوال اللعبة`;
 
 let ctx = null; // { act, toast, getState, getPeers, inkFor, remainingMs, offset }
 let foulOpen = false; // قائمة أسباب المخالفة مفتوحة؟
@@ -40,6 +50,10 @@ export function initTaboo(context) {
   document.getElementById("tabooSeconds")?.addEventListener("change", (e) => {
     ctx.act("tabooConfig", { turnSeconds: Number(e.target.value) });
   });
+  document.getElementById("tabooSkips")?.addEventListener("change", (e) => {
+    ctx.act("tabooConfig", { skipsPerGame: Number(e.target.value) });
+    ctx.toast(Number(e.target.value) < 0 ? "⏭ التخطّي بلا حدّ" : `⏭ ${e.target.value} تخطّي لكل فريق`);
+  });
   document.getElementById("tabooNewBtn")?.addEventListener("click", () => {
     if (confirm("بدء لعبة «الكلمة الممنوعة» جديدة؟ تُصفَّر النقاط وتتجدّد التخطّيات.")) {
       ctx.act("tabooNew");
@@ -59,6 +73,7 @@ export function initTaboo(context) {
       foulOpen = !foulOpen;
       renderTaboo();
     } else if (e.key === "3" && t.phase === "turn") skip();
+    else if (e.key === "4" && (t.phase === "turn" || t.phase === "paused")) pass();
     else if (e.key === " " && (t.phase === "turn" || t.phase === "paused")) {
       e.preventDefault();
       ctx.act(t.phase === "turn" ? "tabooPause" : "tabooResume");
@@ -125,9 +140,13 @@ function right() {
 function skip() {
   const st = ctx.getState();
   const t = st.taboo;
-  if ((t.skips[t.turnTeam] || 0) <= 0) return ctx.toast("لا تخطّيات متبقية لهذا الفريق");
+  if (skipsLeft(t, t.turnTeam) <= 0) return ctx.toast("لا تخطّيات متبقية لهذا الفريق");
   ctx.act("tabooSkip");
   ctx.toast("⏭ تخطّي");
+}
+function pass() {
+  ctx.act("tabooPass");
+  ctx.toast("🔄 كلمة أخرى — لا تُحسب على الفريق");
 }
 function foul(reason) {
   foulOpen = false;
@@ -147,8 +166,9 @@ function scoreboard(st) {
     box.style.setProperty("--team", team.color);
     box.style.setProperty("--team-ink", ctx.inkFor(team.color));
     box.append($("div", "tb-team-name", team.name), $("div", "tb-team-score", String(t.score[k])));
-    const skips = $("div", "tb-team-skips", `⏭ ${"●".repeat(t.skips[k] || 0)}${"○".repeat(Math.max(0, (t.skipsPerGame || 2) - (t.skips[k] || 0)))}`);
-    skips.title = `تخطّيات متبقية: ${t.skips[k]}`;
+    const skips = $("div", "tb-team-skips", skipDots(t, k));
+    const left = skipsLeft(t, k);
+    skips.title = `تخطّيات متبقية: ${left === Infinity ? "بلا حدّ" : left}`;
     const adj = $("div", "tb-adjust");
     adj.append(
       btn("−", "btn-sm", () => ctx.act("tabooAdjust", { team: k, delta: -1 })),
@@ -180,6 +200,8 @@ export function renderTaboo() {
   if (tInput && document.activeElement !== tInput) tInput.value = t.target;
   const sInput = document.getElementById("tabooSeconds");
   if (sInput && document.activeElement !== sInput) sInput.value = t.turnSeconds;
+  const kInput = document.getElementById("tabooSkips");
+  if (kInput && document.activeElement !== kInput) kInput.value = String(t.skipsPerGame ?? 2);
 
   card.replaceChildren();
   card.style.setProperty("--team", t.turnTeam ? tColor(t.turnTeam) : "#ffd93d");
@@ -197,7 +219,7 @@ export function renderTaboo() {
     body.append($("p", "tb-msg", `📜 القوانين ظاهرة على الشاشة الآن. القرعة: يبدأ ${tName(t.startTeam)}.`));
     const ul = $("ol", "tb-rules");
     for (const r of TABOO_RULES) ul.appendChild($("li", "", r));
-    body.append(ul, $("p", "tiny", "أي مخالفة = ⁦-1⁩ وينتهي الدور فوراً · لكل فريق تخطّيان طوال اللعبة"));
+    body.append(ul, $("p", "tiny", `أي مخالفة = ⁦-1⁩ وينتهي الدور فوراً · ${skipsRule(t)}`));
     body.append(btn("▶️ ابدأ اللعبة", "btn-lg btn-green", () => ctx.act("tabooBegin")));
   }
 
@@ -207,6 +229,16 @@ export function renderTaboo() {
     body.append($("div", "tb-describer", who ? `🎤 الشارح: ${who.name}` : "لا يوجد لاعب متصل في هذا الفريق!"));
     const n = teamOnline(st, t.turnTeam);
     if (n < 2) body.append($("p", "tb-warn", `⚠️ ${tName(t.turnTeam)} فيه ${n} لاعب متصل فقط — يحتاج الشارح زميلاً واحداً على الأقل ليخمّن.`));
+    // بطاقة الدور الأولى: يراها الحكم وحده قبل البدء، ويبدّلها إن أراد (ترجع لآخر المجموعة)
+    if (t.card) {
+      const preview = $("div", "tb-preview");
+      preview.append($("div", "tb-preview-label", "👁️ أول كلمة في الدور (لا يراها غيرك)"));
+      preview.append($("div", "tb-topic", `${t.card.icon || "🃏"} ${t.card.topic || ""}`), $("div", "tb-word", t.card.word));
+      const fb = $("div", "tb-forbidden");
+      for (const w of t.card.forbidden || []) fb.appendChild($("span", "tb-fword", w));
+      preview.append(fb, btn("🔄 كلمة أخرى", "", () => ctx.act("tabooSwap")));
+      body.append(preview);
+    }
     body.append($("p", "tiny", "تأكّد أن الشارح يمسك جواله وجاهز، ثم ابدأ الدور."));
     const row = $("div", "btn-row");
     row.append(
@@ -242,11 +274,12 @@ export function renderTaboo() {
       body.append(grid);
     } else {
       const actions = $("div", "tb-actions");
-      const skipsLeft = t.skips[t.turnTeam] || 0;
+      const left = skipsLeft(t, t.turnTeam);
       actions.append(
         btn("✅ صح", "tb-big tb-right", right, { disabled: t.phase !== "turn" }),
         btn("🚫 مخالفة", "tb-big tb-foul", () => { foulOpen = true; renderTaboo(); }),
-        btn(`⏭ تخطّي (${skipsLeft})`, "tb-skip", skip, { disabled: t.phase !== "turn" || skipsLeft <= 0 }),
+        btn(`⏭ تخطّي الفريق (${left === Infinity ? "∞" : left})`, "tb-skip", skip, { disabled: t.phase !== "turn" || left <= 0 }),
+        btn("🔄 كلمة أخرى (مجاناً)", "tb-skip", pass),
         btn(t.phase === "turn" ? "⏸ إيقاف" : "▶️ استئناف", "tb-pause", () => ctx.act(t.phase === "turn" ? "tabooPause" : "tabooResume"))
       );
       body.append(actions);
@@ -272,7 +305,7 @@ export function renderTaboo() {
 }
 
 function summary(t) {
-  const ICON = { right: "✅", skip: "⏭", foul: "🚫", timeout: "⏰" };
+  const ICON = { right: "✅", skip: "⏭", pass: "🔄", foul: "🚫", timeout: "⏰" };
   const ul = $("div", "tb-summary");
   for (const l of t.turnLog || []) ul.appendChild($("span", `tb-chip ${l.result}`, `${ICON[l.result] || ""} ${l.word}`));
   return ul;

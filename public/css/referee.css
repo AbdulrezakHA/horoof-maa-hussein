@@ -1416,3 +1416,41 @@ body[data-game="none"] [data-game="ingame"] {
   0%, 100% { scale: 1; }
   50% { scale: 1.08; }
 }
+
+/* بطاقة الدور القادم — يراها الحكم وحده قبل بدء الدور */
+.tb-preview {
+  margin: 0.7rem 0;
+  padding: 0.7rem 0.8rem 0.8rem;
+  border-radius: 16px;
+  border: 2px dashed rgba(255, 255, 255, 0.35);
+  background: rgba(255, 255, 255, 0.05);
+  display: grid;
+  gap: 0.4rem;
+  justify-items: center;
+}
+.tb-preview .tb-topic {
+  margin-top: 0;
+}
+.tb-preview .tb-word {
+  margin: 0;
+  font-size: 1.8rem;
+}
+.tb-preview-label {
+  font-size: 0.85rem;
+  font-weight: 800;
+  opacity: 0.75;
+}
+.tb-chip.pass {
+  opacity: 0.75;
+}
+
+/* اختيار رموز الدخول على التلفاز */
+.seg {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.35rem;
+}
+.seg .btn {
+  font-size: 0.85rem;
+  padding-inline: 0.3rem;
+}

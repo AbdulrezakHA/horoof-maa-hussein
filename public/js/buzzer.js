@@ -700,6 +700,14 @@ link.onBuzzed = () => {
 
 // الحكم أخرج هذا اللاعب: نعود لشاشة الانضمام
 link.onMessage = (msg) => {
+  if (msg.t === "adopt" && /^[A-Za-z0-9_-]{6,40}$/.test(msg.playerId || "")) {
+    // لاعب بنفس الاسم موجود (دخل سابقاً من الطريق الآخر): نعود إليه بنفس فريقه ونقاطه
+    try {
+      localStorage.setItem("horoof-player-id", msg.playerId);
+    } catch {}
+    location.reload();
+    return;
+  }
   if (msg.t === "kicked") {
     joining = true;
     if (el.joinNote) el.joinNote.textContent = "أخرجك الحكم من اللعبة — يمكنك الانضمام من جديد";

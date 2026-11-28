@@ -7,7 +7,9 @@
  *  - الشرح بالكلام فقط. خلال مدة الدور: كل كلمة صحيحة +1 وتظهر التالية فوراً.
  *  - أي مخالفة (كلمة ممنوعة، حرف، عدد حروف، قافية، ترجمة، إشارة، صوت، كتابة، عرض الجوال)
  *    = ⁦-1⁩ وينتهي الدور فوراً. النتيجة لا تنزل تحت الصفر.
- *  - لكل فريق تخطّيان فقط طوال اللعبة (يتجدّدان مع لعبة جديدة). الشارح يتخطّى من جواله.
+ *  - لكل فريق عدد تخطّيات طوال اللعبة يحدّده الحكم (٠–١٠ أو بلا حدّ، افتراضياً ٢)، والشارح يتخطّى من جواله.
+ *  - الحكم يرى بطاقة الدور الأولى قبل بدئه ويستطيع تبديلها (ترجع لآخر المجموعة)،
+ *    وأثناء الدور له «تبديل مجاني» لا يُحسب من تخطّيات الفريق.
  *  - أول فريق يصل إلى حدّ الفوز يفوز.
  *
  * العشوائية (البطاقة التالية، الشارح، الفريق البادئ) يجهّزها الخادم ويمرّرها في payload.
@@ -39,6 +41,19 @@ export const TABOO_RULES = [
   "ممنوع عرض الجوال على أي أحد",
 ];
 
+/** قيمة «بلا حدّ» للتخطّيات (رقم لأن الحالة تُرسل JSON). */
+export const UNLIMITED = -1;
+
+/** كم تخطّياً بقي للفريق (Infinity = بلا حدّ). */
+export function skipsLeft(t, team) {
+  if (t.skipsPerGame === UNLIMITED) return Infinity;
+  return Math.max(0, (t.skipsPerGame ?? 2) - (t.skipsUsed?.[team] || 0));
+}
+
+function syncSkips(t) {
+  for (const k of ["a", "b"]) t.skips[k] = t.skipsPerGame === UNLIMITED ? UNLIMITED : skipsLeft(t, k);
+}
+
 const IDLE = { running: false, total: 0, endsAt: 0, remaining: 0 };
 
 export function createTaboo() {
@@ -46,10 +61,11 @@ export function createTaboo() {
     phase: "setup", // setup | rules | ready | turn | paused | turnEnd | over
     target: 10, // حدّ الفوز
     turnSeconds: 60, // مدة الدور
-    skipsPerGame: 2, // التخطّي المسموح لكل فريق طوال اللعبة
+    skipsPerGame: 2, // التخطّي المسموح لكل فريق طوال اللعبة (UNLIMITED = بلا حدّ)
     packs: [], // المواضيع المفعّلة (فارغة = كل المواضيع)
     score: { a: 0, b: 0 },
-    skips: { a: 2, b: 2 },
+    skips: { a: 2, b: 2 }, // المتبقّي (UNLIMITED = بلا حدّ) — يُشتقّ من skipsPerGame - skipsUsed
+    skipsUsed: { a: 0, b: 0 },
     startTeam: null,
     turnTeam: null,
     describer: null, // { id, name, team }
@@ -70,6 +86,13 @@ export function cloneTaboo(t) {
     packs: [...(x.packs || [])],
     score: { ...x.score },
     skips: { ...x.skips },
+    // الحالات المحفوظة قبل skipsUsed: نشتقّه من المتبقّي
+    skipsUsed: x.skipsUsed
+      ? { ...x.skipsUsed }
+      : {
+          a: Math.max(0, (x.skipsPerGame ?? 2) - (x.skips?.a ?? 2)),
+          b: Math.max(0, (x.skipsPerGame ?? 2) - (x.skips?.b ?? 2)),
+        },
     describer: x.describer ? { ...x.describer } : null,
     used: { a: [...(x.used?.a || [])], b: [...(x.used?.b || [])] },
     card: x.card ? { ...x.card, forbidden: [...(x.card.forbidden || [])] } : null,
@@ -130,6 +153,11 @@ export function applyTaboo(st, type, p = {}) {
     case "tabooConfig": {
       if (Number.isFinite(Number(p.target))) t.target = Math.max(3, Math.min(50, Math.round(Number(p.target))));
       if (Number.isFinite(Number(p.turnSeconds))) t.turnSeconds = Math.max(20, Math.min(180, Math.round(Number(p.turnSeconds))));
+      if (p.skipsPerGame != null && Number.isFinite(Number(p.skipsPerGame))) {
+        const n = Math.round(Number(p.skipsPerGame));
+        t.skipsPerGame = n < 0 ? UNLIMITED : Math.min(10, n);
+        syncSkips(t); // يُطبَّق فوراً مع احتساب ما استُهلك
+      }
       if (Array.isArray(p.packs)) t.packs = p.packs.filter((x) => typeof x === "string" && x.trim()).map((x) => x.trim());
       return null;
     }
@@ -138,7 +166,8 @@ export function applyTaboo(st, type, p = {}) {
     case "tabooNew": {
       const keep = { target: t.target, turnSeconds: t.turnSeconds, skipsPerGame: t.skipsPerGame, packs: t.packs };
       const fresh = { ...createTaboo(), ...keep };
-      fresh.skips = { a: keep.skipsPerGame, b: keep.skipsPerGame };
+      fresh.skipsUsed = { a: 0, b: 0 };
+      syncSkips(fresh);
       fresh.startTeam = p.startTeam === "b" ? "b" : "a";
       fresh.phase = "rules";
       st.taboo = fresh;
@@ -150,7 +179,7 @@ export function applyTaboo(st, type, p = {}) {
       if (t.phase !== "rules") return null;
       t.turnTeam = t.startTeam || "a";
       setDescriber(t, p.describer);
-      t.card = null;
+      t.card = p.card || null; // بطاقة الدور الأولى: يراها الحكم فقط قبل البدء
       t.turnLog = [];
       t.foul = null;
       t.phase = "ready";
@@ -164,10 +193,18 @@ export function applyTaboo(st, type, p = {}) {
       return t.describer ? { text: `🎲 الشارح: ${t.describer.name}`, tone: t.describer.team } : null;
     }
 
-    // ▶️ بدء الدور: البطاقة الأولى + العدّاد
-    case "tabooStartTurn": {
-      if (t.phase !== "ready" || !t.describer || !p.card) return null;
+    // 🔄 الحكم يبدّل بطاقة الدور قبل بدئه (القديمة ترجع لآخر المجموعة — يتولّاها الخادم)
+    case "tabooSwap": {
+      if (t.phase !== "ready" || !p.card) return null;
       t.card = p.card;
+      return null;
+    }
+
+    // ▶️ بدء الدور: البطاقة الأولى (التي رآها الحكم) + العدّاد
+    case "tabooStartTurn": {
+      if (t.phase !== "ready" || !t.describer) return null;
+      t.card = t.card || p.card || null;
+      if (!t.card) return null;
       t.turnLog = [];
       t.foul = null;
       t.timer = startTimer(t.turnSeconds);
@@ -193,12 +230,24 @@ export function applyTaboo(st, type, p = {}) {
     case "tabooSkip": {
       if (t.phase !== "turn" || !t.card) return null;
       const team = t.turnTeam;
-      if ((t.skips[team] || 0) <= 0) return null;
-      t.skips[team] -= 1;
+      if (skipsLeft(t, team) <= 0) return null;
+      if (!t.skipsUsed) t.skipsUsed = { a: 0, b: 0 };
+      t.skipsUsed[team] += 1;
+      syncSkips(t);
       t.turnLog.push({ word: t.card.word, result: "skip" });
       t.card = p.card || null;
       if (!t.card) endTurn(t);
-      return { text: `⏭ تخطّي — بقي لـ ${teamName(team)} ${t.skips[team]}`, tone: "warn" };
+      const left = skipsLeft(t, team);
+      return { text: `⏭ تخطّي — بقي لـ ${teamName(team)} ${left === Infinity ? "∞" : left}`, tone: "warn" };
+    }
+
+    // 🔄 تبديل مجاني من الحكم أثناء الدور (كلمة غامضة مثلاً): لا يُحسب من تخطّيات الفريق
+    case "tabooPass": {
+      if ((t.phase !== "turn" && t.phase !== "paused") || !t.card) return null;
+      t.turnLog.push({ word: t.card.word, result: "pass" });
+      t.card = p.card || null;
+      if (!t.card) endTurn(t);
+      return { text: "🔄 الحكم بدّل الكلمة (مجاناً)", tone: "info" };
     }
 
     // 🚫 مخالفة: ⁦-1⁩ (لا تحت الصفر) وينتهي الدور فوراً
@@ -240,7 +289,7 @@ export function applyTaboo(st, type, p = {}) {
       if (t.phase !== "turnEnd") return null;
       t.turnTeam = other(t.turnTeam || t.startTeam || "a");
       setDescriber(t, p.describer);
-      t.card = null;
+      t.card = p.card || null;
       t.turnLog = [];
       t.foul = null;
       t.phase = "ready";

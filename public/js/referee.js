@@ -522,6 +522,9 @@ function renderScreenControls() {
     ui.screenSoundBtn.textContent = soundOn ? "🔊 صوت الشاشة: يعمل" : "🔇 صوت الشاشة: مكتوم";
     ui.screenSoundBtn.classList.toggle("active-screen", soundOn);
   }
+  for (const b of document.querySelectorAll("#qrRouteSeg [data-qr]")) {
+    b.classList.toggle("active-screen", (scr.qr || "both") === b.dataset.qr);
+  }
   if (ui.screenFullBtn) {
     const full = !!peers?.screenFullscreen;
     ui.screenFullBtn.textContent = full ? "🗗 الخروج من ملء الشاشة" : "⛶ ملء الشاشة على التلفاز";
@@ -1102,6 +1105,35 @@ ui.lobbyToggleBtn?.addEventListener("click", () => {
   act("screen", { lobby: !lobbyOn });
   toast(lobbyOn ? "بدأ اللعب — أُخفيت الرموز عن الشاشة" : "رموز QR ظاهرة على الشاشة");
 });
+// أي رموز QR تظهر على التلفاز (بدون حكم متصل يظهر الاثنان دائماً)
+document.getElementById("qrRouteSeg")?.addEventListener("click", (e) => {
+  const b = e.target.closest("[data-qr]");
+  if (!b) return;
+  act("screen", { qr: b.dataset.qr });
+  toast({ both: "يظهر الرمزان على التلفاز", net: "رمز الإنترنت فقط على التلفاز", lan: "رمز الواي فاي فقط على التلفاز" }[b.dataset.qr]);
+});
+
+/** حالة الطريقين (يُحدَّث عند كل تغيّر في رابط الإنترنت). */
+async function refreshNetStatus() {
+  const line = document.getElementById("netStatusLine");
+  if (!line) return;
+  try {
+    const info = await (await fetch("/api/network", { cache: "no-store" })).json();
+    const t = info.tunnel || {};
+    const net =
+      t.status === "ok" ? `🌐 الإنترنت: يعمل (${new URL(t.url).host})`
+      : t.status === "error" ? "🌐 الإنترنت: متعطّل — جارٍ المحاولة"
+      : t.status === "off" ? "🌐 الإنترنت: مُطفأ"
+      : "🌐 الإنترنت: جارٍ التجهيز…";
+    const lan = info.addresses?.length ? `📶 الواي فاي: ${info.addresses[0].address}:${info.port}` : "📶 الواي فاي: لا توجد شبكة";
+    line.textContent = `${net} · ${lan}`;
+  } catch {
+    line.textContent = "—";
+  }
+}
+refreshNetStatus();
+setInterval(refreshNetStatus, 30000);
+
 ui.screenFullBtn?.addEventListener("click", () => {
   const full = !!peers?.screenFullscreen;
   act("screenFullscreen");

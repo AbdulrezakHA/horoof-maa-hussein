@@ -422,20 +422,50 @@
         <div class="lobby-badge">لوحة التحكم للجوال</div>
         <h2 class="lobby-title">امسح الرموز للدخول</h2>
         <div class="lobby-qr-grid">
-          <div class="qr-card">
+          <div class="qr-card qr-card-ref" id="qrCardRef">
             <div class="qr-card-label">🧑‍⚖️ لوحة الحكم</div>
-            <div class="qr-box">
-              <canvas id="qrCanvas" class="qr-canvas"></canvas>
+            <div class="qr-routes">
+              <div class="qr-route" data-route="net">
+                <div class="qr-box">
+                  <canvas id="qrRefNet" class="qr-canvas"></canvas>
+                  <div class="qr-wait" id="qrRefNetWait"></div>
+                </div>
+                <div class="qr-route-tag">🌐 عبر الإنترنت</div>
+                <div class="qr-route-hint">أي جوال فيه إنترنت</div>
+              </div>
+              <div class="qr-route" data-route="lan">
+                <div class="qr-box">
+                  <canvas id="qrRefLan" class="qr-canvas"></canvas>
+                  <div class="qr-wait" id="qrRefLanWait"></div>
+                </div>
+                <div class="qr-route-tag">📶 نفس الواي فاي</div>
+                <div class="qr-route-hint">بدون إنترنت</div>
+              </div>
             </div>
           </div>
           <div class="qr-card qr-card-play">
             <div class="qr-card-label">🔔 اللاعبون — رمز واحد للجميع</div>
-            <div class="qr-box">
-              <canvas id="qrCanvasPlay" class="qr-canvas"></canvas>
+            <div class="qr-routes">
+              <div class="qr-route" data-route="net">
+                <div class="qr-box">
+                  <canvas id="qrPlayNet" class="qr-canvas"></canvas>
+                  <div class="qr-wait" id="qrPlayNetWait"></div>
+                </div>
+                <div class="qr-route-tag">🌐 عبر الإنترنت</div>
+                <div class="qr-route-hint">أي جوال فيه إنترنت</div>
+              </div>
+              <div class="qr-route" data-route="lan">
+                <div class="qr-box">
+                  <canvas id="qrPlayLan" class="qr-canvas"></canvas>
+                  <div class="qr-wait" id="qrPlayLanWait"></div>
+                </div>
+                <div class="qr-route-tag">📶 نفس الواي فاي</div>
+                <div class="qr-route-hint">بدون إنترنت</div>
+              </div>
             </div>
           </div>
         </div>
-        <p class="lobby-hint">كل لاعب يمسح الرمز بجواله، يكتب اسمه ويختار فريقه</p>
+        <p class="lobby-hint">امسح أي رمز يعمل على جوالك: 🌐 من أي شبكة فيها إنترنت · 📶 إن كنت على نفس الواي فاي</p>
         <div class="lobby-teams" id="lobbyTeams">
           <div class="lobby-team" data-team="a">
             <div class="lobby-team-name" id="lobbyTeamNameA">الفريق الأول</div>

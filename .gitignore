@@ -20,3 +20,4 @@ data/state.json
 *_out.txt
 ~$*
 data/active-port.txt
+data/cloudflared.pid

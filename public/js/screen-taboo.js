@@ -4,6 +4,7 @@
    فقط اسم الشارح والموضوع والعدّاد والنتيجة. بعد انتهاء الدور تُكشف كلماته.
    ================================================================== */
 import { TABOO_RULES } from "/shared/taboo.js";
+import { skipDots, skipsRule } from "/js/referee-taboo.js";
 
 let ctx = null; // { sfx, inkFor, remainingMs, confetti(color) }
 let root = null;
@@ -33,13 +34,12 @@ function teamBox(st, k) {
   box.style.setProperty("--team", team.color);
   box.style.setProperty("--team-ink", ctx.inkFor(team.color));
   box.classList.toggle("active", t.turnTeam === k && ["ready", "turn", "paused", "turnEnd"].includes(t.phase));
-  const skips = "●".repeat(t.skips[k] || 0) + "○".repeat(Math.max(0, (t.skipsPerGame || 2) - (t.skips[k] || 0)));
-  box.append($("div", "ts-team-name", team.name), $("div", "ts-team-score", String(t.score[k])), $("div", "ts-team-skips", `⏭ ${skips}`));
+  box.append($("div", "ts-team-name", team.name), $("div", "ts-team-score", String(t.score[k])), $("div", "ts-team-skips", skipDots(t, k)));
   return box;
 }
 
 function chips(log) {
-  const ICON = { right: "✅", skip: "⏭", foul: "🚫", timeout: "⏰" };
+  const ICON = { right: "✅", skip: "⏭", pass: "🔄", foul: "🚫", timeout: "⏰" };
   const wrap = $("div", "ts-chips");
   for (const l of log || []) wrap.appendChild($("span", `ts-chip ${l.result}`, `${ICON[l.result] || ""} ${l.word}`));
   return wrap;
@@ -87,7 +87,7 @@ function draw(st) {
       grid.appendChild(item);
     });
     main.append(grid);
-    main.append($("div", "ts-foot", `أي مخالفة = ⁦-1⁩ وينتهي الدور فوراً · لكل فريق تخطّيان طوال اللعبة · أول فريق يصل ${t.target} يفوز`));
+    main.append($("div", "ts-foot", `أي مخالفة = ⁦-1⁩ وينتهي الدور فوراً · ${skipsRule(t)} · أول فريق يصل ${t.target} يفوز`));
     const start = $("div", "ts-starter", `🎲 القرعة: يبدأ ${tName(t.startTeam)}`);
     start.style.background = tColor(t.startTeam);
     start.style.color = ctx.inkFor(tColor(t.startTeam));
@@ -181,7 +181,7 @@ function sounds(st) {
   if (n > seen.logLen && t.phase === "turn") {
     const last = t.turnLog[n - 1];
     if (last.result === "right") ctx.sfx.play("point");
-    else if (last.result === "skip") ctx.sfx.play("toggleOff");
+    else if (last.result === "skip" || last.result === "pass") ctx.sfx.play("toggleOff");
   }
   seen.logLen = n;
 }

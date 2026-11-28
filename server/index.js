@@ -27,6 +27,7 @@ import { fileURLToPath } from "node:url";
 
 import { WsServer } from "./ws.js";
 import { pickDescriber } from "../shared/taboo.js";
+import { startTunnel } from "./tunnel.js";
 import { listTabooPacks, loadTaboo, saveTaboo, deleteTaboo, buildTabooDeck, parseTaboo } from "./taboo-packs.js";
 import {
   createState,
@@ -74,6 +75,10 @@ const OPEN_SCREEN = args.includes("--open-screen");
 // --no-save: لا يحفظ اللعبة على القرص (للاختبارات — حتى لا تُكتب فوق لعبتك الحقيقية)
 const SAVE_STATE = !args.includes("--no-save");
 const PUBLIC_URL = getArg("public-url", process.env.PUBLIC_URL || "").replace(/\/$/, "");
+// --no-tunnel: بلا رابط الإنترنت (الشبكة المحلية فقط — للاختبارات)
+const USE_TUNNEL = !args.includes("--no-tunnel") && !PUBLIC_URL;
+// حالة الطريق الثاني (رابط الإنترنت): off | downloading | starting | ok | error
+let TUNNEL = { status: USE_TUNNEL ? "starting" : "off", url: null, error: null };
 
 // المنفذ الفعلي بعد الاستماع — يختلف عن PORT إذا كان مشغولاً
 // (لازم نستخدمه في /api/network وإلا توجّه رموز QR إلى منفذ خاطئ)
@@ -248,6 +253,7 @@ function onlinePlayerIds(room) {
 function tabooFor(st, client) {
   const t = st.taboo;
   if (!t?.card || client?.meta?.role === "referee") return t;
+  if (t.phase === "ready") return { ...t, card: null }; // بطاقة الدور القادم: للحكم فقط
   if (!["turn", "paused"].includes(t.phase)) return t; // بعد انتهاء الدور: الكلمات مكشوفة للجميع
   const topicOnly = { id: t.card.id, topic: t.card.topic, icon: t.card.icon };
   let card = topicOnly;
@@ -344,7 +350,7 @@ function scheduleTimer(room) {
 const UNDOABLE = new Set([
   "award", "unclaim", "noPoint", "buzzCorrect", "buzzWrong", "clear",
   "reset", "shuffle", "declareWinner", "setLetter", "playerRemove", "playerSetTeam",
-  "tabooRight", "tabooSkip", "tabooFoul", "tabooNew", "tabooAdjust", "nightReset",
+  "tabooRight", "tabooSkip", "tabooPass", "tabooFoul", "tabooNew", "tabooAdjust", "nightReset",
 ]);
 
 /** مؤقّت دور «الكلمة الممنوعة» (مستقل عن مؤقّت حروف). */
@@ -378,6 +384,11 @@ function nextTabooCard(room) {
   return deck.cards.length ? deck.cards[deck.pos++] : null;
 }
 
+/** بطاقة بدّلها الحكم: ترجع لآخر المجموعة (تظهر لاحقاً). */
+function returnTabooCard(room, card) {
+  if (card && room.tabooDeck) room.tabooDeck.cards.push(card);
+}
+
 /** يجهّز العشوائية لإجراءات «الكلمة الممنوعة» (البطاقة، الشارح، الفريق البادئ). */
 function prepareTaboo(room, type, payload) {
   const st = room.state;
@@ -389,12 +400,21 @@ function prepareTaboo(room, type, payload) {
     case "tabooNew":
       return { ...payload, startTeam: randomTeam() };
     case "tabooBegin":
-      return { ...payload, describer: pickDescriber(st, t.startTeam || "a", online) };
+      return { ...payload, describer: pickDescriber(st, t.startTeam || "a", online), card: nextTabooCard(room) };
     case "tabooPick":
       return { ...payload, describer: pickDescriber(st, t.turnTeam || "a", online) };
     case "tabooNextTurn":
-      return { ...payload, describer: pickDescriber(st, t.turnTeam === "a" ? "b" : "a", online) };
+      return { ...payload, describer: pickDescriber(st, t.turnTeam === "a" ? "b" : "a", online), card: nextTabooCard(room) };
     case "tabooStartTurn":
+      return t.card ? payload : { ...payload, card: nextTabooCard(room) };
+    case "tabooSwap":
+    case "tabooPass": {
+      const ok = type === "tabooSwap" ? t.phase === "ready" : t.phase === "turn" || t.phase === "paused";
+      if (!ok || !t.card) return payload;
+      const card = nextTabooCard(room); // نسحب أولاً كي لا تعود نفس البطاقة فوراً
+      returnTabooCard(room, t.card);
+      return { ...payload, card };
+    }
     case "tabooRight":
     case "tabooSkip":
       return { ...payload, card: nextTabooCard(room) };
@@ -763,7 +783,8 @@ const server = http.createServer((req, res) => {
         port: ACTIVE_PORT,
         host: req.headers.host || `localhost:${ACTIVE_PORT}`,
         addresses: lanAddresses(),
-        publicUrl: PUBLIC_URL || null,
+        publicUrl: PUBLIC_URL || (TUNNEL.status === "ok" ? TUNNEL.url : null),
+        tunnel: PUBLIC_URL ? { status: "ok", url: PUBLIC_URL, error: null } : TUNNEL,
       })
     );
   }
@@ -851,6 +872,19 @@ wss.onconnection = (conn) => {
       // لاعب يكتب اسمه ويختار فريقه (أو يغيّرهما لاحقاً)
       case "join": {
         if (conn.meta.role !== "player" || !room) return;
+        // لاعب دخل من الطريق الآخر (الإنترنت ↔ الشبكة المحلية) فصار له جوال «جديد»:
+        // إن وُجد لاعب غير متصل بنفس الاسم نعيده إليه (اسمه وفريقه ونقاطه) بدل إنشاء «أحمد 2».
+        if (!room.state.players?.[conn.meta.playerId]) {
+          const norm = (x) => String(x || "").trim().replace(/\s+/g, " ").toLowerCase();
+          const online = new Set(onlinePlayerIds(room));
+          const twin = Object.values(room.state.players || {}).find(
+            (pl) => !pl.pseudo && norm(pl.name) === norm(msg.name) && !online.has(pl.id)
+          );
+          if (twin) {
+            conn.send(JSON.stringify({ t: "adopt", playerId: twin.id }));
+            return;
+          }
+        }
         handleAction(room, {
           type: "playerJoin",
           payload: { id: conn.meta.playerId, name: msg.name, team: msg.team },
@@ -1062,6 +1096,18 @@ async function startServer(port) {
     ACTIVE_PORT = port;
     writePortFile(port);
     if (OPEN_SCREEN) openScreen(port);
+    if (USE_TUNNEL) {
+      startTunnel({
+        port,
+        rootDir: path.resolve(path.dirname(fileURLToPath(import.meta.url)), ".."),
+        onChange: (s) => {
+          TUNNEL = s;
+          // كل الشاشات تعيد رسم رموز QR
+          const msg = JSON.stringify({ t: "net", tunnel: s });
+          for (const room of rooms.values()) for (const c of room.clients) if (c.open) c.send(msg);
+        },
+      });
+    }
     const addrs = lanAddresses();
     const totalQuestions = Object.values(BANK).reduce((s, v) => s + v.length, 0);
 
@@ -1082,6 +1128,13 @@ async function startServer(port) {
       console.log("\n  ⚠️  لم يُعثر على عنوان شبكة — الهاتف لن يستطيع الاتصال.");
     }
 
+    console.log(
+      USE_TUNNEL
+        ? "\n  🌐  رابط الإنترنت: جارٍ التجهيز… (يظهر هنا وعلى التلفاز عند جاهزيته)"
+        : PUBLIC_URL
+          ? `\n  🌐  رابط الإنترنت: ${PUBLIC_URL}`
+          : "\n  🌐  رابط الإنترنت: مُطفأ (--no-tunnel)"
+    );
     console.log(
       `\n  📚 بنك الأسئلة: ${Object.keys(BANK).length} حرف / ${totalQuestions} سؤال`
     );

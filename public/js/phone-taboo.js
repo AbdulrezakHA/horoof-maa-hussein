@@ -5,7 +5,7 @@
    - الفريق الآخر: الكلمات الممنوعة فقط + «راقبوه!»
    (الخادم نفسه لا يرسل لكل جوال إلا ما يحقّ له رؤيته)
    ================================================================== */
-import { TABOO_RULES } from "/shared/taboo.js";
+import { TABOO_RULES, skipsLeft } from "/shared/taboo.js";
 
 let ctx = null; // { me, myTeam, sendRaw, sfx, remainingMs, inkFor, getState }
 let root = null;
@@ -100,8 +100,8 @@ function draw(st) {
       const fb = $("div", "tp-forbidden");
       for (const w of t.card?.forbidden || []) fb.appendChild($("span", "tp-fword", w));
       body.append(fb, $("div", "tp-reminder", REMINDER));
-      const left = t.skips[mine] || 0;
-      const skip = $("button", "tp-skip", `⏭ تخطّي (${left} متبقٍ للفريق)`);
+      const left = skipsLeft(t, mine);
+      const skip = $("button", "tp-skip", left === Infinity ? "⏭ تخطّي" : `⏭ تخطّي (${left} متبقٍ للفريق)`);
       skip.type = "button";
       skip.disabled = left <= 0 || t.phase !== "turn";
       skip.addEventListener("click", () => {
@@ -133,7 +133,7 @@ function draw(st) {
     if (t.foul) body.appendChild($("div", "tp-foul", `🚫 ممنوع: ${t.foul.label} (⁦-1⁩)`));
     const got = t.turnLog.filter((l) => l.result === "right").length;
     body.append($("div", "tp-big", `انتهى دور ${tName(t.turnTeam)}: +${got}`));
-    const ICON = { right: "✅", skip: "⏭", foul: "🚫", timeout: "⏰" };
+    const ICON = { right: "✅", skip: "⏭", pass: "🔄", foul: "🚫", timeout: "⏰" };
     const chips = $("div", "tp-chips");
     for (const l of t.turnLog) chips.appendChild($("span", `tp-chip ${l.result}`, `${ICON[l.result] || ""} ${l.word}`));
     body.appendChild(chips);
