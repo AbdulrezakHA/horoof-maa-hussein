@@ -23,6 +23,12 @@
   --paper-hi: #ffffff;
   --paper-side: #d8c6a2;
   --paper-2: #f3e9d4;
+
+  /* خلايا الحروف الفارغة (كريمي اللوحة الأصلية) */
+  --cream: #efe6bf;
+  --cream-hi: #fffbe6;
+  --cream-side: #b7a96c;
+  --cream-ink: #5f5840;
   --white: #ffffff;
 
   /* ---------- المسرح (خلفيات التلفاز والجوال) ---------- */
@@ -207,7 +213,7 @@
   background: var(--paper);
   color: var(--ink);
   border: var(--line) solid var(--ink);
-  box-shadow: inset 0 -0.18em 0 var(--ink-12), 0 3px 0 var(--ink);
+  box-shadow: inset 0 2px 0 var(--shine), 0 3px 0 var(--ink);
 }
 
 /* ================================================================
@@ -238,16 +244,19 @@
   color: var(--btn-ink);
   text-decoration: none;
   text-shadow: 0 1px 0 var(--btn-text-shine, var(--shine));
-  background: linear-gradient(180deg, var(--btn-hi) 0%, var(--btn-bg) 52%, var(--btn-bg) 100%);
+  background: linear-gradient(180deg, var(--btn-hi) 0%, var(--btn-bg) 46%, var(--btn-bg) 100%);
   border: var(--line) solid var(--ink);
   border-radius: var(--r-md);
+  /* --d = ارتفاع الجدار الآن (يتغيّر مع التمرير والضغط).
+     الجدار: كتلة حبر بعرض الزر تماماً، وفوقها لون الجدار منكمش بسماكة الحدّ
+     فيظهر الحدّ حول الجدار من الجانبين والأسفل بلا أي «حافة» زائدة. */
+  --d: var(--depth);
   box-shadow:
-    inset 0 -0.3em 0 var(--ink-12),
-    inset 0 0.14em 0 var(--shine),
-    0 var(--depth) 0 0 var(--btn-side),
-    0 var(--depth) 0 var(--line) var(--ink),
-    0 calc(var(--depth) + 8px) 16px var(--glow-dark);
-  margin-bottom: calc(var(--depth) + var(--line));
+    inset 0 2px 0 var(--shine),
+    0 var(--d) 0 calc(var(--line) * -1) var(--btn-side),
+    0 var(--d) 0 0 var(--ink),
+    0 calc(var(--d) + 5px) 6px -3px var(--ink-35);
+  margin-bottom: var(--depth);
   cursor: pointer;
   user-select: none;
   -webkit-tap-highlight-color: transparent;
@@ -261,11 +270,12 @@
   content: "";
   position: absolute;
   z-index: -1;
-  inset-inline: 0.7em;
-  top: 0.22em;
-  height: 0.55em;
+  inset-inline: 0.75em;
+  top: 0.2em;
+  height: 0.42em;
   border-radius: var(--r-pill);
   background: linear-gradient(180deg, var(--shine) 0%, transparent 100%);
+  opacity: 0.85;
   pointer-events: none;
 }
 /* بريق يعبر الزر عند التمرير */
@@ -283,14 +293,9 @@
   pointer-events: none;
 }
 .ds-btn:hover {
+  --d: calc(var(--depth) + 2px);
   transform: translateY(-2px);
   filter: brightness(1.05) saturate(1.05);
-  box-shadow:
-    inset 0 -0.3em 0 var(--ink-12),
-    inset 0 0.14em 0 var(--shine),
-    0 calc(var(--depth) + 2px) 0 0 var(--btn-side),
-    0 calc(var(--depth) + 2px) 0 var(--line) var(--ink),
-    0 calc(var(--depth) + 12px) 20px var(--glow-dark);
 }
 .ds-btn:hover::after {
   opacity: 1;
@@ -299,14 +304,9 @@
 }
 .ds-btn:active,
 .ds-btn.is-pressed {
+  --d: 0px;
   transform: translateY(var(--depth));
-  filter: brightness(0.97);
-  box-shadow:
-    inset 0 -0.15em 0 var(--ink-12),
-    inset 0 0.25em 0 var(--ink-12),
-    0 0 0 0 var(--btn-side),
-    0 0 0 var(--line) var(--ink),
-    0 2px 6px var(--glow-dark);
+  filter: brightness(0.96);
 }
 .ds-btn:focus-visible {
   outline: 4px solid var(--focus);
@@ -320,14 +320,15 @@
 }
 .ds-btn:disabled,
 .ds-btn[aria-disabled="true"] {
+  --btn-hi: var(--paper-2);
+  --btn-bg: var(--paper-2);
+  --btn-side: var(--paper-side);
+  --btn-ink: var(--ink-soft);
+  --d: 3px;
   cursor: not-allowed;
-  transform: translateY(calc(var(--depth) - 2px));
-  filter: grayscale(0.85);
-  opacity: 0.6;
-  box-shadow:
-    inset 0 -0.2em 0 var(--ink-12),
-    0 2px 0 0 var(--btn-side),
-    0 2px 0 var(--line) var(--ink);
+  transform: translateY(calc(var(--depth) - 3px));
+  filter: none;
+  opacity: 0.7;
 }
 .ds-btn:disabled::after {
   display: none;
@@ -475,12 +476,13 @@
   font-weight: 800;
   font-size: var(--fs-2xl);
   text-shadow: 0 2px 0 var(--ink-35);
+  --d: 14px;
   box-shadow:
     inset 0 -0.35em 0 var(--ink-12),
-    0 14px 0 0 var(--b-side),
-    0 14px 0 calc(var(--line) + 2px) var(--ink),
-    0 30px 30px var(--glow-dark);
-  margin-bottom: 20px;
+    0 var(--d) 0 calc((var(--line) + 2px) * -1) var(--b-side),
+    0 var(--d) 0 0 var(--ink),
+    0 calc(var(--d) + 10px) 14px -6px var(--ink-35);
+  margin-bottom: 14px;
   cursor: pointer;
   transition:
     transform var(--dur-1) var(--ease-out),
@@ -494,12 +496,8 @@
   }
 }
 .ds-buzzer:active {
+  --d: 1px;
   transform: translateY(13px);
-  box-shadow:
-    inset 0 0.3em 0 var(--ink-12),
-    0 1px 0 0 var(--b-side),
-    0 1px 0 calc(var(--line) + 2px) var(--ink),
-    0 6px 10px var(--glow-dark);
   animation: none;
 }
 .ds-buzzer:focus-visible {
@@ -557,13 +555,13 @@
   color: var(--ink);
   border: var(--line) solid var(--ink);
   border-radius: var(--r-xl);
+  --d: calc(var(--lift) * 1.6);
   box-shadow:
-    inset 0 -0.5em 0 var(--ink-12),
-    inset 0 0.2em 0 var(--shine),
-    0 calc(var(--lift) * 1.6) 0 0 var(--tile-side),
-    0 calc(var(--lift) * 1.6) 0 var(--line) var(--ink),
-    0 calc(var(--lift) * 1.6 + 14px) 24px var(--glow-dark);
-  margin-bottom: calc(var(--lift) * 1.6 + var(--line));
+    inset 0 3px 0 var(--shine),
+    0 var(--d) 0 calc(var(--line) * -1) var(--tile-side),
+    0 var(--d) 0 0 var(--ink),
+    0 calc(var(--d) + 8px) 10px -4px var(--ink-35);
+  margin-bottom: calc(var(--lift) * 1.6);
   cursor: pointer;
   text-align: center;
   font: inherit;
@@ -591,12 +589,8 @@
   animation-play-state: paused;
 }
 .ds-game-tile:active {
+  --d: 0px;
   transform: translateY(calc(var(--lift) * 1.6)) scale(0.99);
-  box-shadow:
-    inset 0 0.3em 0 var(--ink-12),
-    0 0 0 0 var(--tile-side),
-    0 0 0 var(--line) var(--ink),
-    0 4px 8px var(--glow-dark);
 }
 .ds-game-tile:focus-visible {
   outline: 5px solid var(--focus);
@@ -612,7 +606,7 @@
   border-radius: 50%;
   background: var(--paper);
   border: var(--line) solid var(--ink);
-  box-shadow: inset 0 -0.12em 0 var(--ink-12), 0 4px 0 var(--ink);
+  box-shadow: inset 0 2px 0 var(--shine), 0 4px 0 var(--ink);
 }
 .ds-game-tile-art .ds-icon {
   width: 1.15em;
@@ -1078,7 +1072,7 @@
 .ds-seg button[aria-pressed="true"] {
   background: linear-gradient(180deg, var(--sun-hi), var(--sun) 55%);
   border-color: var(--ink);
-  box-shadow: inset 0 -0.18em 0 var(--ink-12), 0 3px 0 0 var(--sun-side), 0 3px 0 2px var(--ink);
+  box-shadow: inset 0 2px 0 var(--shine), 0 3px 0 -2px var(--sun-side), 0 3px 0 0 var(--ink);
   transform: translateY(-2px);
 }
 .ds-seg button .ds-icon {
@@ -1151,6 +1145,329 @@
 }
 .ds-modal.is-open .ds-card {
   transform: none;
+}
+
+/* ================================================================
+   لعبة «حروف مع حسين» — الخلايا السداسية واللوحة
+   البنية:
+     <div class="ds-hex [is-a|is-b|is-selected|is-win|is-claim]">
+       <div class="ds-hex-in"><div class="ds-hex-face"><span class="ds-hex-letter">ب</span></div></div>
+     </div>
+   الخلية «ملصق» سداسي: حدّ حبر + وجه لامع + جدار سفلي (drop-shadow لأن clip-path يقصّ الظلال).
+   ================================================================ */
+.ds-hex {
+  --hw: 92px; /* عرض الخلية */
+  --hx-face: var(--cream);
+  --hx-hi: var(--cream-hi);
+  --hx-side: var(--cream-side);
+  --hx-ink: var(--cream-ink);
+  --hx-d: 6px;
+  position: relative;
+  width: var(--hw);
+  height: calc(var(--hw) * 1.1547);
+  filter: drop-shadow(0 var(--hx-d) 0 var(--hx-side)) drop-shadow(0 3px 0 var(--ink));
+  transition:
+    transform var(--dur-2) var(--ease-pop),
+    filter var(--dur-2) var(--ease-out);
+}
+.ds-hex-in,
+.ds-hex-face {
+  position: absolute;
+  clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+}
+.ds-hex-in {
+  inset: 0;
+  background: var(--ink);
+}
+.ds-hex-face {
+  inset: calc(var(--hw) * 0.05);
+  display: grid;
+  place-items: center;
+  background:
+    radial-gradient(ellipse 34% 14% at 34% 20%, var(--shine) 0 70%, transparent 72%),
+    linear-gradient(180deg, var(--hx-hi) 0%, var(--hx-face) 55%);
+  transition: background-color var(--dur-3) var(--ease-out);
+}
+.ds-hex-letter {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: calc(var(--hw) * 0.46);
+  line-height: 1;
+  color: var(--hx-ink);
+  transform: translateY(4%);
+  user-select: none;
+}
+/* ألوان الفريقين — تُشتقّ من لون الفريق (المتصفحات القديمة: لون واحد) */
+.ds-hex.is-a,
+.ds-hex.is-b {
+  --hx-face: var(--team);
+  --hx-hi: var(--team);
+  --hx-side: var(--ink-soft);
+  --hx-ink: var(--team-ink);
+}
+.ds-hex.is-a {
+  --team: var(--team-a);
+  --team-ink: var(--paper);
+}
+.ds-hex.is-b {
+  --team: var(--team-b);
+  --team-ink: var(--paper);
+}
+@supports (color: color-mix(in srgb, red 50%, blue)) {
+  .ds-hex.is-a,
+  .ds-hex.is-b {
+    --hx-hi: color-mix(in srgb, var(--team) 72%, white);
+    --hx-side: color-mix(in srgb, var(--team) 60%, black);
+  }
+}
+/* الخلية المختارة: ترتفع، تتوهّج، ودائرة نابضة خلفها */
+.ds-hex.is-selected {
+  --hx-face: var(--sun);
+  --hx-hi: var(--sun-hi);
+  --hx-side: var(--sun-side);
+  --hx-ink: var(--ink);
+  z-index: 3;
+  transform: translateY(-6px) scale(1.1);
+}
+.ds-hex.is-selected::before {
+  content: "";
+  position: absolute;
+  inset: -16%;
+  z-index: -1;
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--sun) 0%, transparent 65%);
+  animation: dsHalo 1.6s ease-in-out infinite;
+}
+@keyframes dsHalo {
+  50% {
+    transform: scale(1.18);
+    opacity: 0.55;
+  }
+}
+/* لحظة الحصول على الخلية */
+.ds-hex.is-claim {
+  animation: dsClaim 560ms var(--ease-pop);
+}
+@keyframes dsClaim {
+  0% {
+    transform: scale(0.7) rotate(-8deg);
+  }
+  45% {
+    transform: scale(1.18) rotate(3deg);
+  }
+  100% {
+    transform: none;
+  }
+}
+/* مسار الفوز: الخلايا تقفز بالتتابع وتلمع */
+.ds-hex.is-win {
+  z-index: 2;
+  animation: dsWinHop 1.4s var(--ease-pop) infinite;
+  animation-delay: calc(var(--k, 0) * 110ms);
+}
+.ds-hex.is-win .ds-hex-face {
+  background:
+    radial-gradient(ellipse 34% 14% at 34% 20%, var(--shine) 0 70%, transparent 72%),
+    radial-gradient(circle at 50% 50%, var(--hx-hi) 0%, var(--hx-face) 70%);
+}
+@keyframes dsWinHop {
+  0%,
+  60%,
+  100% {
+    transform: none;
+  }
+  20% {
+    transform: translateY(-10px) scale(1.08);
+  }
+}
+/* خلية قابلة للضغط (لوحة الحكم) */
+button.ds-hex {
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  font: inherit;
+}
+button.ds-hex:hover {
+  transform: translateY(-3px);
+}
+button.ds-hex:active {
+  transform: translateY(3px);
+  --hx-d: 2px;
+}
+button.ds-hex:focus-visible {
+  outline: 4px solid var(--focus);
+  outline-offset: 2px;
+}
+
+/* اللوحة: إطار ألوانه أهداف الفريقين (أعلى/أسفل للفريق أ، يمين/يسار للفريق ب).
+   حدود CSS بألوان مختلفة تلتقي بزوايا مائلة فتصنع شبه المنحرف تلقائياً. */
+.ds-board {
+  --hw: 74px;
+  --gap: 3px;
+  position: relative;
+  display: inline-block;
+  padding: calc(var(--hw) * 0.35) calc(var(--hw) * 0.3);
+  background: var(--stage-2);
+  border-style: solid;
+  border-width: calc(var(--hw) * 0.32);
+  border-color: var(--team-a) var(--team-b);
+  border-radius: var(--r-lg);
+  box-shadow: 0 0 0 var(--line) var(--ink), 0 calc(var(--lift) * 1.6) 0 var(--line) var(--ink);
+}
+.ds-board-grid {
+  position: relative;
+}
+.ds-board .ds-hex {
+  --hw: inherit;
+  position: absolute;
+}
+.ds-board-goal {
+  position: absolute;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: calc(var(--hw) * 0.2);
+  color: var(--paper);
+  white-space: nowrap;
+}
+
+/* شارة الحرف الحالي (سداسية كبيرة) */
+.ds-letter-badge {
+  --hw: 120px;
+}
+
+/* لوحة السؤال على التلفاز */
+.ds-qpanel {
+  display: flex;
+  align-items: center;
+  gap: var(--gap-4);
+  padding: var(--gap-4);
+  background: var(--paper);
+  color: var(--ink);
+  border: var(--line) solid var(--ink);
+  border-radius: var(--r-xl);
+  box-shadow: inset 0 3px 0 var(--shine), 0 calc(var(--lift) * 1.6) 0 var(--ink);
+}
+.ds-qpanel-text {
+  flex: 1;
+  min-width: 0;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: var(--fs-xl);
+  line-height: 1.35;
+  overflow-wrap: break-word;
+}
+.ds-answer {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5em;
+  margin-top: var(--gap-2);
+  padding: 0.35em 1em;
+  background: var(--mint);
+  border: var(--line) solid var(--ink);
+  border-radius: var(--r-pill);
+  font-size: var(--fs-lg);
+  box-shadow: 0 4px 0 var(--ink);
+}
+.ds-answer[hidden] {
+  display: none;
+}
+
+/* شريط الوقت (يتقلّص) */
+.ds-timebar {
+  --p: 1;
+  --bar: var(--sun);
+  height: 18px;
+  background: var(--stage-3);
+  border: var(--line) solid var(--ink);
+  border-radius: var(--r-pill);
+  overflow: hidden;
+}
+.ds-timebar-fill {
+  height: 100%;
+  background: linear-gradient(180deg, var(--shine) 0 30%, transparent 31%), var(--bar);
+  border-radius: var(--r-pill);
+  transform: scaleX(var(--p));
+  transform-origin: right;
+  transition: transform 120ms linear;
+}
+.ds-timebar.is-urgent {
+  --bar: var(--coral);
+}
+
+/* مراحل الجرس: ١ أول من يضغط · ٢ الفريق الآخر · ٣ مفتوح للجميع */
+.ds-steps {
+  display: flex;
+  gap: var(--gap-2);
+  align-items: center;
+}
+.ds-step {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45em;
+  padding: 0.3em 0.9em 0.3em 0.35em;
+  padding-inline: 0.35em 0.9em;
+  background: var(--stage-3);
+  color: var(--on-stage-dim);
+  border: 2px solid var(--ink);
+  border-radius: var(--r-pill);
+  font-weight: 800;
+  font-size: var(--fs-sm);
+  transition:
+    transform var(--dur-2) var(--ease-pop),
+    background-color var(--dur-2) var(--ease-out);
+}
+.ds-step-num {
+  display: grid;
+  place-items: center;
+  width: 1.7em;
+  height: 1.7em;
+  border-radius: 50%;
+  background: var(--paper);
+  color: var(--ink);
+  border: 2px solid var(--ink);
+  font-family: var(--font-display);
+}
+.ds-step.is-on {
+  background: var(--sun);
+  color: var(--ink);
+  transform: scale(1.08);
+  box-shadow: 0 3px 0 var(--ink);
+}
+.ds-step.is-done {
+  opacity: 0.5;
+}
+
+/* لوحة الحروف عند الحكم: أزرار سداسية صغيرة */
+.ds-hexkeys {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(54px, 1fr));
+  gap: 10px 4px;
+  justify-items: center;
+}
+.ds-hexkeys .ds-hex {
+  --hw: 50px;
+  --hx-d: 4px;
+}
+
+/* شريط الحرف فوق جرس الجوال */
+.ds-letterbar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--gap-2);
+  padding: 0.4em 1em;
+  background: var(--paper);
+  color: var(--ink);
+  border: var(--line) solid var(--ink);
+  border-radius: var(--r-pill);
+  box-shadow: 0 4px 0 var(--ink);
+  font-weight: 800;
+}
+.ds-letterbar b {
+  font-family: var(--font-display);
+  font-size: var(--fs-xl);
+  line-height: 1;
 }
 
 /* ================================================================

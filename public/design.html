@@ -517,6 +517,42 @@
         stroke-width: 2;
         filter: drop-shadow(0 0.6cqw 0 var(--ink));
       }
+      /* ---- حروف مع حسين ---- */
+      .dz-hex-states {
+        gap: var(--gap-4);
+        align-items: end;
+      }
+      .dz-state {
+        display: grid;
+        justify-items: center;
+        gap: 0.7rem;
+        font-weight: 800;
+        font-size: var(--fs-sm);
+        color: var(--on-stage-dim);
+      }
+      .dz-board-wrap {
+        display: flex;
+        justify-content: center;
+        overflow-x: auto;
+        padding: 0.4rem 0 1rem;
+      }
+      @media (max-width: 640px) {
+        .ds-board {
+          --hw: 50px;
+        }
+      }
+      .dz-flow {
+        display: grid;
+        gap: var(--gap-3);
+      }
+      .dz-judge {
+        display: grid;
+        gap: var(--gap-2);
+      }
+      .dz-mini-buzzer {
+        --size: 170px;
+        font-size: var(--fs-xl);
+      }
     </style>
   </head>
   <body class="ds ds-page">
@@ -539,6 +575,7 @@
           <a href="#chips">الرقائق واللاعبون</a>
           <a href="#fields">الحقول</a>
           <a href="#qr">رموز الدخول</a>
+          <a href="#huroof">حروف مع حسين</a>
           <a href="#motion">الحركة</a>
           <a href="#screens">نماذج الشاشات</a>
         </nav>
@@ -779,6 +816,105 @@
         </div>
       </section>
 
+      <!-- ================= حروف مع حسين ================= -->
+      <section class="dz-sec" id="huroof" aria-labelledby="huroofH">
+        <h2 id="huroofH">حروف مع حسين</h2>
+        <p class="dz-lead">الخلية ملصق سداسي بجدار ولمعة. اضغط أي خلية لتبديل حالتها.</p>
+
+        <span class="dz-label">حالات الخلية</span>
+        <div class="dz-row dz-hex-states">
+          <div class="dz-state"><div class="ds-hex"><div class="ds-hex-in"><div class="ds-hex-face"><span class="ds-hex-letter">ب</span></div></div></div><span>فارغة</span></div>
+          <div class="dz-state"><div class="ds-hex is-selected"><div class="ds-hex-in"><div class="ds-hex-face"><span class="ds-hex-letter">ج</span></div></div></div><span>مختارة</span></div>
+          <div class="dz-state"><div class="ds-hex is-a"><div class="ds-hex-in"><div class="ds-hex-face"><span class="ds-hex-letter">د</span></div></div></div><span>للفريق الأول</span></div>
+          <div class="dz-state"><div class="ds-hex is-b"><div class="ds-hex-in"><div class="ds-hex-face"><span class="ds-hex-letter">ر</span></div></div></div><span>للفريق الثاني</span></div>
+          <div class="dz-state"><div class="ds-hex is-a is-win"><div class="ds-hex-in"><div class="ds-hex-face"><span class="ds-hex-letter">س</span></div></div></div><span>مسار الفوز</span></div>
+        </div>
+
+        <span class="dz-label">اللوحة: أعلى وأسفل للفريق الأول، يمين ويسار للفريق الثاني</span>
+        <div class="dz-board-wrap">
+          <div class="ds-board" id="demoBoard"><div class="ds-board-grid" id="demoGrid"></div></div>
+        </div>
+        <div class="dz-row" style="margin-top: 1rem; justify-content: center">
+          <button class="ds-btn ds-btn--team ds-btn--sm" type="button" id="claimA" style="--team: var(--team-a); --team-ink: var(--paper)"><span data-i="plus"></span>خلية للأولاد</button>
+          <button class="ds-btn ds-btn--team ds-btn--sm" type="button" id="claimB" style="--team: var(--team-b); --team-ink: var(--paper)"><span data-i="plus"></span>خلية للبنات</button>
+          <button class="ds-btn ds-btn--primary ds-btn--sm" type="button" id="winPath"><span data-i="trophy"></span>مسار فوز</button>
+          <button class="ds-btn ds-btn--sm" type="button" id="boardReset"><span data-i="undo"></span>إعادة</button>
+        </div>
+
+        <span class="dz-label">السؤال على التلفاز</span>
+        <div class="ds-qpanel">
+          <div class="ds-hex ds-letter-badge is-selected"><div class="ds-hex-in"><div class="ds-hex-face"><span class="ds-hex-letter">م</span></div></div></div>
+          <div class="ds-qpanel-text">
+            مدينة سورية تُلقّب بالشهباء، فيها قلعة شهيرة.
+            <div><span class="ds-answer" id="qAnswer" hidden><span data-i="check"></span>حلب</span></div>
+          </div>
+        </div>
+        <div class="dz-row" style="margin-top: 0.9rem">
+          <button class="ds-btn ds-btn--success ds-btn--sm" type="button" id="revealAns"><span data-i="eye"></span>اكشف الجواب</button>
+        </div>
+
+        <span class="dz-label">جولات الجرس الثلاث</span>
+        <div class="ds-card ds-card--stage dz-flow">
+          <div class="ds-steps" id="steps">
+            <span class="ds-step is-on"><span class="ds-step-num">1</span>أول من يضغط</span>
+            <span class="ds-step"><span class="ds-step-num">2</span>الفريق الآخر</span>
+            <span class="ds-step"><span class="ds-step-num">3</span>مفتوح للجميع</span>
+          </div>
+          <div class="ds-banner" id="flowBanner"><span class="ds-banner-icon"><span data-i="bell"></span></span><span id="flowText">بانتظار أول ضغطة…</span></div>
+          <div class="ds-timebar" id="flowBar"><div class="ds-timebar-fill"></div></div>
+          <div class="dz-row">
+            <button class="ds-btn ds-btn--primary ds-btn--sm" type="button" id="flowNext"><span data-i="play"></span>الخطوة التالية</button>
+            <button class="ds-btn ds-btn--sm" type="button" id="flowReset"><span data-i="undo"></span>من البداية</button>
+          </div>
+        </div>
+
+        <span class="dz-label">عند الحكم: اختيار الحرف والحكم على الإجابة</span>
+        <div class="dz-grid">
+          <div class="ds-card">
+            <div class="ds-card-title">اختر الحرف</div>
+            <div class="ds-hexkeys" id="hexKeys"></div>
+          </div>
+          <div class="ds-card">
+            <div class="ds-card-title">سامر أجاب</div>
+            <div class="dz-judge">
+              <button class="ds-btn ds-btn--success ds-btn--block" type="button"><span data-i="check"></span>صح، للأولاد</button>
+              <button class="ds-btn ds-btn--danger ds-btn--block" type="button"><span data-i="close"></span>خطأ، الدور للبنات</button>
+              <button class="ds-btn ds-btn--block" type="button"><span data-i="question"></span>لم يُجب أحد</button>
+            </div>
+          </div>
+        </div>
+
+        <span class="dz-label">جوال اللاعب</span>
+        <div class="dz-phones">
+          <div>
+            <div class="dz-phone ds-stage">
+              <div class="dz-phone-in">
+                <div class="ds-letterbar">السؤال بحرف <b>م</b></div>
+                <div class="dz-center" style="margin-top: 1rem">
+                  <button class="ds-buzzer dz-mini-buzzer" type="button" style="--team: var(--team-a); --team-ink: var(--paper)">اضغط!</button>
+                  <p class="dz-p dz-dim">أول من يضغط يجيب خلال ٣ ثوانٍ</p>
+                </div>
+              </div>
+            </div>
+            <div class="dz-phone-cap">قبل الضغط</div>
+          </div>
+          <div>
+            <div class="dz-phone ds-stage">
+              <div class="dz-phone-in">
+                <div class="ds-letterbar">السؤال بحرف <b>م</b></div>
+                <div class="dz-center" style="margin-top: 1.6rem">
+                  <span class="ds-badge-icon dz-big-badge ds-glow-turn"><span data-i="bolt"></span></span>
+                  <h3 style="font-size: var(--fs-xl)">أنت أولاً!</h3>
+                  <p class="dz-p dz-dim">أجب الآن بصوت عالٍ</p>
+                  <div class="ds-timebar is-urgent" style="width: 100%; --p: 0.6"><div class="ds-timebar-fill"></div></div>
+                </div>
+              </div>
+            </div>
+            <div class="dz-phone-cap">ضغطت أولاً</div>
+          </div>
+        </div>
+      </section>
+
       <!-- ================= الحركة ================= -->
       <section class="dz-sec" id="motion" aria-labelledby="motionH">
         <h2 id="motionH">الحركة</h2>
@@ -993,6 +1129,129 @@
       // رموز QR
       drawQR(`${location.origin}/play?room=main`, $("qrNet"));
       drawQR(`${location.origin}/play?room=main&lan=1`, $("qrLan"));
+
+      // ---------- حروف مع حسين ----------
+      const hexEl = (letter, cls = "") => {
+        const d = document.createElement("button");
+        d.type = "button";
+        d.className = `ds-hex ${cls}`.trim();
+        d.innerHTML = `<div class="ds-hex-in"><div class="ds-hex-face"><span class="ds-hex-letter">${letter}</span></div></div>`;
+        return d;
+      };
+      const LETTERS = [..."أبتثجحخدذرزسشصضطظعغفقكلمن"];
+      const ROWS = 5, COLS = 5;
+      const boardEl = $("demoBoard");
+      const grid = $("demoGrid");
+      const cells = [];
+      function layoutBoard() {
+        const hw = parseFloat(getComputedStyle(boardEl).getPropertyValue("--hw")) || 74;
+        const hh = hw * 1.1547, g = 4, step = hh * 0.75 + g;
+        grid.style.width = `${COLS * (hw + g) + (hw + g) / 2}px`;
+        grid.style.height = `${(ROWS - 1) * step + hh}px`;
+        for (const c of cells) {
+          c.el.style.left = `${c.c * (hw + g) + (c.r % 2 ? (hw + g) / 2 : 0)}px`;
+          c.el.style.top = `${c.r * step}px`;
+        }
+      }
+      const START = { "0-0": "a", "1-3": "b", "2-1": "a", "3-4": "b", "4-2": "a", "2-3": "selected" };
+      function buildBoard() {
+        grid.replaceChildren();
+        cells.length = 0;
+        let i = 0;
+        for (let r = 0; r < ROWS; r++) {
+          for (let c = 0; c < COLS; c++) {
+            const st = START[`${r}-${c}`] || "";
+            const el = hexEl(LETTERS[i++ % LETTERS.length], st ? `is-${st}` : "");
+            const cell = { r, c, el, st };
+            el.onclick = () => {
+              const order = ["", "selected", "a", "b"];
+              cell.st = order[(order.indexOf(cell.st) + 1) % order.length];
+              el.className = `ds-hex ${cell.st ? "is-" + cell.st : ""}`.trim();
+              if (cell.st === "a" || cell.st === "b") replay(el, "is-claim");
+            };
+            cells.push(cell);
+            grid.appendChild(el);
+          }
+        }
+        layoutBoard();
+      }
+      buildBoard();
+      addEventListener("resize", layoutBoard);
+      const claim = (team) => {
+        const free = cells.filter((c) => !c.st || c.st === "selected");
+        if (!free.length) return;
+        const cell = free[Math.floor(Math.random() * free.length)];
+        cell.st = team;
+        cell.el.className = `ds-hex is-${team}`;
+        replay(cell.el, "is-claim");
+      };
+      $("claimA").onclick = () => claim("a");
+      $("claimB").onclick = () => claim("b");
+      $("winPath").onclick = () => {
+        cells.forEach((c) => c.el.classList.remove("is-win"));
+        cells.filter((c) => c.c === 2).forEach((c, k) => {
+          c.st = "a";
+          c.el.className = "ds-hex is-a is-win";
+          c.el.style.setProperty("--k", k);
+        });
+        confetti();
+      };
+      $("boardReset").onclick = buildBoard;
+
+      // السؤال
+      $("revealAns").onclick = () => {
+        $("qAnswer").hidden = false;
+        replay($("qAnswer"), "ds-flip-in");
+      };
+
+      // جولات الجرس الثلاث
+      const FLOW = [
+        { text: "بانتظار أول ضغطة…", icon: "bell", cls: "", secs: 0 },
+        { text: "سامر ضغط أولاً! يجيب خلال ٣ ثوانٍ", icon: "bolt", cls: "", secs: 3 },
+        { text: "دور البنات: أجيبوا بصوت عالٍ", icon: "users", cls: "ds-banner--info", secs: 10 },
+        { text: "مفتوح للجميع، بلا وقت", icon: "megaphone", cls: "ds-banner--success", secs: 0 },
+      ];
+      let flowAt = 0, flowTimer = null;
+      const flowBar = $("flowBar");
+      function showFlow() {
+        const f = FLOW[flowAt];
+        const stepIdx = flowAt === 0 ? 0 : flowAt - 1;
+        [...$("steps").children].forEach((el, i) => {
+          el.classList.toggle("is-on", i === stepIdx);
+          el.classList.toggle("is-done", i < stepIdx);
+        });
+        $("flowBanner").className = `ds-banner ${f.cls}`.trim();
+        $("flowBanner").querySelector(".ds-banner-icon").innerHTML = iconHTML(f.icon);
+        $("flowText").textContent = f.text;
+        replay($("flowBanner"), "ds-pop-in");
+        clearInterval(flowTimer);
+        flowBar.style.setProperty("--p", 1);
+        flowBar.classList.remove("is-urgent");
+        flowBar.hidden = !f.secs;
+        if (f.secs) {
+          const end = performance.now() + f.secs * 1000;
+          flowTimer = setInterval(() => {
+            const left = Math.max(0, (end - performance.now()) / 1000);
+            flowBar.style.setProperty("--p", left / f.secs);
+            flowBar.classList.toggle("is-urgent", left <= 2);
+            if (!left) clearInterval(flowTimer);
+          }, 100);
+        }
+      }
+      showFlow();
+      $("flowNext").onclick = () => { flowAt = Math.min(FLOW.length - 1, flowAt + 1); showFlow(); };
+      $("flowReset").onclick = () => { flowAt = 0; showFlow(); };
+
+      // لوحة الحروف عند الحكم
+      [..."أبتجحدرسعم"].forEach((l, i) => {
+        const k = hexEl(l, i === 9 ? "is-selected" : i === 2 ? "is-a" : i === 5 ? "is-b" : "");
+        k.onclick = () => {
+          $("hexKeys").querySelectorAll(".is-selected").forEach((x) => x.classList.remove("is-selected"));
+          if (!k.classList.contains("is-a") && !k.classList.contains("is-b")) k.classList.add("is-selected");
+          else replay(k, "ds-shake");
+        };
+        $("hexKeys").appendChild(k);
+      });
 
       // الحركة
       const MOTION = [
