@@ -135,6 +135,19 @@
 
 ---
 
+## قالب شاشة الحكم
+
+صفحة الحكم **عمود واحد دائماً** (`ds-col`): عرض الجوال على الهاتف، وأقصى 760px على الشاشات العريضة.
+
+- **ممنوع** وضع بطاقات أو قوائم جنباً إلى جنب، أو شبكة بطاقات طويلة (masonry).
+- **الترتيب من الأعلى:** `ds-appbar` ← (داخل اللعبة) `ds-now` ← `ds-tabs` ← اللوحة النشطة.
+- **القوائم الطويلة** (اللاعبون، السجل، المجموعات، المواضيع) كل منها في تبويب مستقل، لا بجانب قائمة أخرى.
+- **رموز QR** صغيرة (`ds-qr--sm`) وتُكبَّر بالضغط داخل `ds-sheet`.
+- **النصوص القصيرة:** لا زر ولا بطاقة يلتفّ نصها على ثلاثة أسطر؛ بطاقات الألعاب في `ds-grid` بعمودين.
+- **الألوان والثيم** تُضبط في الصفحة الرئيسية فقط (قبل اللعبة)؛ داخل اللعبة تُحرَّر الفرق فقط (الأسماء، نقل اللاعب، إخراجه).
+
+---
+
 ## المكوّنات
 
 | المكوّن | الأصناف |
@@ -148,6 +161,7 @@
 | لاعب | `ds-player` · `ds-avatar` |
 | العدّاد | `ds-ring` (+ `--sm`، و`ring()`) · `ds-timebar` (`--p`) |
 | لافتة / رسالة | `ds-banner` (+ `--success` / `--danger` / `--info` / `--team` / `--sm`، و`-text` / `-sub`) · `toast()` |
+| قالب الحكم | `ds-col` (عمود واحد) · `ds-appbar` (+ `-title` / `-tools`) · `ds-tabs` / `ds-tab` (`aria-selected`) / `ds-tab-panel` · `ds-section` (+ `-head` / `-title`) · `ds-now` (+ `--info` / `--success` / `--danger` / `--team`، و`-status` / `-body` / `-actions`) · `ds-sheet` (مع `ds-modal`) · `ds-qr--sm` |
 | جداول | `ds-table` (داخل `ds-table-wrap`) · `ds-textarea` (+ `--tall`) · `ds-input--sm` / `ds-select--sm` · `ds-select.is-warn` / `.is-manual` |
 | قوائم | `ds-list` / `ds-list-item` · `ds-collapse` (بطاقة قابلة للطيّ) · `ds-kbd` · `ds-swatch` / `ds-swatches` · `ds-card--preview` · `ds-text--soft` |
 | حقول | `ds-field` · `ds-label` · `ds-input` (+ `--num`) · `ds-select` · `ds-color` · `ds-hint` · `ds-switch` · `ds-seg` (+ `segmented()`) · `ds-stepper` |

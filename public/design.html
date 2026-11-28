@@ -772,6 +772,41 @@
           <button class="ds-game-tile ds-game-tile--sm ds-game-tile--sky" type="button" disabled><span class="ds-game-tile-art"><span data-i="sparkle"></span></span><span class="ds-game-tile-name">قريباً</span><span class="ds-game-tile-tag">معطّلة</span></button>
         </div>
 
+        <span class="dz-label">قالب شاشة الحكم: عمود واحد — شريط علوي، «الآن»، تبويبات، أقسام، ورقة سفلية</span>
+        <div class="dz-phones">
+          <div>
+            <div class="dz-phone ds-stage">
+              <div class="ds-appbar">
+                <button class="ds-btn ds-btn--icon ds-btn--sm" type="button" aria-label="رجوع"><span data-i="arrow"></span></button>
+                <div class="ds-appbar-title"><span>الكلمة الممنوعة</span><span>دور الأولاد</span></div>
+                <div class="ds-appbar-tools"><span class="ds-pill ds-pill--mint"><span data-i="wifi"></span></span><button class="ds-btn ds-btn--icon ds-btn--sm" type="button" aria-label="تراجع"><span data-i="undo"></span></button></div>
+              </div>
+              <div class="dz-phone-in">
+                <div class="ds-now ds-now--info">
+                  <div class="ds-now-status"><span data-i="bolt"></span><span>سامر يجيب — بقي 3 ث</span></div>
+                  <div class="ds-now-actions"><button class="ds-btn ds-btn--success ds-btn--lg ds-btn--block" type="button"><span data-i="check"></span>صح للأولاد</button><button class="ds-btn ds-btn--danger ds-btn--lg ds-btn--block" type="button"><span data-i="close"></span>خطأ</button></div>
+                </div>
+                <div class="ds-tabs" role="tablist" data-demo-tabs>
+                  <button class="ds-tab" role="tab" aria-selected="true" type="button">اللوحة</button>
+                  <button class="ds-tab" role="tab" aria-selected="false" type="button">السؤال</button>
+                  <button class="ds-tab" role="tab" aria-selected="false" type="button">الأجراس</button>
+                  <button class="ds-tab" role="tab" aria-selected="false" type="button">الفرق</button>
+                </div>
+                <section class="ds-section"><div class="ds-section-head"><h4 class="ds-section-title"><span data-i="users"></span>اللاعبون</h4><button class="ds-btn ds-btn--sm" type="button">رمز الدخول</button></div><div class="ds-qr ds-qr--sm"><div class="ds-qr-frame"><canvas id="qrSmDemo"></canvas></div><span class="ds-hint">اضغط للتكبير</span></div></section>
+              </div>
+            </div>
+            <div class="dz-phone-cap">هاتف</div>
+          </div>
+          <div>
+            <div class="dz-phone ds-stage">
+              <button class="ds-btn ds-btn--sm" type="button" id="sheetBtn"><span data-i="qr"></span>افتح الورقة السفلية</button>
+              <p class="dz-p dz-dim">الورقة تنزل من الأسفل على الجوال، وتتوسّط على الشاشات العريضة.</p>
+            </div>
+            <div class="dz-phone-cap">ds-sheet</div>
+          </div>
+        </div>
+        <div class="ds-modal ds-sheet" id="demoSheet" role="dialog" aria-modal="true"><div class="ds-card ds-stack"><div class="ds-card-title">رمز اللاعبين</div><div class="ds-qr"><div class="ds-qr-frame"><canvas id="qrBigDemo"></canvas></div></div><button class="ds-btn ds-btn--block" type="button" id="sheetClose">إغلاق</button></div></div>
+
         <span class="dz-label">جوال اللاعب</span>
         <div class="dz-phones">
           <div>
@@ -1052,6 +1087,17 @@
       // رموز QR
       drawQR(`${location.origin}/play?room=main`, $("qrNet"));
       drawQR(`${location.origin}/play?room=main&lan=1`, $("qrLan"));
+      drawQR(`${location.origin}/play?room=main`, $("qrSmDemo"));
+      drawQR(`${location.origin}/play?room=main`, $("qrBigDemo"));
+      for (const bar of document.querySelectorAll("[data-demo-tabs]")) {
+        bar.addEventListener("click", (e) => {
+          const t = e.target.closest(".ds-tab");
+          if (!t) return;
+          for (const x of bar.children) x.setAttribute("aria-selected", String(x === t));
+        });
+      }
+      $("sheetBtn").onclick = () => $("demoSheet").classList.add("is-open");
+      $("sheetClose").onclick = () => $("demoSheet").classList.remove("is-open");
 
       // ---------- حروف مع حسين ----------
       const hexEl = (letter, cls = "") => {

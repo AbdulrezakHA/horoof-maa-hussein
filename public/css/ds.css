@@ -2475,6 +2475,204 @@ button.ds-hex:focus-visible {
 }
 
 /* ================================================================
+   قالب شاشة الحكم: عمود واحد — شريط علوي، لوحة «الآن»، تبويبات، أقسام، ورقة سفلية
+   ================================================================ */
+/* عمود الصفحة الواحد: عرض الجوال، وأقصى 760 على الشاشات العريضة. لا أعمدة متجاورة أبداً. */
+.ds-col {
+  width: min(var(--phone-max), 100% - 2 * var(--sp-4));
+  margin-inline: auto;
+  display: grid;
+  gap: var(--sp-4);
+  padding-block: var(--sp-3) var(--sp-8);
+}
+@media (min-width: 900px) {
+  .ds-col {
+    width: min(760px, 100% - 2 * var(--sp-4));
+  }
+}
+/* الشريط العلوي الثابت: [رجوع] [عنوان] ... [اتصال] [صوت] [تراجع] */
+.ds-appbar {
+  position: sticky;
+  inset-block-start: 0;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: var(--sp-2) var(--sp-3);
+  background: var(--stage);
+  border-bottom: var(--line-thin) solid var(--ink);
+}
+.ds-appbar-title {
+  display: grid;
+  flex: 1;
+  min-width: 0;
+}
+.ds-appbar-title > :first-child {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: var(--fs-lg);
+  line-height: 1.2;
+}
+.ds-appbar-title > :last-child:not(:first-child) {
+  font-size: var(--fs-xs);
+  opacity: 0.8;
+}
+.ds-appbar-tools {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+}
+/* تبويبات أفقية تُمرَّر على الجوال */
+.ds-tabs {
+  display: flex;
+  gap: var(--sp-2);
+  overflow-x: auto;
+  padding-block: var(--sp-1) var(--sp-2);
+  scrollbar-width: none;
+}
+.ds-tabs::-webkit-scrollbar {
+  display: none;
+}
+.ds-tab {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4em;
+  min-height: var(--tap);
+  padding-inline: var(--sp-4);
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: var(--fs-md);
+  color: var(--on-stage);
+  background: var(--stage-3);
+  border: var(--line-thin) solid var(--ink);
+  border-radius: var(--r-pill);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: transform var(--dur-1) var(--ease-out);
+}
+.ds-tab[aria-selected="true"] {
+  color: var(--sun-ink);
+  background: var(--sun);
+  box-shadow: 0 var(--lift-sm) 0 var(--ink);
+}
+.ds-tab:focus-visible {
+  outline: var(--focus-w) solid var(--focus);
+  outline-offset: var(--focus-gap);
+}
+.ds-tab-panel[hidden] {
+  display: none;
+}
+.ds-tab-panel {
+  display: grid;
+  gap: var(--sp-4);
+}
+/* قسم بعنوان داخل الصفحة (ليس عموداً طويلاً من البطاقات) */
+.ds-section {
+  display: grid;
+  gap: var(--sp-3);
+  padding: var(--sp-4);
+  background: var(--paper);
+  color: var(--ink);
+  border: var(--line-thin) solid var(--ink);
+  border-radius: var(--r-md);
+}
+.ds-section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-3);
+}
+.ds-section-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4em;
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: var(--fs-lg);
+}
+/* «ماذا أفعل الآن»: سطر حالة كبير، عدّاد اختياري، وأزرار رئيسية */
+.ds-now {
+  --now: var(--sun);
+  display: grid;
+  gap: var(--sp-3);
+  padding: var(--sp-4);
+  color: var(--ink);
+  background: var(--now);
+  border: var(--line) solid var(--ink);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow);
+}
+.ds-now--info {
+  --now: var(--sky);
+}
+.ds-now--success {
+  --now: var(--mint);
+}
+.ds-now--danger {
+  --now: var(--coral);
+}
+.ds-now--team {
+  --now: var(--team);
+  color: var(--team-ink);
+}
+.ds-now-status {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: var(--fs-xl);
+  line-height: 1.25;
+}
+.ds-now-status > .ds-icon {
+  width: 1.6em;
+  height: 1.6em;
+}
+.ds-now-status > span {
+  flex: 1;
+  min-width: 0;
+}
+.ds-now-body {
+  display: grid;
+  gap: var(--sp-2);
+  font-weight: 700;
+}
+.ds-now-actions {
+  display: grid;
+  gap: var(--sp-3);
+}
+/* ورقة سفلية على الجوال، ونافذة في الوسط على الشاشات العريضة */
+.ds-sheet {
+  place-items: end center;
+  padding: 0;
+}
+.ds-sheet .ds-card {
+  width: min(var(--phone-max), 100%);
+  border-end-start-radius: 0;
+  border-end-end-radius: 0;
+  transform: translateY(40px);
+}
+@media (min-width: 900px) {
+  .ds-sheet {
+    place-items: center;
+    padding: var(--sp-6);
+  }
+  .ds-sheet .ds-card {
+    border-radius: var(--r-lg);
+  }
+}
+/* رمز QR مدمج داخل قوائم الحكم (اضغطه للتكبير) */
+.ds-qr--sm .ds-qr-frame {
+  --qr: 90px;
+  cursor: zoom-in;
+}
+.ds-qr--sm {
+  gap: var(--sp-1);
+}
+
+/* ================================================================
    تقليل الحركة: نُبقي المحتوى ظاهراً بلا حركة
    ================================================================ */
 @media (prefers-reduced-motion: reduce) {
