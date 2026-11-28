@@ -62,14 +62,14 @@
   --panel-side: #c7c0b2;
   --panel-ink: #1d1235;
   --panel-glow: rgba(255, 255, 255, 0.55);
-  --team-a: #19a974;
-  --team-a-hi: #6dc399;
-  --team-a-side: #007542;
+  --team-a: #6965ae;
+  --team-a-hi: #8786bf;
+  --team-a-side: #3c337b;
   --team-a-ink: #fff8ea;
   --team-a-glow: rgba(29, 18, 53, 0.35);
-  --team-b: #e0453a;
-  --team-b-hi: #ef7b6d;
-  --team-b-side: #a70000;
+  --team-b: #4b9cbf;
+  --team-b-hi: #80b9d4;
+  --team-b-side: #00698c;
   --team-b-ink: #fff8ea;
   --team-b-glow: rgba(29, 18, 53, 0.35);
   /* @theme:end */

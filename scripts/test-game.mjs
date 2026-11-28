@@ -4,6 +4,7 @@
  */
 import { shuffleBoardLetters, normalizeBoardLetters, randomBoardLetters } from "../shared/engine.js";
 import { spawnSync } from "node:child_process";
+import { parseTaboo } from "../server/taboo-packs.js";
 import { fileURLToPath } from "node:url";
 
 const PORT = process.argv[2] || 3111;
@@ -657,6 +658,14 @@ async function main() {
   // ================= السهرة: قائمة الألعاب + «الكلمة الممنوعة» =================
   {
     log("\x1b[36m▸ قائمة الألعاب والكلمة الممنوعة\x1b[0m");
+    {
+      const hdr = parseTaboo("الكلمة\tممنوع١\tممنوع٢\nمطار\tطائرة\tسفر\tحقيبة");
+      check("سطر عناوين حقيقي (أول سطر وبالصيغة) يُتجاهل", hdr.cards.length === 1 && hdr.cards[0].word === "مطار");
+      const real = parseTaboo("كلمة\tأ\tب\tج\nثانية\tد\tهـ\tو");
+      check("بطاقة كلمتها «كلمة» ليست سطر عناوين", real.cards.length === 2 && real.cards[0].word === "كلمة");
+      const late = parseTaboo("مطار\tطائرة\tسفر\tحقيبة\nالكلمة\tممنوع١\tممنوع٢");
+      check("«الكلمة» ليست أول سطر → بطاقة عادية", late.cards.length === 2);
+    }
     const packsRes = await (await fetch(BASE + "/api/taboo/packs")).json();
     const totalCards = (packsRes.packs || []).reduce((n, p) => n + p.total, 0);
     check("مواضيع الكلمة الممنوعة: ١٠ مواضيع على الأقل", (packsRes.packs || []).length >= 10, String(packsRes.packs?.length));

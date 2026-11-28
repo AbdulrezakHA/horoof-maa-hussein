@@ -9,7 +9,7 @@
  * الاستعمال في المتصفح:
  *   import { applyTheme, applyTeams } from "/shared/ds-theme.js";
  *   applyTheme("ramadan");                          // يغيّر كل الألعاب معاً
- *   applyTeams({ a: "#19a974", b: "#e0453a" });     // ألوان الفرق التي اختارها الحكم
+ *   applyTeams({ a: "#6965ae", b: "#4b9cbf" });     // ألوان الفرق التي اختارها الحكم
  *
  * القيم الافتراضية في ds.css (بين علامتي @theme) تُولَّد من هنا:
  *   node scripts/gen-ds-theme.mjs
@@ -33,7 +33,7 @@ export const DS_THEMES = {
     grape: "#a86cf0",
     bubble: "#ff8fc8",
     cream: "#cfc694",
-    teams: { a: "#19a974", b: "#e0453a" },
+    teams: { a: "#6965ae", b: "#4b9cbf" },
   },
   night: {
     name: "ليلي",

@@ -43,6 +43,7 @@ export function parseTaboo(text) {
   const cards = [];
   const warnings = [];
   const seen = new Set();
+  let headerSeen = false;
   const lines = String(text || "").replace(/^﻿/, "").split(/\r?\n/);
   lines.forEach((raw, i) => {
     const line = raw.trim();
@@ -56,7 +57,11 @@ export function parseTaboo(text) {
     const word = cells[0];
     const forbidden = [...new Set(cells.slice(1))].slice(0, MAX_FORBIDDEN);
     if (!word) return;
-    if (/^(الكلمة|كلمة|word)$/i.test(word)) return; // سطر عناوين
+    // سطر العناوين: فقط إن كان أول سطر بيانات ويطابق صيغة العناوين بالضبط (الكلمة ثم ممنوع١ ممنوع٢ …)
+    if (cards.length === 0 && !headerSeen && /^(الكلمة|كلمة|word)$/i.test(word) && cells.slice(1).every((c) => /^(ممنوع[\d٠-٩]*|forbidden\d*|\.{3}|…)$/i.test(c))) {
+      headerSeen = true;
+      return;
+    }
     if (forbidden.length < 2) warnings.push(`السطر ${i + 1}: «${word}» بلا كلمات ممنوعة كافية`);
     if (seen.has(word)) {
       warnings.push(`السطر ${i + 1}: «${word}» مكرّرة`);
