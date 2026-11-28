@@ -1065,6 +1065,16 @@
   --banner: var(--team);
   color: var(--team-ink);
 }
+/* نص اللافتة: سطر رئيسي وسطر فرعي */
+.ds-banner-text {
+  flex: 1;
+  min-width: 0;
+  display: grid;
+}
+.ds-banner-sub {
+  font-size: var(--fs-sm);
+  opacity: 0.85;
+}
 
 .ds-toasts {
   position: fixed;
@@ -1946,6 +1956,284 @@ button.ds-hex:focus-visible {
   to {
     transform: translate(var(--dx, 0), 110vh) rotate(var(--rot, 540deg));
   }
+}
+
+/* ================================================================
+   شاشة التلفاز — مسرح 16:9 ثابت يتناسب مع أي شاشة (يضبط --scale عليه fitScale())
+     <body class="ds ds-tv ds-stage ds-tvroot">
+       <div class="ds-tvstage ds-scaled">  ← طبقات ds-tvlayer فوق بعضها
+   ================================================================ */
+.ds-tvroot {
+  margin: 0;
+  width: 100vw;
+  height: 100vh;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  user-select: none;
+}
+.ds-tvstage {
+  position: relative;
+  isolation: isolate;
+  overflow: clip;
+  width: min(100vw, calc(100vh * 16 / 9));
+  aspect-ratio: 16 / 9;
+}
+/* طبقة تملأ المسرح: قائمة الألعاب، الفوز، الاستقبال… */
+.ds-tvlayer {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  box-sizing: border-box;
+  padding: var(--sp-10);
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: var(--sp-6);
+}
+.ds-tvlayer--rows {
+  grid-template-rows: auto minmax(0, 1fr);
+  place-items: stretch;
+  align-content: stretch;
+}
+.ds-tvlayer--solid {
+  background-color: var(--stage);
+  background-image: radial-gradient(circle at 20% 10%, var(--stage-3) 0, transparent 45%), radial-gradient(circle at 85% 90%, var(--stage-2) 0, transparent 50%);
+  z-index: 8;
+}
+/* العمود الجانبي في «حروف مع حسين»: الحرف والسؤال والجولة والنتيجة (يمين الشاشة) */
+.ds-tvside {
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: 0;
+  width: 40.8%;
+  box-sizing: border-box;
+  padding: var(--sp-12) var(--sp-8);
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto auto;
+  gap: var(--sp-4);
+  z-index: 2;
+}
+.ds-tvside .ds-qpanel {
+  min-height: 0;
+  overflow: hidden;
+}
+.ds-tvmain {
+  width: 100%;
+  min-height: 0;
+  align-content: center;
+  gap: var(--sp-6);
+}
+.ds-tvside-scores {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--sp-4);
+}
+/* عنصر عائم فوق المسرح: شارة الاتصال (الزاوية السفلية) أو المؤقّت (أعلى الوسط) */
+.ds-tvfloat {
+  position: absolute;
+  z-index: 9;
+  inset-block-end: var(--sp-4);
+  inset-inline-end: var(--sp-4);
+}
+.ds-tvfloat--top {
+  inset-block: var(--sp-4) auto;
+  inset-inline: 0;
+  margin-inline: auto;
+  width: max-content;
+}
+
+/* لوحة التلفاز: SVG مرسوم من اللوحة الأصلية (مقاس 1920×1080). الألوان كلها من المتغيّرات. */
+.ds-tvboard {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+.ds-tvbg-left {
+  fill: var(--team-b);
+}
+.ds-tvbg-right {
+  fill: url(#grad-bg-right);
+}
+.ds-tvgoal {
+  fill: url(#grad-team-a);
+}
+.ds-tvcell {
+  transform-box: fill-box;
+  transform-origin: center;
+  transition: scale var(--dur-2) var(--ease-pop);
+}
+.ds-tvcell-path {
+  fill: url(#grad-cell);
+  stroke: var(--ink);
+  stroke-width: 4px;
+  stroke-miterlimit: 10;
+}
+.ds-tvcell-text {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 104px;
+  fill: var(--cream-ink);
+  dominant-baseline: central;
+  pointer-events: none;
+  transition: fill var(--dur-2) var(--ease-out);
+}
+.ds-tvcell-shine ellipse {
+  fill: var(--shine-strong);
+  pointer-events: none;
+}
+.ds-tvcell.is-a .ds-tvcell-path {
+  fill: url(#grad-team-a);
+}
+.ds-tvcell.is-a .ds-tvcell-text {
+  fill: var(--team-a-ink);
+}
+.ds-tvcell.is-b .ds-tvcell-path {
+  fill: url(#grad-team-b);
+}
+.ds-tvcell.is-b .ds-tvcell-text {
+  fill: var(--team-b-ink);
+}
+.ds-tvcell.is-selected .ds-tvcell-path {
+  fill: url(#grad-sel);
+  filter: drop-shadow(0 0 14px var(--sun));
+}
+.ds-tvcell.is-selected .ds-tvcell-text {
+  fill: var(--sun-ink);
+}
+.ds-tvcell.is-selected {
+  scale: 1.06;
+  animation: dsTvBreathe 2.2s ease-in-out infinite;
+}
+@keyframes dsTvBreathe {
+  50% {
+    scale: 1.09;
+  }
+}
+.ds-tvcell.is-claim {
+  animation: dsTvClaim 0.55s var(--ease-pop);
+}
+@keyframes dsTvClaim {
+  35% {
+    scale: 1.14;
+  }
+}
+/* موجة بلون الفريق من الخلية الملتقطة (ضع ds-team-a|b عليها) */
+.ds-tvcell-ripple {
+  fill: none;
+  stroke: var(--team);
+  stroke-width: 10;
+  transform-box: fill-box;
+  transform-origin: center;
+  pointer-events: none;
+  animation: dsTvRipple 0.75s var(--ease-out) forwards;
+}
+@keyframes dsTvRipple {
+  from {
+    scale: 1;
+    opacity: 0.9;
+  }
+  to {
+    scale: 1.45;
+    opacity: 0;
+  }
+}
+/* جولة جديدة: الخلايا تظهر بالتتابع (--i) */
+.ds-tvcell.is-in {
+  animation: dsTvIn 0.5s var(--ease-pop) both;
+}
+@keyframes dsTvIn {
+  from {
+    scale: 0.6;
+    opacity: 0;
+  }
+}
+/* الفوز: خلايا المسار تومض */
+.ds-tvcell.is-win {
+  animation: dsTvWin 0.9s ease-in-out 2;
+}
+@keyframes dsTvWin {
+  50% {
+    scale: 1.12;
+    filter: brightness(1.25) drop-shadow(0 0 18px var(--shine-strong));
+  }
+}
+
+/* بطاقة الجواب بألوان أخرى: للفريق الفائز بالنقطة، أو محايدة، أو تلميح، أو فئة */
+.ds-answer--team {
+  background: var(--team);
+  color: var(--team-ink);
+}
+.ds-answer--dark {
+  background: var(--stage-3);
+  color: var(--on-stage);
+}
+.ds-answer--sun {
+  background: var(--sun);
+  color: var(--sun-ink);
+}
+.ds-answer--sky {
+  background: var(--sky);
+  color: var(--sky-ink);
+}
+.ds-answer-label {
+  font-size: var(--fs-sm);
+  opacity: 0.85;
+}
+
+/* أحجام وألوان إضافية */
+.ds-ring--sm {
+  --size: 84px;
+}
+.ds-ring--sm .ds-ring-num {
+  font-size: var(--fs-xl);
+}
+.ds-pill--lg {
+  font-size: var(--fs-xl);
+  padding: 0.25em 0.9em;
+}
+.ds-pill--mint {
+  background: var(--mint);
+  color: var(--mint-ink);
+}
+/* رمز التحقق الكبير */
+.ds-code {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: var(--fs-2xl);
+  letter-spacing: 0.18em;
+  font-variant-numeric: tabular-nums;
+  direction: ltr;
+}
+/* رمز QR قيد التجهيز: نص فوق الإطار */
+.ds-qr-frame {
+  position: relative;
+}
+.ds-qr-wait {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: var(--sp-3);
+  text-align: center;
+  line-height: 1.4;
+  font-weight: 800;
+  font-size: var(--fs-sm);
+  color: var(--ink);
+  background: var(--white);
+  border-radius: inherit;
+}
+.ds-qr-wait:empty {
+  display: none;
+}
+.ds-qr.is-pending canvas {
+  visibility: hidden;
+}
+/* بطاقة مصغّرة (مثل بطاقة الحكم بعد اتصاله) */
+.ds-card.is-compact .ds-qr-frame {
+  --qr: 100px;
 }
 
 /* ================================================================

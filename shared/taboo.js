@@ -44,6 +44,10 @@ export const TABOO_RULES = [
 /** قيمة «بلا حدّ» للتخطّيات (رقم لأن الحالة تُرسل JSON). */
 export const UNLIMITED = -1;
 
+/** نص قاعدة التخطّي بحسب إعداد اللعبة. */
+export const skipsRule = (t) =>
+  t.skipsPerGame === UNLIMITED ? "التخطّي بلا حدّ" : !t.skipsPerGame ? "لا تخطّي في هذه اللعبة" : `لكل فريق ${t.skipsPerGame} تخطّي طوال اللعبة`;
+
 /** كم تخطّياً بقي للفريق (Infinity = بلا حدّ). */
 export function skipsLeft(t, team) {
   if (t.skipsPerGame === UNLIMITED) return Infinity;

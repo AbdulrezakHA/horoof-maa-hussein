@@ -6,482 +6,377 @@
     <title>حروف مع حسين — الشاشة</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Cairo:wght@700;800;900&family=Tajawal:wght@700;800;900&display=swap"
-      rel="stylesheet" media="print" onload="this.media='all'"
-    />
-    <link rel="stylesheet" href="/css/screen.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Baloo+Bhaijaan+2:wght@500;700;800&family=Tajawal:wght@500;700;800&display=swap"
+          rel="stylesheet" media="print" onload="this.media='all'" />
+    <link rel="stylesheet" href="/css/ds.css" />
     <script src="/js/vendor/qrcode.js"></script>
   </head>
-  <body class="screen-body" data-game="none">
-    <div class="screen-viewport">
-      <svg
-        id="gameSvg"
-        class="game-svg"
-        viewBox="0 0 1920 1080"
-        preserveAspectRatio="xMidYMid meet"
-        xmlns="http://www.w3.org/2000/svg"
-        xmlns:xlink="http://www.w3.org/1999/xlink"
-      >
-        <defs>
-          <!-- تدرجات الألوان المطابقة لملف layout.svg والمدعومة بالتخصيص الديناميكي -->
-          <linearGradient id="grad-cell-unselected" x1="0" y1="0" x2="0" y2="1">
-            <stop id="stopCell1" offset="0%" stop-color="#ede5bb" />
-            <stop id="stopCell2" offset="100%" stop-color="#c4bd93" />
-          </linearGradient>
+  <body class="ds ds-tv ds-stage ds-tvroot" data-game="none">
+    <!-- ملاحظة: هذه الصفحة تُكتب يدوياً الآن (كان يولّدها scripts/gen-screen-html.mjs، أُلغي).
+         هندسة اللوحة (المسارات) مأخوذة من حروف مع حسين layout.svg؛ ألوانها كلها متغيّرات من ds.css. -->
+    <div class="ds-tvstage ds-scaled" id="tvStage">
+      <!-- لعبة «حروف مع حسين»: اللوحة يساراً والعمود الجانبي يميناً -->
+      <div id="huroofLayer" hidden>
+        <svg id="gameSvg" class="ds-tvboard" viewBox="0 0 1920 1080" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="grad-cell" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" style="stop-color: var(--cream-hi)" />
+              <stop offset="100%" style="stop-color: var(--cream)" />
+            </linearGradient>
+            <linearGradient id="grad-sel" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" style="stop-color: var(--sun-hi)" />
+              <stop offset="100%" style="stop-color: var(--sun)" />
+            </linearGradient>
+            <linearGradient id="grad-team-a" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" style="stop-color: var(--team-a-hi)" />
+              <stop offset="100%" style="stop-color: var(--team-a)" />
+            </linearGradient>
+            <linearGradient id="grad-team-b" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" style="stop-color: var(--team-b-hi)" />
+              <stop offset="100%" style="stop-color: var(--team-b)" />
+            </linearGradient>
+            <linearGradient id="grad-bg-right" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0%" style="stop-color: var(--stage-3)" />
+              <stop offset="100%" style="stop-color: var(--stage)" />
+            </linearGradient>
+            <filter id="drop-shadow-board" x="40" y="90" width="1060" height="900" filterUnits="userSpaceOnUse">
+              <feOffset dx="0" dy="4" />
+              <feGaussianBlur result="blur" stdDeviation="0" />
+              <feFlood style="flood-color: var(--ink)" flood-opacity="0.9" />
+              <feComposite in2="blur" operator="in" />
+              <feComposite in="SourceGraphic" />
+            </filter>
+          </defs>
 
-          <linearGradient id="grad-cell-selected" x1="0" y1="0" x2="0" y2="1">
-            <stop id="stopSel1" offset="0%" stop-color="#fcb017" />
-            <stop id="stopSel2" offset="100%" stop-color="#e9965e" />
-          </linearGradient>
+          <!-- خلفية اللوحة: الجانبان للفريق الثاني، والأعلى والأسفل للفريق الأول (كالتصميم الأصلي) -->
+          <rect id="bgLeft" class="ds-tvbg-left" x="-200" y="-100" width="1336" height="1280" />
+          <polygon id="polyTop" class="ds-tvgoal" points="962.92 231.1 172.81 231.1 0 0 1135.72 0 962.92 231.1" />
+          <polygon id="polyBottom" class="ds-tvgoal" points="172.81 848.9 962.92 848.9 1135.72 1080 0 1080 172.81 848.9" />
+          <rect id="bgRight" class="ds-tvbg-right" x="1135.72" y="-100" width="1800" height="1280" />
 
-          <linearGradient id="grad-team-a" x1="0" y1="0" x2="0" y2="1">
-            <stop id="stopTeamA1" offset="0%" stop-color="#7c78cb" />
-            <stop id="stopTeamA2" offset="100%" stop-color="#6965ae" />
-          </linearGradient>
-
-          <linearGradient id="grad-team-b" x1="0" y1="0" x2="0" y2="1">
-            <stop id="stopTeamB1" offset="0%" stop-color="#5fb3d6" />
-            <stop id="stopTeamB2" offset="100%" stop-color="#4b9cbf" />
-          </linearGradient>
-
-          <linearGradient id="grad-bg-right" x1="0" y1="0" x2="1" y2="0">
-            <stop id="stopBgRight1" offset="0%" stop-color="#73c4ee" />
-            <stop id="stopBgRight2" offset="100%" stop-color="#4b9cbf" />
-          </linearGradient>
-
-          <filter id="drop-shadow-board" x="40" y="90" width="1060" height="900" filterUnits="userSpaceOnUse">
-            <feOffset dx="0" dy="4" />
-            <feGaussianBlur result="blur" stdDeviation="0" />
-            <feFlood flood-color="#070808" flood-opacity="0.9" />
-            <feComposite in2="blur" operator="in" />
-            <feComposite in="SourceGraphic" />
-          </filter>
-        </defs>
-
-        <!-- خلفية الشاشة اليسرى (منطقة اللوحة السداسية) -->
-        <rect id="bgLeft" fill="#73c4ee" x="-200" y="-100" width="1336" height="1280" />
-
-        <!-- شبه المنحرف العلوي والسفلي (هدف الفريق أ: ربط أعلى بأسفل) -->
-        <polygon id="polyTop" points="962.92 231.1 172.81 231.1 0 0 1135.72 0 962.92 231.1" fill="url(#grad-team-a)" />
-        <polygon id="polyBottom" points="172.81 848.9 962.92 848.9 1135.72 1080 0 1080 172.81 848.9" fill="url(#grad-team-a)" />
-
-        <!-- خلفية الشاشة اليمنى (تمتد بعرض كبير لمنع أي هامش زائد على أي دقة شاشة) -->
-        <rect id="bgRight" fill="url(#grad-bg-right)" x="1135.72" y="-100" width="1800" height="1280" />
-
-        <!-- الخلايا الـ 25 (مصغرة بنسبة 0.93 حول المركز لتعطي مساحة تنفس متناسقة ومريحة) -->
-        <g filter="url(#drop-shadow-board)" id="boardCellsGroup" transform="translate(567.86, 546.13) scale(0.93) translate(-567.86, -546.13)">
-          
-      <g class="svg-cell" id="cell-r0c0" data-id="r0c0">
-        <path class="cell-path" d="M172.8,191.96v78.27c0,7.15,3.82,13.75,10,17.32l67.8,39.14c6.18,3.58,13.81,3.58,20,0l67.79-39.14c6.18-3.57,10-10.17,10-17.32v-78.27c0-7.15-3.82-13.75-10-17.32l-67.79-39.14c-6.19-3.58-13.82-3.58-20,0l-67.8,39.14C176.62,178.21,172.8,184.81,172.8,191.96Z" fill="url(#grad-cell-unselected)" stroke="#070808" stroke-width="4px" stroke-miterlimit="10"/>
-        <g class="cell-shine">
-          <ellipse class="cls-30" cx="210.1" cy="177.26" rx="20.18" ry="6.63" transform="translate(-60.48 128.8) rotate(-30)"/>
-          <ellipse class="cls-30" cx="243.66" cy="158.33" rx="9.47" ry="5.46" transform="translate(-46.52 143.04) rotate(-30)"/>
-        </g>
-        <text class="cell-text" x="260.60" y="231.10" text-anchor="middle" dominant-baseline="central">؟</text>
-      </g>
-      <g class="svg-cell" id="cell-r0c1" data-id="r0c1">
-        <path class="cell-path" d="M348.39,191.96v78.27c0,7.15,3.81,13.75,10,17.32l67.79,39.14c6.18,3.58,13.81,3.58,20,0l67.79-39.14c6.18-3.57,10-10.17,10-17.32v-78.27c0-7.15-3.82-13.75-10-17.32l-67.79-39.14c-6.19-3.58-13.82-3.58-20,0l-67.79,39.14C352.2,178.21,348.39,184.81,348.39,191.96Z" fill="url(#grad-cell-unselected)" stroke="#070808" stroke-width="4px" stroke-miterlimit="10"/>
-        <g class="cell-shine">
-          <ellipse class="cls-30" cx="385.03" cy="177.26" rx="20.18" ry="6.63" transform="translate(-37.04 216.26) rotate(-30)"/>
-          <ellipse class="cls-30" cx="418.6" cy="158.33" rx="9.47" ry="5.46" transform="translate(-23.08 230.51) rotate(-30)"/>
-        </g>
-        <text class="cell-text" x="436.19" y="231.10" text-anchor="middle" dominant-baseline="central">؟</text>
-      </g>
-      <g class="svg-cell" id="cell-r0c2" data-id="r0c2">
-        <path class="cell-path" d="M523.97,191.96v78.27c0,7.15,3.81,13.75,10,17.32l67.79,39.14c6.18,3.58,13.81,3.58,20,0l67.79-39.14c6.19-3.57,10-10.17,10-17.32v-78.27c0-7.15-3.81-13.75-10-17.32l-67.79-39.14c-6.19-3.58-13.82-3.58-20,0l-67.79,39.14C527.78,178.21,523.97,184.81,523.97,191.96Z" fill="url(#grad-cell-unselected)" stroke="#070808" stroke-width="4px" stroke-miterlimit="10"/>
-        <g class="cell-shine">
-          <ellipse class="cls-30" cx="559.96" cy="177.26" rx="20.18" ry="6.63" transform="translate(-13.61 303.73) rotate(-30)"/>
-          <ellipse class="cls-30" cx="593.53" cy="158.33" rx="9.47" ry="5.46" transform="translate(.35 317.98) rotate(-30)"/>
-        </g>
-        <text class="cell-text" x="611.76" y="231.10" text-anchor="middle" dominant-baseline="central">؟</text>
-      </g>
-      <g class="svg-cell" id="cell-r0c3" data-id="r0c3">
-        <path class="cell-path" d="M699.55,191.96v78.27c0,7.15,3.81,13.75,10,17.32l67.79,39.14c6.19,3.58,13.81,3.58,20,0l67.79-39.14c6.19-3.57,10-10.17,10-17.32v-78.27c0-7.15-3.81-13.75-10-17.32l-67.79-39.14c-6.19-3.58-13.81-3.58-20,0l-67.79,39.14C703.36,178.21,699.55,184.81,699.55,191.96Z" fill="url(#grad-cell-unselected)" stroke="#070808" stroke-width="4px" stroke-miterlimit="10"/>
-        <g class="cell-shine">
-          <ellipse class="cls-30" cx="734.9" cy="177.26" rx="20.18" ry="6.63" transform="translate(9.83 391.2) rotate(-30)"/>
-          <ellipse class="cls-30" cx="768.47" cy="158.33" rx="9.47" ry="5.46" transform="translate(23.79 405.45) rotate(-30)"/>
-        </g>
-        <text class="cell-text" x="787.34" y="231.10" text-anchor="middle" dominant-baseline="central">؟</text>
-      </g>
-      <g class="svg-cell" id="cell-r0c4" data-id="r0c4">
-        <path class="cell-path" d="M875.13,191.96v78.27c0,7.15,3.81,13.75,10,17.32l67.79,39.14c6.19,3.58,13.81,3.58,20,0l67.79-39.14c6.19-3.57,10-10.17,10-17.32v-78.27c0-7.15-3.81-13.75-10-17.32l-67.79-39.14c-6.19-3.58-13.81-3.58-20,0l-67.79,39.14C878.94,178.21,875.13,184.81,875.13,191.96Z" fill="url(#grad-cell-unselected)" stroke="#070808" stroke-width="4px" stroke-miterlimit="10"/>
-        <g class="cell-shine">
-          <ellipse class="cls-30" cx="909.83" cy="177.26" rx="20.18" ry="6.63" transform="translate(33.27 478.67) rotate(-30)"/>
-          <ellipse class="cls-30" cx="943.4" cy="158.33" rx="9.47" ry="5.46" transform="translate(47.23 492.91) rotate(-30)"/>
-        </g>
-        <text class="cell-text" x="962.92" y="231.10" text-anchor="middle" dominant-baseline="central">؟</text>
-      </g>
-      <g class="svg-cell" id="cell-r1c0" data-id="r1c0">
-        <path class="cell-path" d="M85.01,344.02v78.28c0,7.14,3.82,13.75,10,17.32l67.79,39.14c6.19,3.57,13.82,3.57,20,0l67.8-39.14c6.18-3.57,10-10.18,10-17.32v-78.28c0-7.14-3.82-13.75-10-17.32l-67.8-39.14c-6.18-3.57-13.81-3.57-20,0l-67.79,39.14C88.83,330.27,85.01,336.88,85.01,344.02Z" fill="url(#grad-cell-unselected)" stroke="#070808" stroke-width="4px" stroke-miterlimit="10"/>
-        <g class="cell-shine">
-          <ellipse class="cls-30" cx="120.28" cy="329.29" rx="20.18" ry="6.63" transform="translate(-148.53 104.26) rotate(-30)"/>
-          <ellipse class="cls-30" cx="153.85" cy="310.36" rx="9.47" ry="5.46" transform="translate(-134.57 118.51) rotate(-30)"/>
-        </g>
-        <text class="cell-text" x="172.81" y="383.16" text-anchor="middle" dominant-baseline="central">؟</text>
-      </g>
-      <g class="svg-cell" id="cell-r1c1" data-id="r1c1">
-        <path class="cell-path" d="M260.6,344.02v78.28c0,7.14,3.81,13.75,10,17.32l67.79,39.14c6.18,3.57,13.81,3.57,20,0l67.79-39.14c6.18-3.57,10-10.18,10-17.32v-78.28c0-7.14-3.82-13.75-10-17.32l-67.79-39.14c-6.19-3.57-13.82-3.57-20,0l-67.79,39.14C264.41,330.27,260.6,336.88,260.6,344.02Z" fill="url(#grad-cell-unselected)" stroke="#070808" stroke-width="4px" stroke-miterlimit="10"/>
-        <g class="cell-shine">
-          <ellipse class="cls-30" cx="295.22" cy="329.29" rx="20.18" ry="6.63" transform="translate(-125.09 191.73) rotate(-30)"/>
-          <ellipse class="cls-30" cx="328.79" cy="310.36" rx="9.47" ry="5.46" transform="translate(-111.13 205.97) rotate(-30)"/>
-        </g>
-        <text class="cell-text" x="348.40" y="383.16" text-anchor="middle" dominant-baseline="central">؟</text>
-      </g>
-      <g class="svg-cell" id="cell-r1c2" data-id="r1c2">
-        <path class="cell-path" d="M436.18,344.02v78.28c0,7.14,3.81,13.75,10,17.32l67.79,39.14c6.18,3.57,13.81,3.57,20,0l67.79-39.14c6.18-3.57,10-10.18,10-17.32v-78.28c0-7.14-3.82-13.75-10-17.32l-67.79-39.14c-6.19-3.57-13.82-3.57-20,0l-67.79,39.14C439.99,330.27,436.18,336.88,436.18,344.02Z" fill="url(#grad-cell-unselected)" stroke="#070808" stroke-width="4px" stroke-miterlimit="10"/>
-        <g class="cell-shine">
-          <ellipse class="cls-30" cx="470.15" cy="329.29" rx="20.18" ry="6.63" transform="translate(-101.65 279.19) rotate(-30)"/>
-          <ellipse class="cls-30" cx="503.72" cy="310.36" rx="9.47" ry="5.46" transform="translate(-87.69 293.44) rotate(-30)"/>
-        </g>
-        <text class="cell-text" x="523.98" y="383.16" text-anchor="middle" dominant-baseline="central">؟</text>
-      </g>
-      <g class="svg-cell" id="cell-r1c3" data-id="r1c3">
-        <path class="cell-path" d="M611.76,344.02v78.28c0,7.14,3.81,13.75,10,17.32l67.79,39.14c6.19,3.57,13.81,3.57,20,0l67.79-39.14c6.19-3.57,10-10.18,10-17.32v-78.28c0-7.14-3.81-13.75-10-17.32l-67.79-39.14c-6.19-3.57-13.81-3.57-20,0l-67.79,39.14C615.57,330.27,611.76,336.88,611.76,344.02Z" fill="url(#grad-cell-unselected)" stroke="#070808" stroke-width="4px" stroke-miterlimit="10"/>
-        <g class="cell-shine">
-          <ellipse class="cls-30" cx="645.09" cy="329.29" rx="20.18" ry="6.63" transform="translate(-78.22 366.66) rotate(-30)"/>
-          <ellipse class="cls-30" cx="678.66" cy="310.36" rx="9.47" ry="5.46" transform="translate(-64.26 380.91) rotate(-30)"/>
-        </g>
-        <text class="cell-text" x="699.55" y="383.16" text-anchor="middle" dominant-baseline="central">؟</text>
-      </g>
-      <g class="svg-cell" id="cell-r1c4" data-id="r1c4">
-        <path class="cell-path" d="M787.34,344.02v78.28c0,7.14,3.81,13.75,10,17.32l67.79,39.14c6.19,3.57,13.81,3.57,20,0l67.79-39.14c6.19-3.57,10-10.18,10-17.32v-78.28c0-7.14-3.81-13.75-10-17.32l-67.79-39.14c-6.19-3.57-13.81-3.57-20,0l-67.79,39.14C791.15,330.27,787.34,336.88,787.34,344.02Z" fill="url(#grad-cell-unselected)" stroke="#070808" stroke-width="4px" stroke-miterlimit="10"/>
-        <g class="cell-shine">
-          <ellipse class="cls-30" cx="820.02" cy="329.29" rx="20.18" ry="6.63" transform="translate(-54.78 454.13) rotate(-30)"/>
-          <ellipse class="cls-30" cx="853.59" cy="310.36" rx="9.47" ry="5.46" transform="translate(-40.82 468.38) rotate(-30)"/>
-        </g>
-        <text class="cell-text" x="875.13" y="383.16" text-anchor="middle" dominant-baseline="central">؟</text>
-      </g>
-      <g class="svg-cell" id="cell-r2c0" data-id="r2c0">
-        <path class="cell-path" d="M172.8,496.08v78.28c0,7.15,3.82,13.75,10,17.32l67.8,39.14c6.18,3.57,13.81,3.57,20,0l67.79-39.14c6.18-3.57,10-10.17,10-17.32v-78.28c0-7.14-3.82-13.74-10-17.32l-67.79-39.13c-6.19-3.58-13.82-3.58-20,0l-67.8,39.13C176.62,482.34,172.8,488.94,172.8,496.08Z" fill="url(#grad-cell-unselected)" stroke="#070808" stroke-width="4px" stroke-miterlimit="10"/>
-        <g class="cell-shine">
-          <ellipse class="cls-30" cx="210.1" cy="481.31" rx="20.18" ry="6.63" transform="translate(-212.51 169.53) rotate(-30)"/>
-          <ellipse class="cls-30" cx="243.66" cy="462.38" rx="9.47" ry="5.46" transform="translate(-198.55 183.78) rotate(-30)"/>
-        </g>
-        <text class="cell-text" x="260.60" y="535.22" text-anchor="middle" dominant-baseline="central">؟</text>
-      </g>
-      <g class="svg-cell" id="cell-r2c1" data-id="r2c1">
-        <path class="cell-path" d="M348.39,496.08v78.28c0,7.15,3.81,13.75,10,17.32l67.79,39.14c6.18,3.57,13.81,3.57,20,0l67.79-39.14c6.18-3.57,10-10.17,10-17.32v-78.28c0-7.14-3.82-13.74-10-17.32l-67.79-39.13c-6.19-3.58-13.82-3.58-20,0l-67.79,39.13C352.2,482.34,348.39,488.94,348.39,496.08Z" fill="url(#grad-cell-unselected)" stroke="#070808" stroke-width="4px" stroke-miterlimit="10"/>
-        <g class="cell-shine">
-          <ellipse class="cls-30" cx="385.03" cy="481.31" rx="20.18" ry="6.63" transform="translate(-189.07 257) rotate(-30)"/>
-          <ellipse class="cls-30" cx="418.6" cy="462.38" rx="9.47" ry="5.46" transform="translate(-175.11 271.25) rotate(-30)"/>
-        </g>
-        <text class="cell-text" x="436.19" y="535.22" text-anchor="middle" dominant-baseline="central">؟</text>
-      </g>
-      <g class="svg-cell" id="cell-r2c2" data-id="r2c2">
-        <path class="cell-path" d="M523.97,496.08v78.28c0,7.15,3.81,13.75,10,17.32l67.79,39.14c6.18,3.57,13.81,3.57,20,0l67.79-39.14c6.19-3.57,10-10.17,10-17.32v-78.28c0-7.14-3.81-13.74-10-17.32l-67.79-39.13c-6.19-3.58-13.82-3.58-20,0l-67.79,39.13C527.78,482.34,523.97,488.94,523.97,496.08Z" fill="url(#grad-cell-unselected)" stroke="#070808" stroke-width="4px" stroke-miterlimit="10"/>
-        <g class="cell-shine">
-          <ellipse class="cls-30" cx="559.96" cy="481.31" rx="20.18" ry="6.63" transform="translate(-165.64 344.47) rotate(-30)"/>
-          <ellipse class="cls-30" cx="593.53" cy="462.38" rx="9.47" ry="5.46" transform="translate(-151.67 358.71) rotate(-30)"/>
-        </g>
-        <text class="cell-text" x="611.76" y="535.22" text-anchor="middle" dominant-baseline="central">؟</text>
-      </g>
-      <g class="svg-cell" id="cell-r2c3" data-id="r2c3">
-        <path class="cell-path" d="M699.55,496.08v78.28c0,7.15,3.81,13.75,10,17.32l67.79,39.14c6.19,3.57,13.81,3.57,20,0l67.79-39.14c6.19-3.57,10-10.17,10-17.32v-78.28c0-7.14-3.81-13.74-10-17.32l-67.79-39.13c-6.19-3.58-13.81-3.58-20,0l-67.79,39.13C703.36,482.34,699.55,488.94,699.55,496.08Z" fill="url(#grad-cell-unselected)" stroke="#070808" stroke-width="4px" stroke-miterlimit="10"/>
-        <g class="cell-shine">
-          <ellipse class="cls-30" cx="734.9" cy="481.31" rx="20.18" ry="6.63" transform="translate(-142.2 431.93) rotate(-30)"/>
-          <ellipse class="cls-30" cx="768.47" cy="462.38" rx="9.47" ry="5.46" transform="translate(-128.24 446.18) rotate(-30)"/>
-        </g>
-        <text class="cell-text" x="787.34" y="535.22" text-anchor="middle" dominant-baseline="central">؟</text>
-      </g>
-      <g class="svg-cell" id="cell-r2c4" data-id="r2c4">
-        <path class="cell-path" d="M875.13,496.08v78.28c0,7.15,3.81,13.75,10,17.32l67.79,39.14c6.19,3.57,13.81,3.57,20,0l67.79-39.14c6.19-3.57,10-10.17,10-17.32v-78.28c0-7.14-3.81-13.74-10-17.32l-67.79-39.13c-6.19-3.58-13.81-3.58-20,0l-67.79,39.13C878.94,482.34,875.13,488.94,875.13,496.08Z" fill="url(#grad-cell-unselected)" stroke="#070808" stroke-width="4px" stroke-miterlimit="10"/>
-        <g class="cell-shine">
-          <ellipse class="cls-30" cx="909.83" cy="481.31" rx="20.18" ry="6.63" transform="translate(-118.76 519.4) rotate(-30)"/>
-          <ellipse class="cls-30" cx="943.4" cy="462.38" rx="9.47" ry="5.46" transform="translate(-104.8 533.65) rotate(-30)"/>
-        </g>
-        <text class="cell-text" x="962.92" y="535.22" text-anchor="middle" dominant-baseline="central">؟</text>
-      </g>
-      <g class="svg-cell" id="cell-r3c0" data-id="r3c0">
-        <path class="cell-path" d="M85.01,648.15v78.28c0,7.14,3.82,13.74,10,17.32l67.79,39.14c6.19,3.57,13.82,3.57,20,0l67.8-39.14c6.18-3.58,10-10.18,10-17.32v-78.28c0-7.15-3.82-13.75-10-17.32l-67.8-39.14c-6.18-3.57-13.81-3.57-20,0l-67.79,39.14C88.83,634.4,85.01,641,85.01,648.15Z" fill="url(#grad-cell-unselected)" stroke="#070808" stroke-width="4px" stroke-miterlimit="10"/>
-        <g class="cell-shine">
-          <ellipse class="cls-30" cx="120.28" cy="633.34" rx="20.18" ry="6.63" transform="translate(-300.56 144.99) rotate(-30)"/>
-          <ellipse class="cls-30" cx="153.85" cy="614.41" rx="9.47" ry="5.46" transform="translate(-286.59 159.24) rotate(-30)"/>
-        </g>
-        <text class="cell-text" x="172.81" y="687.29" text-anchor="middle" dominant-baseline="central">؟</text>
-      </g>
-      <g class="svg-cell" id="cell-r3c1" data-id="r3c1">
-        <path class="cell-path" d="M260.6,648.15v78.28c0,7.14,3.81,13.74,10,17.32l67.79,39.14c6.18,3.57,13.81,3.57,20,0l67.79-39.14c6.18-3.58,10-10.18,10-17.32v-78.28c0-7.15-3.82-13.75-10-17.32l-67.79-39.14c-6.19-3.57-13.82-3.57-20,0l-67.79,39.14C264.41,634.4,260.6,641,260.6,648.15Z" fill="url(#grad-cell-unselected)" stroke="#070808" stroke-width="4px" stroke-miterlimit="10"/>
-        <g class="cell-shine">
-          <ellipse class="cls-30" cx="295.22" cy="633.34" rx="20.18" ry="6.63" transform="translate(-277.12 232.46) rotate(-30)"/>
-          <ellipse class="cls-30" cx="328.79" cy="614.41" rx="9.47" ry="5.46" transform="translate(-263.16 246.71) rotate(-30)"/>
-        </g>
-        <text class="cell-text" x="348.40" y="687.29" text-anchor="middle" dominant-baseline="central">؟</text>
-      </g>
-      <g class="svg-cell" id="cell-r3c2" data-id="r3c2">
-        <path class="cell-path" d="M436.18,648.15v78.28c0,7.14,3.81,13.74,10,17.32l67.79,39.14c6.18,3.57,13.81,3.57,20,0l67.79-39.14c6.18-3.58,10-10.18,10-17.32v-78.28c0-7.15-3.82-13.75-10-17.32l-67.79-39.14c-6.19-3.57-13.82-3.57-20,0l-67.79,39.14C439.99,634.4,436.18,641,436.18,648.15Z" fill="url(#grad-cell-unselected)" stroke="#070808" stroke-width="4px" stroke-miterlimit="10"/>
-        <g class="cell-shine">
-          <ellipse class="cls-30" cx="470.15" cy="633.34" rx="20.18" ry="6.63" transform="translate(-253.68 319.93) rotate(-30)"/>
-          <ellipse class="cls-30" cx="503.72" cy="614.41" rx="9.47" ry="5.46" transform="translate(-239.72 334.18) rotate(-30)"/>
-        </g>
-        <text class="cell-text" x="523.98" y="687.29" text-anchor="middle" dominant-baseline="central">؟</text>
-      </g>
-      <g class="svg-cell" id="cell-r3c3" data-id="r3c3">
-        <path class="cell-path" d="M611.76,648.15v78.28c0,7.14,3.81,13.74,10,17.32l67.79,39.14c6.19,3.57,13.81,3.57,20,0l67.79-39.14c6.19-3.58,10-10.18,10-17.32v-78.28c0-7.15-3.81-13.75-10-17.32l-67.79-39.14c-6.19-3.57-13.81-3.57-20,0l-67.79,39.14C615.57,634.4,611.76,641,611.76,648.15Z" fill="url(#grad-cell-unselected)" stroke="#070808" stroke-width="4px" stroke-miterlimit="10"/>
-        <g class="cell-shine">
-          <ellipse class="cls-30" cx="645.09" cy="633.34" rx="20.18" ry="6.63" transform="translate(-230.25 407.4) rotate(-30)"/>
-          <ellipse class="cls-30" cx="678.66" cy="614.41" rx="9.47" ry="5.46" transform="translate(-216.28 421.64) rotate(-30)"/>
-        </g>
-        <text class="cell-text" x="699.55" y="687.29" text-anchor="middle" dominant-baseline="central">؟</text>
-      </g>
-      <g class="svg-cell" id="cell-r3c4" data-id="r3c4">
-        <path class="cell-path" d="M787.34,648.15v78.28c0,7.14,3.81,13.74,10,17.32l67.79,39.14c6.19,3.57,13.81,3.57,20,0l67.79-39.14c6.19-3.58,10-10.18,10-17.32v-78.28c0-7.15-3.81-13.75-10-17.32l-67.79-39.14c-6.19-3.57-13.81-3.57-20,0l-67.79,39.14C791.15,634.4,787.34,641,787.34,648.15Z" fill="url(#grad-cell-unselected)" stroke="#070808" stroke-width="4px" stroke-miterlimit="10"/>
-        <g class="cell-shine">
-          <ellipse class="cls-30" cx="820.02" cy="633.34" rx="20.18" ry="6.63" transform="translate(-206.81 494.86) rotate(-30)"/>
-          <ellipse class="cls-30" cx="853.59" cy="614.41" rx="9.47" ry="5.46" transform="translate(-192.85 509.11) rotate(-30)"/>
-        </g>
-        <text class="cell-text" x="875.13" y="687.29" text-anchor="middle" dominant-baseline="central">؟</text>
-      </g>
-      <g class="svg-cell" id="cell-r4c0" data-id="r4c0">
-        <path class="cell-path" d="M172.8,800.21v78.28c0,7.15,3.82,13.75,10,17.32l67.8,39.14c6.18,3.57,13.81,3.57,20,0l67.79-39.14c6.18-3.57,10-10.17,10-17.32v-78.28c0-7.14-3.82-13.74-10-17.32l-67.79-39.14c-6.19-3.57-13.82-3.57-20,0l-67.8,39.14C176.62,786.47,172.8,793.07,172.8,800.21Z" fill="url(#grad-cell-unselected)" stroke="#070808" stroke-width="4px" stroke-miterlimit="10"/>
-        <g class="cell-shine">
-          <ellipse class="cls-30" cx="210.1" cy="785.37" rx="20.18" ry="6.63" transform="translate(-364.54 210.27) rotate(-30)"/>
-          <ellipse class="cls-30" cx="243.66" cy="766.44" rx="9.47" ry="5.46" transform="translate(-350.58 224.51) rotate(-30)"/>
-        </g>
-        <text class="cell-text" x="260.60" y="839.35" text-anchor="middle" dominant-baseline="central">؟</text>
-      </g>
-      <g class="svg-cell" id="cell-r4c1" data-id="r4c1">
-        <path class="cell-path" d="M348.39,800.21v78.28c0,7.15,3.81,13.75,10,17.32l67.79,39.14c6.18,3.57,13.81,3.57,20,0l67.79-39.14c6.18-3.57,10-10.17,10-17.32v-78.28c0-7.14-3.82-13.74-10-17.32l-67.79-39.14c-6.19-3.57-13.82-3.57-20,0l-67.79,39.14C352.2,786.47,348.39,793.07,348.39,800.21Z" fill="url(#grad-cell-unselected)" stroke="#070808" stroke-width="4px" stroke-miterlimit="10"/>
-        <g class="cell-shine">
-          <ellipse class="cls-30" cx="385.03" cy="785.37" rx="20.18" ry="6.63" transform="translate(-341.1 297.73) rotate(-30)"/>
-          <ellipse class="cls-30" cx="418.6" cy="766.44" rx="9.47" ry="5.46" transform="translate(-327.14 311.98) rotate(-30)"/>
-        </g>
-        <text class="cell-text" x="436.19" y="839.35" text-anchor="middle" dominant-baseline="central">؟</text>
-      </g>
-      <g class="svg-cell" id="cell-r4c2" data-id="r4c2">
-        <path class="cell-path" d="M523.97,800.21v78.28c0,7.15,3.81,13.75,10,17.32l67.79,39.14c6.18,3.57,13.81,3.57,20,0l67.79-39.14c6.19-3.57,10-10.17,10-17.32v-78.28c0-7.14-3.81-13.74-10-17.32l-67.79-39.14c-6.19-3.57-13.82-3.57-20,0l-67.79,39.14C527.78,786.47,523.97,793.07,523.97,800.21Z" fill="url(#grad-cell-unselected)" stroke="#070808" stroke-width="4px" stroke-miterlimit="10"/>
-        <g class="cell-shine">
-          <ellipse class="cls-30" cx="559.96" cy="785.37" rx="20.18" ry="6.63" transform="translate(-317.66 385.2) rotate(-30)"/>
-          <ellipse class="cls-30" cx="593.53" cy="766.44" rx="9.47" ry="5.46" transform="translate(-303.7 399.45) rotate(-30)"/>
-        </g>
-        <text class="cell-text" x="611.76" y="839.35" text-anchor="middle" dominant-baseline="central">؟</text>
-      </g>
-      <g class="svg-cell" id="cell-r4c3" data-id="r4c3">
-        <path class="cell-path" d="M699.55,800.21v78.28c0,7.15,3.81,13.75,10,17.32l67.79,39.14c6.19,3.57,13.81,3.57,20,0l67.79-39.14c6.19-3.57,10-10.17,10-17.32v-78.28c0-7.14-3.81-13.74-10-17.32l-67.79-39.14c-6.19-3.57-13.81-3.57-20,0l-67.79,39.14C703.36,786.47,699.55,793.07,699.55,800.21Z" fill="url(#grad-cell-unselected)" stroke="#070808" stroke-width="4px" stroke-miterlimit="10"/>
-        <g class="cell-shine">
-          <ellipse class="cls-30" cx="734.9" cy="785.37" rx="20.18" ry="6.63" transform="translate(-294.23 472.67) rotate(-30)"/>
-          <ellipse class="cls-30" cx="768.47" cy="766.44" rx="9.47" ry="5.46" transform="translate(-280.26 486.92) rotate(-30)"/>
-        </g>
-        <text class="cell-text" x="787.34" y="839.35" text-anchor="middle" dominant-baseline="central">؟</text>
-      </g>
-      <g class="svg-cell" id="cell-r4c4" data-id="r4c4">
-        <path class="cell-path" d="M875.13,800.21v78.28c0,7.15,3.81,13.75,10,17.32l67.79,39.14c6.19,3.57,13.81,3.57,20,0l67.79-39.14c6.19-3.57,10-10.17,10-17.32v-78.28c0-7.14-3.81-13.74-10-17.32l-67.79-39.14c-6.19-3.57-13.81-3.57-20,0l-67.79,39.14C878.94,786.47,875.13,793.07,875.13,800.21Z" fill="url(#grad-cell-unselected)" stroke="#070808" stroke-width="4px" stroke-miterlimit="10"/>
-        <g class="cell-shine">
-          <ellipse class="cls-30" cx="909.83" cy="785.37" rx="20.18" ry="6.63" transform="translate(-270.79 560.14) rotate(-30)"/>
-          <ellipse class="cls-30" cx="943.4" cy="766.44" rx="9.47" ry="5.46" transform="translate(-256.83 574.38) rotate(-30)"/>
-        </g>
-        <text class="cell-text" x="962.92" y="839.35" text-anchor="middle" dominant-baseline="central">؟</text>
-      </g>
-        </g>
-
-        <!-- الحرف المختار في أعلى اليمين (Zone: y=150 to 390) -->
-        <g id="selectedHexGroup" class="selected-hex-group">
-          <path
-            id="selectedHexPath"
-            d="M1440.07,232.52v78.27c0,7.15,3.81,13.75,10,17.32l67.79,39.14c6.19,3.57,13.81,3.57,20,0l67.79-39.14c6.19-3.57,10-10.17,10-17.32v-78.27c0-7.15-3.81-13.75-10-17.33l-67.79-39.13c-6.19-3.58-13.81-3.58-20,0l-67.79,39.13C1443.88,218.77,1440.07,225.37,1440.07,232.52Z"
-            fill="url(#grad-cell-selected)"
-            stroke="#070808"
-            stroke-width="4px"
-            stroke-miterlimit="10"
-          />
-          <g class="selected-shine">
-            <ellipse class="cls-30" cx="1474.78" cy="217.82" rx="20.18" ry="6.63" transform="translate(88.67 766.57) rotate(-30)"/>
-      <ellipse class="cls-30" cx="1508.34" cy="198.89" rx="9.47" ry="5.46" transform="translate(102.64 780.82) rotate(-30)"/>
+          <!-- الخلايا الـ 25 -->
+          <g filter="url(#drop-shadow-board)" id="boardCellsGroup" transform="translate(567.86, 546.13) scale(0.93) translate(-567.86, -546.13)">
+          <g class="ds-tvcell" id="cell-r0c0" data-id="r0c0">
+            <path class="ds-tvcell-path" d="M172.8,191.96v78.27c0,7.15,3.82,13.75,10,17.32l67.8,39.14c6.18,3.58,13.81,3.58,20,0l67.79-39.14c6.18-3.57,10-10.17,10-17.32v-78.27c0-7.15-3.82-13.75-10-17.32l-67.79-39.14c-6.19-3.58-13.82-3.58-20,0l-67.8,39.14C176.62,178.21,172.8,184.81,172.8,191.96Z" />
+            <g class="ds-tvcell-shine">
+            <ellipse cx="210.1" cy="177.26" rx="20.18" ry="6.63" transform="translate(-60.48 128.8) rotate(-30)"/>
+            <ellipse cx="243.66" cy="158.33" rx="9.47" ry="5.46" transform="translate(-46.52 143.04) rotate(-30)"/>
+            </g>
+            <text class="ds-tvcell-text" x="260.60" y="231.10" text-anchor="middle">؟</text>
           </g>
-          <text
-            id="selectedHexText"
-            class="selected-hex-text"
-            x="1527.87"
-            y="271.66"
-            text-anchor="middle"
-            dominant-baseline="central"
-          >أ</text>
-        </g>
+          <g class="ds-tvcell" id="cell-r0c1" data-id="r0c1">
+            <path class="ds-tvcell-path" d="M348.39,191.96v78.27c0,7.15,3.81,13.75,10,17.32l67.79,39.14c6.18,3.58,13.81,3.58,20,0l67.79-39.14c6.18-3.57,10-10.17,10-17.32v-78.27c0-7.15-3.82-13.75-10-17.32l-67.79-39.14c-6.19-3.58-13.82-3.58-20,0l-67.79,39.14C352.2,178.21,348.39,184.81,348.39,191.96Z" />
+            <g class="ds-tvcell-shine">
+            <ellipse cx="385.03" cy="177.26" rx="20.18" ry="6.63" transform="translate(-37.04 216.26) rotate(-30)"/>
+            <ellipse cx="418.6" cy="158.33" rx="9.47" ry="5.46" transform="translate(-23.08 230.51) rotate(-30)"/>
+            </g>
+            <text class="ds-tvcell-text" x="436.19" y="231.10" text-anchor="middle">؟</text>
+          </g>
+          <g class="ds-tvcell" id="cell-r0c2" data-id="r0c2">
+            <path class="ds-tvcell-path" d="M523.97,191.96v78.27c0,7.15,3.81,13.75,10,17.32l67.79,39.14c6.18,3.58,13.81,3.58,20,0l67.79-39.14c6.19-3.57,10-10.17,10-17.32v-78.27c0-7.15-3.81-13.75-10-17.32l-67.79-39.14c-6.19-3.58-13.82-3.58-20,0l-67.79,39.14C527.78,178.21,523.97,184.81,523.97,191.96Z" />
+            <g class="ds-tvcell-shine">
+            <ellipse cx="559.96" cy="177.26" rx="20.18" ry="6.63" transform="translate(-13.61 303.73) rotate(-30)"/>
+            <ellipse cx="593.53" cy="158.33" rx="9.47" ry="5.46" transform="translate(.35 317.98) rotate(-30)"/>
+            </g>
+            <text class="ds-tvcell-text" x="611.76" y="231.10" text-anchor="middle">؟</text>
+          </g>
+          <g class="ds-tvcell" id="cell-r0c3" data-id="r0c3">
+            <path class="ds-tvcell-path" d="M699.55,191.96v78.27c0,7.15,3.81,13.75,10,17.32l67.79,39.14c6.19,3.58,13.81,3.58,20,0l67.79-39.14c6.19-3.57,10-10.17,10-17.32v-78.27c0-7.15-3.81-13.75-10-17.32l-67.79-39.14c-6.19-3.58-13.81-3.58-20,0l-67.79,39.14C703.36,178.21,699.55,184.81,699.55,191.96Z" />
+            <g class="ds-tvcell-shine">
+            <ellipse cx="734.9" cy="177.26" rx="20.18" ry="6.63" transform="translate(9.83 391.2) rotate(-30)"/>
+            <ellipse cx="768.47" cy="158.33" rx="9.47" ry="5.46" transform="translate(23.79 405.45) rotate(-30)"/>
+            </g>
+            <text class="ds-tvcell-text" x="787.34" y="231.10" text-anchor="middle">؟</text>
+          </g>
+          <g class="ds-tvcell" id="cell-r0c4" data-id="r0c4">
+            <path class="ds-tvcell-path" d="M875.13,191.96v78.27c0,7.15,3.81,13.75,10,17.32l67.79,39.14c6.19,3.58,13.81,3.58,20,0l67.79-39.14c6.19-3.57,10-10.17,10-17.32v-78.27c0-7.15-3.81-13.75-10-17.32l-67.79-39.14c-6.19-3.58-13.81-3.58-20,0l-67.79,39.14C878.94,178.21,875.13,184.81,875.13,191.96Z" />
+            <g class="ds-tvcell-shine">
+            <ellipse cx="909.83" cy="177.26" rx="20.18" ry="6.63" transform="translate(33.27 478.67) rotate(-30)"/>
+            <ellipse cx="943.4" cy="158.33" rx="9.47" ry="5.46" transform="translate(47.23 492.91) rotate(-30)"/>
+            </g>
+            <text class="ds-tvcell-text" x="962.92" y="231.10" text-anchor="middle">؟</text>
+          </g>
+          <g class="ds-tvcell" id="cell-r1c0" data-id="r1c0">
+            <path class="ds-tvcell-path" d="M85.01,344.02v78.28c0,7.14,3.82,13.75,10,17.32l67.79,39.14c6.19,3.57,13.82,3.57,20,0l67.8-39.14c6.18-3.57,10-10.18,10-17.32v-78.28c0-7.14-3.82-13.75-10-17.32l-67.8-39.14c-6.18-3.57-13.81-3.57-20,0l-67.79,39.14C88.83,330.27,85.01,336.88,85.01,344.02Z" />
+            <g class="ds-tvcell-shine">
+            <ellipse cx="120.28" cy="329.29" rx="20.18" ry="6.63" transform="translate(-148.53 104.26) rotate(-30)"/>
+            <ellipse cx="153.85" cy="310.36" rx="9.47" ry="5.46" transform="translate(-134.57 118.51) rotate(-30)"/>
+            </g>
+            <text class="ds-tvcell-text" x="172.81" y="383.16" text-anchor="middle">؟</text>
+          </g>
+          <g class="ds-tvcell" id="cell-r1c1" data-id="r1c1">
+            <path class="ds-tvcell-path" d="M260.6,344.02v78.28c0,7.14,3.81,13.75,10,17.32l67.79,39.14c6.18,3.57,13.81,3.57,20,0l67.79-39.14c6.18-3.57,10-10.18,10-17.32v-78.28c0-7.14-3.82-13.75-10-17.32l-67.79-39.14c-6.19-3.57-13.82-3.57-20,0l-67.79,39.14C264.41,330.27,260.6,336.88,260.6,344.02Z" />
+            <g class="ds-tvcell-shine">
+            <ellipse cx="295.22" cy="329.29" rx="20.18" ry="6.63" transform="translate(-125.09 191.73) rotate(-30)"/>
+            <ellipse cx="328.79" cy="310.36" rx="9.47" ry="5.46" transform="translate(-111.13 205.97) rotate(-30)"/>
+            </g>
+            <text class="ds-tvcell-text" x="348.40" y="383.16" text-anchor="middle">؟</text>
+          </g>
+          <g class="ds-tvcell" id="cell-r1c2" data-id="r1c2">
+            <path class="ds-tvcell-path" d="M436.18,344.02v78.28c0,7.14,3.81,13.75,10,17.32l67.79,39.14c6.18,3.57,13.81,3.57,20,0l67.79-39.14c6.18-3.57,10-10.18,10-17.32v-78.28c0-7.14-3.82-13.75-10-17.32l-67.79-39.14c-6.19-3.57-13.82-3.57-20,0l-67.79,39.14C439.99,330.27,436.18,336.88,436.18,344.02Z" />
+            <g class="ds-tvcell-shine">
+            <ellipse cx="470.15" cy="329.29" rx="20.18" ry="6.63" transform="translate(-101.65 279.19) rotate(-30)"/>
+            <ellipse cx="503.72" cy="310.36" rx="9.47" ry="5.46" transform="translate(-87.69 293.44) rotate(-30)"/>
+            </g>
+            <text class="ds-tvcell-text" x="523.98" y="383.16" text-anchor="middle">؟</text>
+          </g>
+          <g class="ds-tvcell" id="cell-r1c3" data-id="r1c3">
+            <path class="ds-tvcell-path" d="M611.76,344.02v78.28c0,7.14,3.81,13.75,10,17.32l67.79,39.14c6.19,3.57,13.81,3.57,20,0l67.79-39.14c6.19-3.57,10-10.18,10-17.32v-78.28c0-7.14-3.81-13.75-10-17.32l-67.79-39.14c-6.19-3.57-13.81-3.57-20,0l-67.79,39.14C615.57,330.27,611.76,336.88,611.76,344.02Z" />
+            <g class="ds-tvcell-shine">
+            <ellipse cx="645.09" cy="329.29" rx="20.18" ry="6.63" transform="translate(-78.22 366.66) rotate(-30)"/>
+            <ellipse cx="678.66" cy="310.36" rx="9.47" ry="5.46" transform="translate(-64.26 380.91) rotate(-30)"/>
+            </g>
+            <text class="ds-tvcell-text" x="699.55" y="383.16" text-anchor="middle">؟</text>
+          </g>
+          <g class="ds-tvcell" id="cell-r1c4" data-id="r1c4">
+            <path class="ds-tvcell-path" d="M787.34,344.02v78.28c0,7.14,3.81,13.75,10,17.32l67.79,39.14c6.19,3.57,13.81,3.57,20,0l67.79-39.14c6.19-3.57,10-10.18,10-17.32v-78.28c0-7.14-3.81-13.75-10-17.32l-67.79-39.14c-6.19-3.57-13.81-3.57-20,0l-67.79,39.14C791.15,330.27,787.34,336.88,787.34,344.02Z" />
+            <g class="ds-tvcell-shine">
+            <ellipse cx="820.02" cy="329.29" rx="20.18" ry="6.63" transform="translate(-54.78 454.13) rotate(-30)"/>
+            <ellipse cx="853.59" cy="310.36" rx="9.47" ry="5.46" transform="translate(-40.82 468.38) rotate(-30)"/>
+            </g>
+            <text class="ds-tvcell-text" x="875.13" y="383.16" text-anchor="middle">؟</text>
+          </g>
+          <g class="ds-tvcell" id="cell-r2c0" data-id="r2c0">
+            <path class="ds-tvcell-path" d="M172.8,496.08v78.28c0,7.15,3.82,13.75,10,17.32l67.8,39.14c6.18,3.57,13.81,3.57,20,0l67.79-39.14c6.18-3.57,10-10.17,10-17.32v-78.28c0-7.14-3.82-13.74-10-17.32l-67.79-39.13c-6.19-3.58-13.82-3.58-20,0l-67.8,39.13C176.62,482.34,172.8,488.94,172.8,496.08Z" />
+            <g class="ds-tvcell-shine">
+            <ellipse cx="210.1" cy="481.31" rx="20.18" ry="6.63" transform="translate(-212.51 169.53) rotate(-30)"/>
+            <ellipse cx="243.66" cy="462.38" rx="9.47" ry="5.46" transform="translate(-198.55 183.78) rotate(-30)"/>
+            </g>
+            <text class="ds-tvcell-text" x="260.60" y="535.22" text-anchor="middle">؟</text>
+          </g>
+          <g class="ds-tvcell" id="cell-r2c1" data-id="r2c1">
+            <path class="ds-tvcell-path" d="M348.39,496.08v78.28c0,7.15,3.81,13.75,10,17.32l67.79,39.14c6.18,3.57,13.81,3.57,20,0l67.79-39.14c6.18-3.57,10-10.17,10-17.32v-78.28c0-7.14-3.82-13.74-10-17.32l-67.79-39.13c-6.19-3.58-13.82-3.58-20,0l-67.79,39.13C352.2,482.34,348.39,488.94,348.39,496.08Z" />
+            <g class="ds-tvcell-shine">
+            <ellipse cx="385.03" cy="481.31" rx="20.18" ry="6.63" transform="translate(-189.07 257) rotate(-30)"/>
+            <ellipse cx="418.6" cy="462.38" rx="9.47" ry="5.46" transform="translate(-175.11 271.25) rotate(-30)"/>
+            </g>
+            <text class="ds-tvcell-text" x="436.19" y="535.22" text-anchor="middle">؟</text>
+          </g>
+          <g class="ds-tvcell" id="cell-r2c2" data-id="r2c2">
+            <path class="ds-tvcell-path" d="M523.97,496.08v78.28c0,7.15,3.81,13.75,10,17.32l67.79,39.14c6.18,3.57,13.81,3.57,20,0l67.79-39.14c6.19-3.57,10-10.17,10-17.32v-78.28c0-7.14-3.81-13.74-10-17.32l-67.79-39.13c-6.19-3.58-13.82-3.58-20,0l-67.79,39.13C527.78,482.34,523.97,488.94,523.97,496.08Z" />
+            <g class="ds-tvcell-shine">
+            <ellipse cx="559.96" cy="481.31" rx="20.18" ry="6.63" transform="translate(-165.64 344.47) rotate(-30)"/>
+            <ellipse cx="593.53" cy="462.38" rx="9.47" ry="5.46" transform="translate(-151.67 358.71) rotate(-30)"/>
+            </g>
+            <text class="ds-tvcell-text" x="611.76" y="535.22" text-anchor="middle">؟</text>
+          </g>
+          <g class="ds-tvcell" id="cell-r2c3" data-id="r2c3">
+            <path class="ds-tvcell-path" d="M699.55,496.08v78.28c0,7.15,3.81,13.75,10,17.32l67.79,39.14c6.19,3.57,13.81,3.57,20,0l67.79-39.14c6.19-3.57,10-10.17,10-17.32v-78.28c0-7.14-3.81-13.74-10-17.32l-67.79-39.13c-6.19-3.58-13.81-3.58-20,0l-67.79,39.13C703.36,482.34,699.55,488.94,699.55,496.08Z" />
+            <g class="ds-tvcell-shine">
+            <ellipse cx="734.9" cy="481.31" rx="20.18" ry="6.63" transform="translate(-142.2 431.93) rotate(-30)"/>
+            <ellipse cx="768.47" cy="462.38" rx="9.47" ry="5.46" transform="translate(-128.24 446.18) rotate(-30)"/>
+            </g>
+            <text class="ds-tvcell-text" x="787.34" y="535.22" text-anchor="middle">؟</text>
+          </g>
+          <g class="ds-tvcell" id="cell-r2c4" data-id="r2c4">
+            <path class="ds-tvcell-path" d="M875.13,496.08v78.28c0,7.15,3.81,13.75,10,17.32l67.79,39.14c6.19,3.57,13.81,3.57,20,0l67.79-39.14c6.19-3.57,10-10.17,10-17.32v-78.28c0-7.14-3.81-13.74-10-17.32l-67.79-39.13c-6.19-3.58-13.81-3.58-20,0l-67.79,39.13C878.94,482.34,875.13,488.94,875.13,496.08Z" />
+            <g class="ds-tvcell-shine">
+            <ellipse cx="909.83" cy="481.31" rx="20.18" ry="6.63" transform="translate(-118.76 519.4) rotate(-30)"/>
+            <ellipse cx="943.4" cy="462.38" rx="9.47" ry="5.46" transform="translate(-104.8 533.65) rotate(-30)"/>
+            </g>
+            <text class="ds-tvcell-text" x="962.92" y="535.22" text-anchor="middle">؟</text>
+          </g>
+          <g class="ds-tvcell" id="cell-r3c0" data-id="r3c0">
+            <path class="ds-tvcell-path" d="M85.01,648.15v78.28c0,7.14,3.82,13.74,10,17.32l67.79,39.14c6.19,3.57,13.82,3.57,20,0l67.8-39.14c6.18-3.58,10-10.18,10-17.32v-78.28c0-7.15-3.82-13.75-10-17.32l-67.8-39.14c-6.18-3.57-13.81-3.57-20,0l-67.79,39.14C88.83,634.4,85.01,641,85.01,648.15Z" />
+            <g class="ds-tvcell-shine">
+            <ellipse cx="120.28" cy="633.34" rx="20.18" ry="6.63" transform="translate(-300.56 144.99) rotate(-30)"/>
+            <ellipse cx="153.85" cy="614.41" rx="9.47" ry="5.46" transform="translate(-286.59 159.24) rotate(-30)"/>
+            </g>
+            <text class="ds-tvcell-text" x="172.81" y="687.29" text-anchor="middle">؟</text>
+          </g>
+          <g class="ds-tvcell" id="cell-r3c1" data-id="r3c1">
+            <path class="ds-tvcell-path" d="M260.6,648.15v78.28c0,7.14,3.81,13.74,10,17.32l67.79,39.14c6.18,3.57,13.81,3.57,20,0l67.79-39.14c6.18-3.58,10-10.18,10-17.32v-78.28c0-7.15-3.82-13.75-10-17.32l-67.79-39.14c-6.19-3.57-13.82-3.57-20,0l-67.79,39.14C264.41,634.4,260.6,641,260.6,648.15Z" />
+            <g class="ds-tvcell-shine">
+            <ellipse cx="295.22" cy="633.34" rx="20.18" ry="6.63" transform="translate(-277.12 232.46) rotate(-30)"/>
+            <ellipse cx="328.79" cy="614.41" rx="9.47" ry="5.46" transform="translate(-263.16 246.71) rotate(-30)"/>
+            </g>
+            <text class="ds-tvcell-text" x="348.40" y="687.29" text-anchor="middle">؟</text>
+          </g>
+          <g class="ds-tvcell" id="cell-r3c2" data-id="r3c2">
+            <path class="ds-tvcell-path" d="M436.18,648.15v78.28c0,7.14,3.81,13.74,10,17.32l67.79,39.14c6.18,3.57,13.81,3.57,20,0l67.79-39.14c6.18-3.58,10-10.18,10-17.32v-78.28c0-7.15-3.82-13.75-10-17.32l-67.79-39.14c-6.19-3.57-13.82-3.57-20,0l-67.79,39.14C439.99,634.4,436.18,641,436.18,648.15Z" />
+            <g class="ds-tvcell-shine">
+            <ellipse cx="470.15" cy="633.34" rx="20.18" ry="6.63" transform="translate(-253.68 319.93) rotate(-30)"/>
+            <ellipse cx="503.72" cy="614.41" rx="9.47" ry="5.46" transform="translate(-239.72 334.18) rotate(-30)"/>
+            </g>
+            <text class="ds-tvcell-text" x="523.98" y="687.29" text-anchor="middle">؟</text>
+          </g>
+          <g class="ds-tvcell" id="cell-r3c3" data-id="r3c3">
+            <path class="ds-tvcell-path" d="M611.76,648.15v78.28c0,7.14,3.81,13.74,10,17.32l67.79,39.14c6.19,3.57,13.81,3.57,20,0l67.79-39.14c6.19-3.58,10-10.18,10-17.32v-78.28c0-7.15-3.81-13.75-10-17.32l-67.79-39.14c-6.19-3.57-13.81-3.57-20,0l-67.79,39.14C615.57,634.4,611.76,641,611.76,648.15Z" />
+            <g class="ds-tvcell-shine">
+            <ellipse cx="645.09" cy="633.34" rx="20.18" ry="6.63" transform="translate(-230.25 407.4) rotate(-30)"/>
+            <ellipse cx="678.66" cy="614.41" rx="9.47" ry="5.46" transform="translate(-216.28 421.64) rotate(-30)"/>
+            </g>
+            <text class="ds-tvcell-text" x="699.55" y="687.29" text-anchor="middle">؟</text>
+          </g>
+          <g class="ds-tvcell" id="cell-r3c4" data-id="r3c4">
+            <path class="ds-tvcell-path" d="M787.34,648.15v78.28c0,7.14,3.81,13.74,10,17.32l67.79,39.14c6.19,3.57,13.81,3.57,20,0l67.79-39.14c6.19-3.58,10-10.18,10-17.32v-78.28c0-7.15-3.81-13.75-10-17.32l-67.79-39.14c-6.19-3.57-13.81-3.57-20,0l-67.79,39.14C791.15,634.4,787.34,641,787.34,648.15Z" />
+            <g class="ds-tvcell-shine">
+            <ellipse cx="820.02" cy="633.34" rx="20.18" ry="6.63" transform="translate(-206.81 494.86) rotate(-30)"/>
+            <ellipse cx="853.59" cy="614.41" rx="9.47" ry="5.46" transform="translate(-192.85 509.11) rotate(-30)"/>
+            </g>
+            <text class="ds-tvcell-text" x="875.13" y="687.29" text-anchor="middle">؟</text>
+          </g>
+          <g class="ds-tvcell" id="cell-r4c0" data-id="r4c0">
+            <path class="ds-tvcell-path" d="M172.8,800.21v78.28c0,7.15,3.82,13.75,10,17.32l67.8,39.14c6.18,3.57,13.81,3.57,20,0l67.79-39.14c6.18-3.57,10-10.17,10-17.32v-78.28c0-7.14-3.82-13.74-10-17.32l-67.79-39.14c-6.19-3.57-13.82-3.57-20,0l-67.8,39.14C176.62,786.47,172.8,793.07,172.8,800.21Z" />
+            <g class="ds-tvcell-shine">
+            <ellipse cx="210.1" cy="785.37" rx="20.18" ry="6.63" transform="translate(-364.54 210.27) rotate(-30)"/>
+            <ellipse cx="243.66" cy="766.44" rx="9.47" ry="5.46" transform="translate(-350.58 224.51) rotate(-30)"/>
+            </g>
+            <text class="ds-tvcell-text" x="260.60" y="839.35" text-anchor="middle">؟</text>
+          </g>
+          <g class="ds-tvcell" id="cell-r4c1" data-id="r4c1">
+            <path class="ds-tvcell-path" d="M348.39,800.21v78.28c0,7.15,3.81,13.75,10,17.32l67.79,39.14c6.18,3.57,13.81,3.57,20,0l67.79-39.14c6.18-3.57,10-10.17,10-17.32v-78.28c0-7.14-3.82-13.74-10-17.32l-67.79-39.14c-6.19-3.57-13.82-3.57-20,0l-67.79,39.14C352.2,786.47,348.39,793.07,348.39,800.21Z" />
+            <g class="ds-tvcell-shine">
+            <ellipse cx="385.03" cy="785.37" rx="20.18" ry="6.63" transform="translate(-341.1 297.73) rotate(-30)"/>
+            <ellipse cx="418.6" cy="766.44" rx="9.47" ry="5.46" transform="translate(-327.14 311.98) rotate(-30)"/>
+            </g>
+            <text class="ds-tvcell-text" x="436.19" y="839.35" text-anchor="middle">؟</text>
+          </g>
+          <g class="ds-tvcell" id="cell-r4c2" data-id="r4c2">
+            <path class="ds-tvcell-path" d="M523.97,800.21v78.28c0,7.15,3.81,13.75,10,17.32l67.79,39.14c6.18,3.57,13.81,3.57,20,0l67.79-39.14c6.19-3.57,10-10.17,10-17.32v-78.28c0-7.14-3.81-13.74-10-17.32l-67.79-39.14c-6.19-3.57-13.82-3.57-20,0l-67.79,39.14C527.78,786.47,523.97,793.07,523.97,800.21Z" />
+            <g class="ds-tvcell-shine">
+            <ellipse cx="559.96" cy="785.37" rx="20.18" ry="6.63" transform="translate(-317.66 385.2) rotate(-30)"/>
+            <ellipse cx="593.53" cy="766.44" rx="9.47" ry="5.46" transform="translate(-303.7 399.45) rotate(-30)"/>
+            </g>
+            <text class="ds-tvcell-text" x="611.76" y="839.35" text-anchor="middle">؟</text>
+          </g>
+          <g class="ds-tvcell" id="cell-r4c3" data-id="r4c3">
+            <path class="ds-tvcell-path" d="M699.55,800.21v78.28c0,7.15,3.81,13.75,10,17.32l67.79,39.14c6.19,3.57,13.81,3.57,20,0l67.79-39.14c6.19-3.57,10-10.17,10-17.32v-78.28c0-7.14-3.81-13.74-10-17.32l-67.79-39.14c-6.19-3.57-13.81-3.57-20,0l-67.79,39.14C703.36,786.47,699.55,793.07,699.55,800.21Z" />
+            <g class="ds-tvcell-shine">
+            <ellipse cx="734.9" cy="785.37" rx="20.18" ry="6.63" transform="translate(-294.23 472.67) rotate(-30)"/>
+            <ellipse cx="768.47" cy="766.44" rx="9.47" ry="5.46" transform="translate(-280.26 486.92) rotate(-30)"/>
+            </g>
+            <text class="ds-tvcell-text" x="787.34" y="839.35" text-anchor="middle">؟</text>
+          </g>
+          <g class="ds-tvcell" id="cell-r4c4" data-id="r4c4">
+            <path class="ds-tvcell-path" d="M875.13,800.21v78.28c0,7.15,3.81,13.75,10,17.32l67.79,39.14c6.19,3.57,13.81,3.57,20,0l67.79-39.14c6.19-3.57,10-10.17,10-17.32v-78.28c0-7.14-3.81-13.74-10-17.32l-67.79-39.14c-6.19-3.57-13.81-3.57-20,0l-67.79,39.14C878.94,786.47,875.13,793.07,875.13,800.21Z" />
+            <g class="ds-tvcell-shine">
+            <ellipse cx="909.83" cy="785.37" rx="20.18" ry="6.63" transform="translate(-270.79 560.14) rotate(-30)"/>
+            <ellipse cx="943.4" cy="766.44" rx="9.47" ry="5.46" transform="translate(-256.83 574.38) rotate(-30)"/>
+            </g>
+            <text class="ds-tvcell-text" x="962.92" y="839.35" text-anchor="middle">؟</text>
+          </g>
+          </g>
+        </svg>
 
-        <!-- نص السؤال في منتصف اليمين (Zone: y=370 to 540) -->
-        <foreignObject x="1150" y="370" width="750" height="180">
-          <div xmlns="http://www.w3.org/1999/xhtml" class="q-text-wrap">
-            <div id="qText" class="q-main-text">اضغط على أي حرف في اللوحة لبدء الجولة</div>
-          </div>
-        </foreignObject>
-
-        <!-- بطاقة الجواب أسفل السؤال مباشرة (Zone: y=565 to 685 - فوق خليتي النقاط بمسافة مريحة تمنع أي تداخل) -->
-        <foreignObject x="1150" y="565" width="750" height="120">
-          <div xmlns="http://www.w3.org/1999/xhtml" class="q-answer-wrap">
-            <div id="qAnswerBox" class="q-answer-card" style="display: none;">
-              <span class="q-answer-badge">الجواب الصحيح</span>
-              <span id="qAnswerValue" class="q-answer-content">—</span>
+        <div class="ds-tvside">
+          <div class="ds-stack">
+            <div class="ds-steps" id="buzzSteps" hidden>
+              <span class="ds-step" data-stage="1"><span class="ds-step-num">1</span>أول من يضغط</span>
+              <span class="ds-step" data-stage="2"><span class="ds-step-num">2</span>الفريق الآخر</span>
+              <span class="ds-step" data-stage="3"><span class="ds-step-num">3</span>مفتوح للجميع</span>
+            </div>
+            <!-- لافتة الأجراس: اضغط الآن · من ضغط أولاً · دور الفريق الآخر · نقطة محسوبة -->
+            <div class="ds-banner" id="buzzBanner" data-mode="off" hidden>
+              <span class="ds-banner-icon"><svg class="ds-icon" id="buzzBannerIcon" aria-hidden="true"><use href="/icons.svg#bell" /></svg></span>
+              <span class="ds-banner-text"><span id="buzzBannerText">اضغط الآن!</span><span class="ds-banner-sub" id="buzzBannerSub"></span></span>
+              <div class="ds-ring ds-ring--sm" id="buzzBannerTimer" hidden><svg viewBox="0 0 100 100" aria-hidden="true"><circle class="ds-ring-bg" cx="50" cy="50" r="46" /><circle class="ds-ring-fg" cx="50" cy="50" r="46" /></svg><span class="ds-ring-num"></span></div>
             </div>
           </div>
-        </foreignObject>
 
-        <!-- خليتا النقاط في أسفل اليمين (Zone: y=809 to 966) -->
-        <!-- خلية الفريق الأول (البنفسجي / يمين) -->
-        <g id="scoreGroupA" class="score-group">
-          <path
-            id="scoreHexPathA"
-            d="M1550.36,809.77v78.27c0,7.15,3.81,13.75,10,17.32l67.79,39.14c6.19,3.58,13.81,3.58,20,0l67.79-39.14c6.19-3.57,10-10.17,10-17.32v-78.27c0-7.15-3.81-13.75-10-17.32l-67.79-39.14c-6.19-3.58-13.81-3.58-20,0l-67.79,39.14C1554.17,796.02,1550.36,802.62,1550.36,809.77Z"
-            fill="url(#grad-team-a)"
-            stroke="#070808"
-            stroke-width="4px"
-            stroke-miterlimit="10"
-          />
-          <g class="score-shine">
-            <ellipse class="cls-30" cx="1585.06" cy="795.07" rx="20.18" ry="6.63" transform="translate(-185.18 899.05) rotate(-30)"/>
-        <ellipse class="cls-30" cx="1618.63" cy="776.14" rx="9.47" ry="5.46" transform="translate(-171.21 913.3) rotate(-30)"/>
-          </g>
-          <text
-            id="scoreTextA"
-            class="score-text"
-            x="1638.15"
-            y="848.91"
-            text-anchor="middle"
-            dominant-baseline="central"
-          >0</text>
-        </g>
+          <div class="ds-qpanel" id="qPanel">
+            <div class="ds-hex ds-letter-badge" id="selectedHexGroup"><div class="ds-hex-in"><div class="ds-hex-face"><span class="ds-hex-letter" id="selectedHexText">؟</span></div></div></div>
+            <div class="ds-qpanel-text" id="qText"></div>
+          </div>
 
-        <!-- خلية الفريق الثاني (السماوي / يسار) -->
-        <g id="scoreGroupB" class="score-group">
-          <path
-            id="scoreHexPathB"
-            d="M1331.05,809.77v78.27c0,7.15,3.82,13.75,10,17.32l67.79,39.14c6.19,3.58,13.82,3.58,20,0l67.79-39.14c6.19-3.57,10-10.17,10-17.32v-78.27c0-7.15-3.81-13.75-10-17.32l-67.79-39.14c-6.18-3.58-13.81-3.58-20,0l-67.79,39.14C1334.87,796.02,1331.05,802.62,1331.05,809.77Z"
-            fill="url(#grad-team-b)"
-            stroke="#070808"
-            stroke-width="4px"
-            stroke-miterlimit="10"
-          />
-          <g class="score-shine">
-            <ellipse class="cls-30" cx="1365.76" cy="795.07" rx="20.18" ry="6.63" transform="translate(-214.56 789.4) rotate(-30)"/>
-        <ellipse class="cls-30" cx="1399.33" cy="776.14" rx="9.47" ry="5.46" transform="translate(-200.59 803.65) rotate(-30)"/>
-          </g>
-          <text
-            id="scoreTextB"
-            class="score-text"
-            x="1418.85"
-            y="848.91"
-            text-anchor="middle"
-            dominant-baseline="central"
-          >0</text>
-        </g>
-      </svg>
-    </div>
+          <div class="ds-center">
+            <span class="ds-answer" id="qAnswerBox" hidden><svg class="ds-icon" aria-hidden="true"><use href="/icons.svg#check" /></svg><span class="ds-answer-label" id="qAnswerLabel">الجواب الصحيح</span><span id="qAnswerValue">—</span></span>
+          </div>
 
-    <!-- مؤقّت الدور عائم عند تشغيله -->
-    <div class="timer-float" id="timerOverlay">
-      <div class="timer-badge" id="timerBadge">
-        <span class="timer-dot" id="timerDot"></span>
-        <span class="timer-seconds" id="timerNum">10</span>
-        <span class="timer-label" id="timerTurn">الدور</span>
+          <div class="ds-tvside-scores">
+            <div class="ds-team ds-team-a" id="scoreGroupA"><div class="ds-team-name" id="scoreNameA">الفريق الأول</div><div class="ds-score" id="scoreTextA">0</div></div>
+            <div class="ds-team ds-team-b" id="scoreGroupB"><div class="ds-team-name" id="scoreNameB">الفريق الثاني</div><div class="ds-score" id="scoreTextB">0</div></div>
+          </div>
+        </div>
+
+        <!-- مؤقّت الدور اليدوي عائم عند تشغيله -->
+        <div class="ds-tvfloat ds-tvfloat--top" id="timerOverlay" hidden>
+          <span class="ds-pill ds-pill--lg ds-pill--dark" id="timerBadge"><svg class="ds-icon" aria-hidden="true"><use href="/icons.svg#timer" /></svg><span id="timerNum">10</span><span id="timerTurn">الدور</span></span>
+        </div>
       </div>
-    </div>
 
-    <!-- شاشة الفوز والاحتفال عند اكتمال الربط -->
-    <div class="winner-modal" id="winnerOverlay">
-      <div class="winner-banner">
-        <div class="winner-icon">★</div>
-        <div class="winner-sub">مبروك الفوز!</div>
-        <div class="winner-title" id="winnerName">الفريق الأول</div>
-        <div class="winner-caption">نجح في ربط طرفي اللوحة أولاً!</div>
-        <div class="winner-stats" id="winnerStats"></div>
+      <!-- قائمة الألعاب: قبل أن يختار الحكم لعبة -->
+      <div class="ds-tvlayer" id="hubScreen">
+        <h1 class="ds-title"><svg class="ds-icon" aria-hidden="true"><use href="/icons.svg#gamepad" /></svg> سهرة الألعاب</h1>
+        <p class="ds-text ds-text--dim">الحكم يختار اللعبة من جواله…</p>
+        <div class="ds-cluster ds-cluster--center">
+          <div class="ds-game-tile" style="--i: 0"><span class="ds-game-tile-art"><svg class="ds-icon" aria-hidden="true"><use href="/icons.svg#hexagon" /></svg></span><span class="ds-game-tile-name">حروف مع حسين</span><span class="ds-game-tile-tag">أسئلة وأجراس</span></div>
+          <div class="ds-game-tile ds-game-tile--coral" style="--i: 1"><span class="ds-game-tile-art"><svg class="ds-icon" aria-hidden="true"><use href="/icons.svg#hush" /></svg></span><span class="ds-game-tile-name">الكلمة الممنوعة</span><span class="ds-game-tile-tag">شرح بالكلام</span></div>
+        </div>
+        <div class="ds-cluster ds-cluster--center" id="hubNight"></div>
       </div>
-    </div>
 
-    <!-- لافتة الأجراس: «اضغط الآن» ثم إعلان الفريق الأسرع مع العدّاد الحيّ -->
-    <div class="buzz-banner" id="buzzBanner" data-mode="off">
-      <span class="buzz-banner-icon" id="buzzBannerIcon">🔔</span>
-      <span class="buzz-banner-text" id="buzzBannerText">اضغط الآن!</span>
-      <span class="buzz-banner-sub" id="buzzBannerSub"></span>
-      <span class="buzz-banner-timer" id="buzzBannerTimer" hidden></span>
-    </div>
+      <!-- لعبة «الكلمة الممنوعة» -->
+      <div class="ds-tvlayer ds-tvlayer--rows" id="tabooScreen" hidden></div>
 
-    <!-- قائمة الألعاب: قبل أن يختار الحكم لعبة -->
-    <div class="hub-screen" id="hubScreen">
-      <div class="hub-screen-title">🎮 سهرة الألعاب</div>
-      <div class="hub-screen-sub">الحكم يختار اللعبة من جواله…</div>
-      <div class="hub-screen-games">
-        <div class="hub-screen-game"><span>🔤</span>حروف مع حسين</div>
-        <div class="hub-screen-game"><span>🚫</span>الكلمة الممنوعة</div>
+      <!-- شاشة الفوز -->
+      <div class="ds-tvlayer ds-tvlayer--solid" id="winnerOverlay" hidden>
+        <svg class="ds-icon ds-trophy ds-float" aria-hidden="true"><use href="/icons.svg#trophy" /></svg>
+        <div class="ds-title ds-title--sm">مبروك الفوز!</div>
+        <div class="ds-winner ds-pop-in" id="winnerName">الفريق الأول</div>
+        <span class="ds-pill ds-pill--lg ds-pill--team" id="winnerCaption">نجح في ربط طرفي اللوحة أولاً!</span>
+        <div class="ds-cluster ds-cluster--center" id="winnerStats"></div>
       </div>
-      <div class="hub-screen-night" id="hubNight"></div>
-    </div>
 
-    <!-- لعبة «الكلمة الممنوعة» -->
-    <div class="taboo-screen" id="tabooScreen"></div>
+      <!-- شارة اتصال الحكم (للعرض فقط — التحكم كله من جوال الحكم) -->
+      <span class="ds-pill ds-pill--dark ds-tvfloat" id="connBadge">
+        <svg class="ds-icon" id="connBadgeDot" aria-hidden="true"><use href="/icons.svg#warning" /></svg>
+        <span id="connBadgeText">بانتظار الحكم</span>
+      </span>
 
-    <canvas id="confetti" class="confetti-canvas"></canvas>
-
-    <!-- شارة حالة اتصال الحكم في الزاوية العلوية (للعرض فقط — التحكم كله من جوال الحكم) -->
-    <div class="conn-badge" id="connBadge">
-      <span class="conn-dot" id="connBadgeDot"></span>
-      <span id="connBadgeText">بانتظار الحكم</span>
-    </div>
-
-    <!-- بطاقة البداية ومسح QR لربط جوال الحكم -->
-    <div class="lobby-overlay" id="lobby">
-      <div class="lobby-card">
-        <div class="lobby-badge">لوحة التحكم للجوال</div>
-        <h2 class="lobby-title">امسح الرموز للدخول</h2>
-        <div class="lobby-qr-grid">
-          <div class="qr-card qr-card-ref" id="qrCardRef">
-            <div class="qr-card-label">🧑‍⚖️ لوحة الحكم</div>
-            <div class="qr-routes">
-              <div class="qr-route" data-route="net">
-                <div class="qr-box">
-                  <canvas id="qrRefNet" class="qr-canvas"></canvas>
-                  <div class="qr-wait" id="qrRefNetWait"></div>
-                </div>
-                <div class="qr-route-tag">🌐 عبر الإنترنت</div>
-                <div class="qr-route-hint">أي جوال فيه إنترنت</div>
+      <!-- الاستقبال: رموز الدخول للحكم واللاعبين -->
+      <div class="ds-tvlayer ds-tvlayer--solid" id="lobby">
+        <span class="ds-pill ds-pill--sun"><svg class="ds-icon" aria-hidden="true"><use href="/icons.svg#qr" /></svg>لوحة التحكم للجوال</span>
+        <h2 class="ds-title">امسح الرموز للدخول</h2>
+        <div class="ds-cluster ds-cluster--center">
+          <div class="ds-card" id="qrCardRef">
+            <div class="ds-card-title"><svg class="ds-icon" aria-hidden="true"><use href="/icons.svg#judge" /></svg> لوحة الحكم</div>
+            <div class="ds-cluster ds-cluster--center">
+              <div class="ds-qr" data-route="net">
+                <div class="ds-qr-frame"><canvas id="qrRefNet"></canvas><div class="ds-qr-wait" id="qrRefNetWait"></div></div>
+                <span class="ds-pill ds-pill--sun"><svg class="ds-icon" aria-hidden="true"><use href="/icons.svg#globe" /></svg>عبر الإنترنت</span>
+                <span class="ds-hint">أي جوال فيه إنترنت</span>
               </div>
-              <div class="qr-route" data-route="lan">
-                <div class="qr-box">
-                  <canvas id="qrRefLan" class="qr-canvas"></canvas>
-                  <div class="qr-wait" id="qrRefLanWait"></div>
-                </div>
-                <div class="qr-route-tag">📶 نفس الواي فاي</div>
-                <div class="qr-route-hint">بدون إنترنت</div>
+              <div class="ds-qr" data-route="lan">
+                <div class="ds-qr-frame"><canvas id="qrRefLan"></canvas><div class="ds-qr-wait" id="qrRefLanWait"></div></div>
+                <span class="ds-pill ds-pill--sky"><svg class="ds-icon" aria-hidden="true"><use href="/icons.svg#wifi" /></svg>نفس الواي فاي</span>
+                <span class="ds-hint">بدون إنترنت</span>
               </div>
             </div>
           </div>
-          <div class="qr-card qr-card-play">
-            <div class="qr-card-label">🔔 اللاعبون — رمز واحد للجميع</div>
-            <div class="qr-routes">
-              <div class="qr-route" data-route="net">
-                <div class="qr-box">
-                  <canvas id="qrPlayNet" class="qr-canvas"></canvas>
-                  <div class="qr-wait" id="qrPlayNetWait"></div>
-                </div>
-                <div class="qr-route-tag">🌐 عبر الإنترنت</div>
-                <div class="qr-route-hint">أي جوال فيه إنترنت</div>
+          <div class="ds-card" id="qrCardPlay">
+            <div class="ds-card-title"><svg class="ds-icon" aria-hidden="true"><use href="/icons.svg#bell" /></svg> اللاعبون — رمز واحد للجميع</div>
+            <div class="ds-cluster ds-cluster--center">
+              <div class="ds-qr" data-route="net">
+                <div class="ds-qr-frame"><canvas id="qrPlayNet"></canvas><div class="ds-qr-wait" id="qrPlayNetWait"></div></div>
+                <span class="ds-pill ds-pill--sun"><svg class="ds-icon" aria-hidden="true"><use href="/icons.svg#globe" /></svg>عبر الإنترنت</span>
+                <span class="ds-hint">أي جوال فيه إنترنت</span>
               </div>
-              <div class="qr-route" data-route="lan">
-                <div class="qr-box">
-                  <canvas id="qrPlayLan" class="qr-canvas"></canvas>
-                  <div class="qr-wait" id="qrPlayLanWait"></div>
-                </div>
-                <div class="qr-route-tag">📶 نفس الواي فاي</div>
-                <div class="qr-route-hint">بدون إنترنت</div>
+              <div class="ds-qr" data-route="lan">
+                <div class="ds-qr-frame"><canvas id="qrPlayLan"></canvas><div class="ds-qr-wait" id="qrPlayLanWait"></div></div>
+                <span class="ds-pill ds-pill--sky"><svg class="ds-icon" aria-hidden="true"><use href="/icons.svg#wifi" /></svg>نفس الواي فاي</span>
+                <span class="ds-hint">بدون إنترنت</span>
               </div>
             </div>
           </div>
         </div>
-        <p class="lobby-hint">امسح أي رمز يعمل على جوالك: 🌐 من أي شبكة فيها إنترنت · 📶 إن كنت على نفس الواي فاي</p>
-        <div class="lobby-teams" id="lobbyTeams">
-          <div class="lobby-team" data-team="a">
-            <div class="lobby-team-name" id="lobbyTeamNameA">الفريق الأول</div>
-            <div class="lobby-team-players" id="lobbyPlayersA"></div>
+        <div class="ds-cluster ds-cluster--center">
+          <div class="ds-stack ds-stack--tight ds-team-a">
+            <span class="ds-pill ds-pill--team" id="lobbyTeamNameA">الفريق الأول</span>
+            <div class="ds-cluster ds-cluster--tight" id="lobbyPlayersA"></div>
           </div>
-          <div class="lobby-team" data-team="b">
-            <div class="lobby-team-name" id="lobbyTeamNameB">الفريق الثاني</div>
-            <div class="lobby-team-players" id="lobbyPlayersB"></div>
+          <div class="ds-stack ds-stack--tight ds-team-b">
+            <span class="ds-pill ds-pill--team" id="lobbyTeamNameB">الفريق الثاني</span>
+            <div class="ds-cluster ds-cluster--tight" id="lobbyPlayersB"></div>
           </div>
         </div>
-        <div class="lobby-url" id="lobbyUrl">جارٍ تجهيز الرابط…</div>
-        <div class="pair-code-wrap">
-          <span class="pair-label">رمز التحقق:</span>
-          <span class="pair-code" id="lobbyPairCode">------</span>
+        <div class="ds-cluster ds-cluster--center">
+          <span class="ds-pill ds-pill--dark"><span>رمز التحقق</span><b class="ds-code" id="lobbyPairCode">------</b></span>
+          <div class="ds-banner ds-banner--info" id="lobbyStatus">
+            <span class="ds-banner-icon"><svg class="ds-icon" id="lobbyStatusIcon" aria-hidden="true"><use href="/icons.svg#timer" /></svg></span>
+            <span id="lobbyStatusText">بانتظار مسح الرمز من الجوال…</span>
+          </div>
         </div>
-        <p class="lobby-status" id="lobbyStatusText">بانتظار مسح الرمز من الجوال…</p>
       </div>
     </div>
 
