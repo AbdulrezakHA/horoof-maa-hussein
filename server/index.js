@@ -98,6 +98,7 @@ const PATHS = {
   "/buzzer.html": "public/buzzer.html",
   "/presets": "public/presets.html",
   "/taboo-packs": "public/taboo-packs.html",
+  "/design": "public/design.html",
   "/presets.html": "public/presets.html",
 };
 

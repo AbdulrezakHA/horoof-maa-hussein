@@ -1,0 +1,900 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>نظام التصميم: سهرة الألعاب</title>
+    <meta name="description" content="المرجع البصري لكل ألعاب سهرة الألعاب: الألوان والخطوط والمكوّنات والحركة ونماذج الشاشات." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Baloo+Bhaijaan+2:wght@500;700;800&family=Lalezar&family=Reem+Kufi+Fun:wght@500;700&family=Tajawal:wght@500;700;800&display=swap"
+      rel="stylesheet" media="print" onload="this.media='all'"
+    />
+    <link rel="stylesheet" href="/css/ds.css" />
+    <style>
+      /* Hallmark · custom direction: sticker cartoon reference page · genre playful · scope app
+         critique: the page demos ds.css components live; captions above mockups are demo labels, not eyebrows.
+         waive 30a (emoji as icon): the game's established visual language. waive 54: demo captions. */
+      /* صفحة المرجع فقط: كل الألوان من متغيّرات ds.css */
+      html,
+      body {
+        overflow-x: clip;
+      }
+      body {
+        margin: 0;
+        min-height: 100vh;
+      }
+      .dz-wrap {
+        width: min(1180px, 100% - 2.4rem);
+        margin-inline: auto;
+        padding-bottom: 6rem;
+      }
+      .dz-bar {
+        position: sticky;
+        top: 0;
+        z-index: 50;
+        background: var(--stage);
+        border-bottom: var(--line) solid var(--ink);
+        box-shadow: 0 4px 0 var(--ink);
+      }
+      .dz-bar-in {
+        width: min(1180px, 100% - 2.4rem);
+        margin-inline: auto;
+        display: flex;
+        align-items: center;
+        gap: var(--gap-3);
+        padding: 0.7rem 0;
+        flex-wrap: wrap;
+      }
+      .dz-logo {
+        font-family: var(--font-display);
+        font-weight: 800;
+        font-size: var(--fs-lg);
+        margin-inline-end: auto;
+      }
+      .dz-nav {
+        display: flex;
+        gap: 0.4rem;
+        overflow-x: auto;
+        width: 100%;
+        padding-bottom: 0.2rem;
+        scrollbar-width: none;
+      }
+      .dz-nav a {
+        flex: none;
+        color: var(--on-stage);
+        text-decoration: none;
+        font-weight: 800;
+        font-size: var(--fs-sm);
+        padding: 0.3em 0.8em;
+        border: 2px solid var(--on-stage-dim);
+        border-radius: var(--r-pill);
+        transition: background-color var(--dur-2) var(--ease-out);
+      }
+      .dz-nav a:hover {
+        background: var(--stage-3);
+      }
+      .dz-nav a:focus-visible {
+        outline: 3px solid var(--focus);
+        outline-offset: 2px;
+      }
+      .dz-hero {
+        display: grid;
+        gap: var(--gap-3);
+        justify-items: start;
+        padding: 3.2rem 0 1rem;
+      }
+      .dz-hero h1 {
+        font-size: var(--fs-hero);
+        color: var(--sun);
+        -webkit-text-stroke: 3px var(--ink);
+        paint-order: stroke fill;
+        text-shadow: 0 6px 0 var(--ink);
+      }
+      .dz-hero p {
+        margin: 0;
+        font-size: var(--fs-lg);
+        font-weight: 700;
+        color: var(--on-stage-dim);
+        max-width: 46ch;
+      }
+      .dz-sec {
+        padding-top: 3.4rem;
+        scroll-margin-top: 110px;
+      }
+      .dz-sec > h2 {
+        font-size: var(--fs-2xl);
+        margin-bottom: 0.3rem;
+      }
+      .dz-sec > .dz-lead {
+        margin: 0 0 1.4rem;
+        color: var(--on-stage-dim);
+        font-weight: 700;
+        font-size: var(--fs-md);
+      }
+      .dz-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--gap-3);
+        align-items: center;
+      }
+      .dz-grid {
+        display: grid;
+        gap: var(--gap-4);
+        grid-template-columns: repeat(auto-fill, minmax(min(260px, 100%), 1fr));
+      }
+      .dz-label {
+        display: block;
+        margin: 1.2rem 0 0.6rem;
+        font-weight: 800;
+        font-size: var(--fs-sm);
+        color: var(--on-stage-dim);
+      }
+      .dz-principles {
+        display: grid;
+        gap: var(--gap-3);
+        grid-template-columns: repeat(auto-fill, minmax(min(240px, 100%), 1fr));
+      }
+      .dz-principles .ds-card {
+        padding: var(--gap-3) var(--gap-4);
+      }
+      .dz-principles b {
+        display: block;
+        font-family: var(--font-display);
+        font-size: var(--fs-lg);
+        margin-bottom: 0.2rem;
+      }
+      .dz-principles p {
+        margin: 0;
+        font-weight: 700;
+        color: var(--ink-soft);
+      }
+      /* الألوان */
+      .dz-swatches {
+        display: grid;
+        gap: var(--gap-3);
+        grid-template-columns: repeat(auto-fill, minmax(min(150px, 100%), 1fr));
+      }
+      .dz-swatch {
+        border: var(--line) solid var(--ink);
+        border-radius: var(--r-md);
+        overflow: hidden;
+        box-shadow: var(--shadow);
+        background: var(--paper);
+        color: var(--ink);
+      }
+      .dz-swatch-color {
+        height: 84px;
+        border-bottom: var(--line) solid var(--ink);
+      }
+      .dz-swatch-info {
+        padding: 0.5rem 0.7rem;
+        font-size: var(--fs-xs);
+        font-weight: 700;
+        line-height: 1.5;
+      }
+      .dz-swatch-info b {
+        display: block;
+        font-size: var(--fs-sm);
+      }
+      /* الخطوط */
+      .dz-type-sample {
+        display: grid;
+        gap: 0.4rem;
+      }
+      .dz-type-row {
+        display: flex;
+        align-items: baseline;
+        gap: var(--gap-3);
+        border-bottom: 2px dashed var(--stage-3);
+        padding-bottom: 0.4rem;
+      }
+      .dz-type-row code,
+      .dz-swatch-info span {
+        direction: ltr;
+        unicode-bidi: isolate;
+      }
+      .dz-type-row code {
+        flex: none;
+        width: 5.5rem;
+        font-size: var(--fs-xs);
+        color: var(--on-stage-dim);
+      }
+      .dz-type-row span {
+        font-family: var(--font-display);
+        font-weight: 800;
+        line-height: 1.2;
+        min-width: 0;
+        overflow-wrap: break-word;
+      }
+      /* نماذج الشاشات */
+      .dz-tv {
+        aspect-ratio: 16 / 9;
+        border: var(--line) solid var(--ink);
+        border-radius: var(--r-lg);
+        box-shadow: var(--shadow-lg);
+        overflow: hidden;
+        position: relative;
+        container-type: inline-size;
+      }
+      .dz-tv-in {
+        position: absolute;
+        inset: 0;
+        display: grid;
+        align-content: center;
+        justify-items: center;
+        gap: 4cqw;
+        padding: 4cqw;
+      }
+      .dz-tv h3 {
+        font-size: 5.4cqw;
+        color: var(--paper);
+        text-shadow: 0 0.5cqw 0 var(--ink);
+      }
+      .dz-hub-tiles {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 3cqw;
+        width: 100%;
+        max-width: 86cqw;
+      }
+      .dz-hub-tiles .ds-game-tile {
+        border-radius: 3cqw;
+        padding: 1.6cqw;
+        gap: 0.6cqw;
+      }
+      .dz-hub-tiles .ds-game-tile-art {
+        font-size: 7cqw;
+      }
+      .dz-hub-tiles .ds-game-tile-name {
+        font-size: 2.6cqw;
+      }
+      .dz-hub-tiles .ds-game-tile-tag {
+        font-size: 1.5cqw;
+      }
+      .dz-night {
+        display: flex;
+        gap: 2cqw;
+      }
+      .dz-night .ds-pill {
+        font-size: 2cqw;
+      }
+      /* شريحة القوانين */
+      .dz-rules-title {
+        font-size: 4.2cqw !important;
+      }
+      .dz-rules {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 2.6cqw;
+        width: 100%;
+        max-width: 84cqw;
+      }
+      .dz-rule {
+        display: grid;
+        justify-items: center;
+        gap: 1cqw;
+        padding: 2.6cqw 1.6cqw;
+        background: var(--paper);
+        color: var(--ink);
+        border: 0.4cqw solid var(--ink);
+        border-radius: 2.6cqw;
+        box-shadow: 0 0.7cqw 0 var(--ink);
+        text-align: center;
+      }
+      .dz-rule-icon {
+        font-size: 7cqw;
+        line-height: 1;
+      }
+      .dz-rule-text {
+        font-family: var(--font-display);
+        font-weight: 800;
+        font-size: 3cqw;
+        line-height: 1.2;
+      }
+      .dz-rule-foul {
+        background: var(--coral);
+      }
+      .dz-dots-nav {
+        display: flex;
+        gap: 1cqw;
+      }
+      .dz-dots-nav span {
+        width: 1.4cqw;
+        height: 1.4cqw;
+        border-radius: 50%;
+        border: 0.3cqw solid var(--ink);
+        background: var(--stage-3);
+        transition: transform var(--dur-2) var(--ease-pop), background-color var(--dur-2);
+      }
+      .dz-dots-nav span.on {
+        background: var(--sun);
+        transform: scale(1.3);
+      }
+      .dz-winner {
+        font-size: 6cqw !important;
+        color: var(--sun) !important;
+      }
+      .dz-trophy {
+        font-size: 11cqw;
+        line-height: 1;
+      }
+      /* الجوال */
+      .dz-phones {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--gap-4);
+        justify-content: center;
+      }
+      .dz-phone {
+        width: 300px;
+        min-height: 560px;
+        border: var(--line) solid var(--ink);
+        border-radius: 34px;
+        box-shadow: var(--shadow-lg);
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+      }
+      .dz-phone-in {
+        flex: 1;
+        display: grid;
+        align-content: start;
+        gap: var(--gap-3);
+        padding: var(--gap-3);
+      }
+      .dz-phone-cap {
+        text-align: center;
+        font-weight: 800;
+        font-size: var(--fs-sm);
+        color: var(--on-stage-dim);
+        margin-top: 0.5rem;
+      }
+      .dz-center {
+        display: grid;
+        justify-items: center;
+        text-align: center;
+        gap: var(--gap-2);
+      }
+      .dz-word {
+        font-family: var(--font-display);
+        font-weight: 800;
+        font-size: var(--fs-2xl);
+        color: var(--ink);
+      }
+      .dz-motion {
+        display: grid;
+        gap: var(--gap-3);
+        grid-template-columns: repeat(auto-fill, minmax(min(170px, 100%), 1fr));
+      }
+      .dz-motion .ds-card {
+        display: grid;
+        justify-items: center;
+        gap: var(--gap-2);
+        padding: var(--gap-3);
+        text-align: center;
+      }
+      .dz-motion-demo {
+        width: 64px;
+        height: 64px;
+        display: grid;
+        place-items: center;
+        font-size: 2rem;
+        background: var(--sun);
+        border: var(--line) solid var(--ink);
+        border-radius: var(--r-md);
+        box-shadow: var(--shadow);
+      }
+      .dz-motion code {
+        font-size: var(--fs-xs);
+        color: var(--ink-soft);
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .dz-nav a,
+        .dz-dots-nav span {
+          transition: none;
+        }
+      }
+      .dz-foot {
+        margin-top: 4rem;
+        color: var(--on-stage-dim);
+        font-weight: 700;
+        font-size: var(--fs-sm);
+      }
+    </style>
+  </head>
+  <body class="ds ds-page">
+    <header class="dz-bar">
+      <div class="dz-bar-in">
+        <div class="dz-logo">🎨 نظام تصميم سهرة الألعاب</div>
+        <div class="ds-seg" id="scaleSeg" aria-label="المقاس">
+          <button type="button" data-value="phone" aria-pressed="true">📱 جوال</button>
+          <button type="button" data-value="tv" aria-pressed="false">📺 تلفاز</button>
+        </div>
+        <nav class="dz-nav" aria-label="الأقسام">
+          <a href="#colors">الألوان</a>
+          <a href="#type">الخطوط</a>
+          <a href="#buttons">الأزرار</a>
+          <a href="#cards">البطاقات</a>
+          <a href="#teams">الفرق والنقاط</a>
+          <a href="#timer">العدّاد</a>
+          <a href="#alerts">التنبيهات</a>
+          <a href="#chips">الرقائق واللاعبون</a>
+          <a href="#fields">الحقول</a>
+          <a href="#qr">رموز الدخول</a>
+          <a href="#motion">الحركة</a>
+          <a href="#screens">نماذج الشاشات</a>
+        </nav>
+      </div>
+    </header>
+
+    <main class="dz-wrap">
+      <section class="dz-hero">
+        <h1 class="ds-pop-in">سهرة الألعاب</h1>
+        <p class="ds-rise-in" style="--i: 2">مرجع واحد لكل شاشة: ملصقات كرتونية، حدود سميكة، وحركة قصيرة نابضة.</p>
+        <div class="dz-row ds-rise-in" style="--i: 3">
+          <a class="ds-btn ds-btn--primary ds-btn--lg" href="#screens">🎮 نماذج الشاشات</a>
+          <button class="ds-btn" type="button" id="heroConfetti">🎉 احتفال</button>
+        </div>
+      </section>
+
+      <section class="dz-sec" aria-labelledby="pr">
+        <h2 id="pr">المبادئ</h2>
+        <div class="dz-principles">
+          <div class="ds-card ds-pop-in" style="--i: 0"><b>✏️ حبر سميك</b><p>كل عنصر محاط بحدّ داكن، كأنه ملصق.</p></div>
+          <div class="ds-card ds-pop-in" style="--i: 1"><b>🧱 ظل صلب</b><p>الظل إزاحة صلبة لأسفل، لا ضباب.</p></div>
+          <div class="ds-card ds-pop-in" style="--i: 2"><b>🫧 حركة نابضة</b><p>قصيرة ومرنة، ولا تشتّت عن اللعب.</p></div>
+          <div class="ds-card ds-pop-in" style="--i: 3"><b>🎨 ألوان الفرق</b><p>كل ما يخصّ الفريق يأخذ لونه تلقائياً.</p></div>
+        </div>
+      </section>
+
+      <!-- ================= الألوان ================= -->
+      <section class="dz-sec" id="colors" aria-labelledby="colorsH">
+        <h2 id="colorsH">الألوان</h2>
+        <p class="dz-lead">ألوان اللعب للإجراءات، والمسرح للخلفيات، والحبر للحدود.</p>
+        <div class="dz-swatches" id="swatches"></div>
+      </section>
+
+      <!-- ================= الخطوط ================= -->
+      <section class="dz-sec" id="type" aria-labelledby="typeH">
+        <h2 id="typeH">الخطوط</h2>
+        <p class="dz-lead">اختر خط العناوين، ويتغيّر في الصفحة كلها فوراً.</p>
+        <div class="ds-seg" id="fontSeg" aria-label="خط العناوين">
+          <button type="button" data-value="Baloo Bhaijaan 2" aria-pressed="true">بالو بهيجان</button>
+          <button type="button" data-value="Lalezar" aria-pressed="false">لاله زار</button>
+          <button type="button" data-value="Reem Kufi Fun" aria-pressed="false">ريم كوفي فن</button>
+        </div>
+        <span class="dz-label">سلّم الأحجام</span>
+        <div class="dz-type-sample">
+          <div class="dz-type-row"><code>--fs-hero</code><span style="font-size: var(--fs-hero)">فاز الأولاد!</span></div>
+          <div class="dz-type-row"><code>--fs-3xl</code><span style="font-size: var(--fs-3xl)">دور البنات</span></div>
+          <div class="dz-type-row"><code>--fs-2xl</code><span style="font-size: var(--fs-2xl)">الكلمة الممنوعة</span></div>
+          <div class="dz-type-row"><code>--fs-xl</code><span style="font-size: var(--fs-xl)">اختر اللعبة</span></div>
+          <div class="dz-type-row"><code>--fs-lg</code><span style="font-size: var(--fs-lg)">الشارح: سامر</span></div>
+          <div class="dz-type-row"><code>--fs-md</code><span style="font-size: var(--fs-md); font-family: var(--font-body)">نص عادي للشرح والتعليمات</span></div>
+        </div>
+      </section>
+
+      <!-- ================= الأزرار ================= -->
+      <section class="dz-sec" id="buttons" aria-labelledby="btnH">
+        <h2 id="btnH">الأزرار</h2>
+        <p class="dz-lead">اضغط عليها: الزر ينزل ويختفي ظلّه كزر حقيقي.</p>
+        <span class="dz-label">الأنواع</span>
+        <div class="dz-row">
+          <button class="ds-btn ds-btn--primary" type="button">▶️ ابدأ الدور</button>
+          <button class="ds-btn ds-btn--success" type="button">✅ صح</button>
+          <button class="ds-btn ds-btn--danger" type="button">🚫 مخالفة</button>
+          <button class="ds-btn ds-btn--info" type="button">🔄 كلمة أخرى</button>
+          <button class="ds-btn" type="button">⏸ إيقاف</button>
+          <button class="ds-btn ds-btn--ghost" type="button">إلغاء</button>
+          <button class="ds-btn ds-btn--team" type="button" style="--team: var(--team-a); --team-ink: var(--paper)">فريق الأولاد</button>
+        </div>
+        <span class="dz-label">الأحجام والحالات</span>
+        <div class="dz-row">
+          <button class="ds-btn ds-btn--primary ds-btn--sm" type="button">صغير</button>
+          <button class="ds-btn ds-btn--primary" type="button">عادي</button>
+          <button class="ds-btn ds-btn--primary ds-btn--lg" type="button">كبير</button>
+          <button class="ds-btn ds-btn--icon" type="button" aria-label="الصوت">🔊</button>
+          <button class="ds-btn ds-btn--primary" type="button" disabled>معطّل</button>
+          <button class="ds-btn ds-btn--primary" type="button" id="loadBtn">جارٍ الحفظ؟</button>
+        </div>
+        <span class="dz-label">الجرس الكبير</span>
+        <div class="dz-row">
+          <button class="ds-buzzer" type="button" style="--team: var(--team-b); --team-ink: var(--paper)">اضغط!</button>
+        </div>
+      </section>
+
+      <!-- ================= البطاقات ================= -->
+      <section class="dz-sec" id="cards" aria-labelledby="cardsH">
+        <h2 id="cardsH">البطاقات</h2>
+        <p class="dz-lead">بطاقات الألعاب تتمايل بلطف، وتقفز عند التمرير.</p>
+        <div class="dz-grid">
+          <button class="ds-game-tile" type="button" style="--tile: var(--sun); --i: 0">
+            <span class="ds-game-tile-art">🔤</span><span class="ds-game-tile-name">حروف مع حسين</span><span class="ds-game-tile-tag">أسئلة وأجراس</span>
+          </button>
+          <button class="ds-game-tile" type="button" style="--tile: var(--coral); --i: 1">
+            <span class="ds-game-tile-art">🤐</span><span class="ds-game-tile-name">الكلمة الممنوعة</span><span class="ds-game-tile-tag">شرح بالكلام</span>
+          </button>
+          <button class="ds-game-tile" type="button" style="--tile: var(--sky); --i: 2">
+            <span class="ds-game-tile-art">✨</span><span class="ds-game-tile-name">لعبة قادمة</span><span class="ds-game-tile-tag">قريباً</span>
+          </button>
+        </div>
+        <span class="dz-label">بطاقات المحتوى</span>
+        <div class="dz-grid">
+          <div class="ds-card"><div class="ds-card-title">بطاقة فاتحة</div><p style="margin: 0; font-weight: 700">للإعدادات والقوائم والمحتوى.</p></div>
+          <div class="ds-card ds-card--stage"><div class="ds-card-title">بطاقة المسرح</div><p style="margin: 0; font-weight: 700">على الخلفيات الداكنة.</p></div>
+          <div class="ds-card ds-card--team" style="--team: var(--team-a); --team-ink: var(--paper)"><div class="ds-card-title">بطاقة الفريق</div><p style="margin: 0; font-weight: 700">تأخذ لون الفريق تلقائياً.</p></div>
+        </div>
+      </section>
+
+      <!-- ================= الفرق والنقاط ================= -->
+      <section class="dz-sec" id="teams" aria-labelledby="teamsH">
+        <h2 id="teamsH">الفرق والنقاط</h2>
+        <p class="dz-lead">الفريق صاحب الدور يكبر قليلاً، والآخر يخفت.</p>
+        <div class="dz-grid">
+          <div class="ds-team is-turn" id="teamA" style="--team: var(--team-a); --team-ink: var(--paper)">
+            <div><div class="ds-team-name">الأولاد</div><div class="ds-team-meta">⏭ <span class="ds-dots"><span class="ds-dot"></span><span class="ds-dot is-used"></span></span></div></div>
+            <div class="ds-score" id="scoreA">3</div>
+          </div>
+          <div class="ds-team is-waiting" id="teamB" style="--team: var(--team-b); --team-ink: var(--paper)">
+            <div><div class="ds-team-name">البنات</div><div class="ds-team-meta">⏭ <span class="ds-dots"><span class="ds-dot"></span><span class="ds-dot"></span></span></div></div>
+            <div class="ds-score" id="scoreB">5</div>
+          </div>
+        </div>
+        <div class="dz-row" style="margin-top: 1rem">
+          <button class="ds-btn ds-btn--success ds-btn--sm" type="button" id="plusA">+1 للأولاد</button>
+          <button class="ds-btn ds-btn--success ds-btn--sm" type="button" id="plusB">+1 للبنات</button>
+          <button class="ds-btn ds-btn--sm" type="button" id="swapTurn">↔ تبديل الدور</button>
+        </div>
+        <span class="dz-label">شارات</span>
+        <div class="dz-row">
+          <span class="ds-pill">🎯 الهدف 10</span>
+          <span class="ds-pill ds-pill--team" style="--team: var(--team-a); --team-ink: var(--paper)">🏆 الأولاد 2</span>
+          <span class="ds-pill ds-pill--dark">⏱ 60 ثانية</span>
+          <span class="ds-pill">⏭ ∞</span>
+        </div>
+      </section>
+
+      <!-- ================= العدّاد ================= -->
+      <section class="dz-sec" id="timer" aria-labelledby="timerH">
+        <h2 id="timerH">العدّاد</h2>
+        <p class="dz-lead">يتحوّل للأحمر وينبض في آخر خمس ثوانٍ.</p>
+        <div class="dz-row">
+          <div class="ds-ring" id="ring1">
+            <svg viewBox="0 0 100 100" aria-hidden="true"><circle class="ds-ring-bg" cx="50" cy="50" r="46" /><circle class="ds-ring-fg" cx="50" cy="50" r="46" /></svg>
+            <span class="ds-ring-num">10</span>
+          </div>
+          <button class="ds-btn ds-btn--primary" type="button" id="ringStart">▶️ عدّ ١٠ ثوانٍ</button>
+        </div>
+      </section>
+
+      <!-- ================= التنبيهات ================= -->
+      <section class="dz-sec" id="alerts" aria-labelledby="alertsH">
+        <h2 id="alertsH">اللافتات والتنبيهات</h2>
+        <p class="dz-lead">اللافتة للحدث المهم على الشاشة، والرسالة القصيرة للتأكيد.</p>
+        <div class="dz-grid">
+          <div class="ds-banner"><span class="ds-banner-icon">⚡</span>سامر ضغط أولاً!</div>
+          <div class="ds-banner ds-banner--success"><span class="ds-banner-icon">✅</span>صح! +1 للأولاد</div>
+          <div class="ds-banner ds-banner--danger" id="foulBanner"><span class="ds-banner-icon">🚫</span>ممنوع: ذكر حرفاً</div>
+          <div class="ds-banner ds-banner--info"><span class="ds-banner-icon">⏱</span>دور الفريق الآخر</div>
+        </div>
+        <div class="dz-row" style="margin-top: 1rem">
+          <button class="ds-btn ds-btn--sm" type="button" id="toastBtn">💬 رسالة قصيرة</button>
+          <button class="ds-btn ds-btn--danger ds-btn--sm" type="button" id="shakeBtn">🚫 هزّة المخالفة</button>
+          <button class="ds-btn ds-btn--info ds-btn--sm" type="button" id="modalBtn">🪟 نافذة منبثقة</button>
+        </div>
+      </section>
+
+      <!-- ================= الرقائق واللاعبون ================= -->
+      <section class="dz-sec" id="chips" aria-labelledby="chipsH">
+        <h2 id="chipsH">الرقائق واللاعبون</h2>
+        <p class="dz-lead">سجلّ الدور، والكلمات الممنوعة، واللاعبون بلون فريقهم.</p>
+        <div class="dz-row">
+          <span class="ds-chip ds-chip--right">✅ مطار</span>
+          <span class="ds-chip ds-chip--skip">⏭ ساعة</span>
+          <span class="ds-chip ds-chip--pass">🔄 بركان</span>
+          <span class="ds-chip ds-chip--foul">🚫 قمر</span>
+          <span class="ds-chip ds-chip--forbidden">طائرة</span>
+          <span class="ds-chip ds-chip--forbidden">سفر</span>
+        </div>
+        <span class="dz-label">اللاعبون</span>
+        <div class="dz-row" id="players"></div>
+      </section>
+
+      <!-- ================= الحقول ================= -->
+      <section class="dz-sec" id="fields" aria-labelledby="fieldsH">
+        <h2 id="fieldsH">الحقول</h2>
+        <p class="dz-lead">حقول كبيرة سهلة اللمس، والخطأ يهتزّ برفق.</p>
+        <div class="dz-grid">
+          <div class="ds-card">
+            <div class="ds-field">
+              <label class="ds-label" for="nameIn">اسمك</label>
+              <input class="ds-input" id="nameIn" placeholder="اكتب اسمك هنا" maxlength="24" />
+              <span class="ds-hint" id="nameHint">يظهر على التلفاز تحت فريقك.</span>
+            </div>
+            <div class="dz-row" style="margin-top: 0.8rem">
+              <button class="ds-btn ds-btn--primary" type="button" id="joinDemo">دخول</button>
+            </div>
+          </div>
+          <div class="ds-card">
+            <div class="dz-row" style="justify-content: space-between">
+              <label class="ds-label" for="sw1">صوت الشاشة</label>
+              <input class="ds-switch" type="checkbox" id="sw1" checked />
+            </div>
+            <span class="dz-label" style="color: var(--ink-soft)">رموز الدخول</span>
+            <div class="ds-seg" id="demoSeg">
+              <button type="button" data-value="both" aria-pressed="true">الاثنان</button>
+              <button type="button" data-value="net" aria-pressed="false">🌐 إنترنت</button>
+              <button type="button" data-value="lan" aria-pressed="false">📶 واي فاي</button>
+            </div>
+            <span class="dz-label" style="color: var(--ink-soft)">التخطّيات لكل فريق</span>
+            <div class="ds-stepper">
+              <button class="ds-btn ds-btn--icon ds-btn--sm" type="button" id="stepMinus" aria-label="أقل">−</button>
+              <span class="ds-stepper-value" id="stepVal">2</span>
+              <button class="ds-btn ds-btn--icon ds-btn--sm" type="button" id="stepPlus" aria-label="أكثر">+</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= رموز الدخول ================= -->
+      <section class="dz-sec" id="qr" aria-labelledby="qrH">
+        <h2 id="qrH">رموز الدخول</h2>
+        <p class="dz-lead">طريقان دائماً، كل رمز بشارته.</p>
+        <div class="dz-row" style="gap: var(--gap-5)">
+          <div class="ds-qr">
+            <div class="ds-qr-frame"><canvas id="qrNet"></canvas></div>
+            <span class="ds-pill" style="background: var(--sun)">🌐 عبر الإنترنت</span>
+          </div>
+          <div class="ds-qr">
+            <div class="ds-qr-frame"><canvas id="qrLan"></canvas></div>
+            <span class="ds-pill" style="background: var(--sky)">📶 نفس الواي فاي</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= الحركة ================= -->
+      <section class="dz-sec" id="motion" aria-labelledby="motionH">
+        <h2 id="motionH">الحركة</h2>
+        <p class="dz-lead">اضغط أي بطاقة لتشغيل حركتها. كلها أقل من نصف ثانية.</p>
+        <div class="dz-motion" id="motionGrid"></div>
+      </section>
+
+      <!-- ================= نماذج الشاشات ================= -->
+      <section class="dz-sec" id="screens" aria-labelledby="screensH">
+        <h2 id="screensH">نماذج الشاشات</h2>
+        <p class="dz-lead">كيف ستبدو الشاشات بعد إعادة التصميم.</p>
+
+        <span class="dz-label">📺 قائمة الألعاب على التلفاز</span>
+        <div class="dz-tv ds-stage">
+          <div class="dz-tv-in">
+            <h3>🎮 سهرة الألعاب</h3>
+            <div class="dz-hub-tiles">
+              <div class="ds-game-tile" style="--tile: var(--sun); --i: 0"><span class="ds-game-tile-art">🔤</span><span class="ds-game-tile-name">حروف مع حسين</span><span class="ds-game-tile-tag">أسئلة وأجراس</span></div>
+              <div class="ds-game-tile is-active" style="--tile: var(--coral); --i: 1"><span class="ds-game-tile-art">🤐</span><span class="ds-game-tile-name">الكلمة الممنوعة</span><span class="ds-game-tile-tag">شرح بالكلام</span></div>
+              <div class="ds-game-tile" style="--tile: var(--sky); --i: 2"><span class="ds-game-tile-art">✨</span><span class="ds-game-tile-name">قريباً</span><span class="ds-game-tile-tag">لعبة جديدة</span></div>
+            </div>
+            <div class="dz-night">
+              <span class="ds-pill ds-pill--team" style="--team: var(--team-a); --team-ink: var(--paper)">🏆 الأولاد 1</span>
+              <span class="ds-pill ds-pill--team" style="--team: var(--team-b); --team-ink: var(--paper)">🏆 البنات 2</span>
+            </div>
+          </div>
+        </div>
+
+        <span class="dz-label">📺 قوانين الكلمة الممنوعة: شرائح تتبدّل وحدها</span>
+        <div class="dz-tv ds-stage">
+          <div class="dz-tv-in">
+            <h3 class="dz-rules-title">📜 القوانين</h3>
+            <div class="dz-rules" id="rulesSlide"></div>
+            <div class="dz-dots-nav" id="rulesDots"></div>
+          </div>
+        </div>
+
+        <span class="dz-label">📺 شاشة الفوز</span>
+        <div class="dz-tv ds-stage">
+          <div class="dz-tv-in" id="winStage">
+            <div class="dz-trophy ds-float">🏆</div>
+            <h3 class="dz-winner ds-pop-in">فاز الأولاد!</h3>
+            <div class="dz-night"><span class="ds-pill">10 : 7</span><span class="ds-pill ds-pill--dark">+1 لنقاط السهرة</span></div>
+          </div>
+        </div>
+        <div class="dz-row" style="margin-top: 0.8rem"><button class="ds-btn ds-btn--primary ds-btn--sm" type="button" id="winReplay">🎉 أعد الاحتفال</button></div>
+
+        <span class="dz-label">📱 الجوالات أثناء دور «الكلمة الممنوعة»</span>
+        <div class="dz-phones">
+          <div>
+            <div class="dz-phone" style="background: var(--paper)">
+              <div class="dz-phone-in">
+                <div class="dz-row" style="justify-content: space-between">
+                  <span class="ds-pill ds-pill--team" style="--team: var(--team-a); --team-ink: var(--paper)">الأولاد 3</span>
+                  <span class="ds-pill ds-pill--dark">⏱ 42</span>
+                </div>
+                <div class="dz-center">
+                  <span class="ds-chip">🍽️ أكل وشرب</span>
+                  <div class="dz-word">كنافة</div>
+                  <div class="dz-row" style="justify-content: center">
+                    <span class="ds-chip ds-chip--forbidden">حلوى</span><span class="ds-chip ds-chip--forbidden">جبن</span><span class="ds-chip ds-chip--forbidden">نابلس</span><span class="ds-chip ds-chip--forbidden">قطر</span>
+                  </div>
+                </div>
+                <button class="ds-btn ds-btn--block" type="button">⏭ تخطّي (1 متبقٍ)</button>
+              </div>
+            </div>
+            <div class="dz-phone-cap">الشارح</div>
+          </div>
+          <div>
+            <div class="dz-phone ds-stage">
+              <div class="dz-phone-in">
+                <div class="dz-center" style="margin-top: 3rem">
+                  <div style="font-size: 4rem" class="ds-float">🤔</div>
+                  <h3 style="font-size: var(--fs-xl)">سامر يشرح</h3>
+                  <p style="margin: 0; font-weight: 700; color: var(--on-stage-dim)">خمّنوا بصوت عالٍ!</p>
+                  <span class="ds-pill ds-pill--team" style="--team: var(--team-a); --team-ink: var(--paper)">هذا الدور +2</span>
+                </div>
+              </div>
+            </div>
+            <div class="dz-phone-cap">فريق الشارح</div>
+          </div>
+          <div>
+            <div class="dz-phone ds-stage">
+              <div class="dz-phone-in">
+                <div class="dz-center" style="margin-top: 1.4rem">
+                  <h3 style="font-size: var(--fs-xl)">👀 راقبوا سامر</h3>
+                  <div class="dz-row" style="justify-content: center">
+                    <span class="ds-chip ds-chip--forbidden">حلوى</span><span class="ds-chip ds-chip--forbidden">جبن</span><span class="ds-chip ds-chip--forbidden">نابلس</span><span class="ds-chip ds-chip--forbidden">قطر</span>
+                  </div>
+                  <div class="ds-banner ds-banner--danger" style="font-size: var(--fs-md)"><span class="ds-banner-icon">📣</span>قال كلمة منها؟ اصرخوا: ممنوع!</div>
+                </div>
+              </div>
+            </div>
+            <div class="dz-phone-cap">الفريق الخصم</div>
+          </div>
+        </div>
+      </section>
+
+      <p class="dz-foot">الملفات: <code>/css/ds.css</code> للأشكال والمتغيّرات، و<code>/js/ds.js</code> للحركات.</p>
+    </main>
+
+    <div class="ds-modal" id="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+      <div class="ds-card">
+        <div class="ds-card-title" id="modalTitle">🔁 لعبة جديدة؟</div>
+        <p style="margin: 0 0 1rem; font-weight: 700">تُصفَّر النقاط وتتجدّد التخطّيات.</p>
+        <div class="dz-row">
+          <button class="ds-btn ds-btn--primary" type="button" data-close>نعم، ابدأ</button>
+          <button class="ds-btn" type="button" data-close>إلغاء</button>
+        </div>
+      </div>
+    </div>
+
+    <script src="/js/vendor/qrcode.js"></script>
+    <script type="module">
+      import { toast, bump, replay, confetti, ring, segmented } from "/js/ds.js";
+      import { drawQR } from "/js/qr.js";
+
+      const $ = (id) => document.getElementById(id);
+      const css = getComputedStyle(document.documentElement);
+
+      // الألوان
+      const SW = [
+        ["--sun", "الإجراء الأساسي"], ["--mint", "صح / نجاح"], ["--coral", "مخالفة / خطر"], ["--sky", "معلومة"],
+        ["--grape", "زينة"], ["--bubble", "زينة"], ["--ink", "الحبر"], ["--paper", "الورق"],
+        ["--stage", "المسرح"], ["--stage-2", "المسرح ٢"], ["--stage-3", "المسرح ٣"], ["--team-a", "فريق (مثال)"],
+      ];
+      for (const [v, use] of SW) {
+        const d = document.createElement("div");
+        d.className = "dz-swatch";
+        d.innerHTML = `<div class="dz-swatch-color" style="background: var(${v})"></div><div class="dz-swatch-info"><b>${use}</b><span dir="ltr">${v}<br>${css.getPropertyValue(v).trim()}</span></div>`;
+        $("swatches").appendChild(d);
+      }
+
+      // مقاس الجوال / التلفاز
+      segmented($("scaleSeg"), (v) => document.body.classList.toggle("ds-tv", v === "tv"));
+      // خط العناوين
+      segmented($("fontSeg"), (v) => document.documentElement.style.setProperty("--font-display", `"${v}", "Tajawal", system-ui, sans-serif`));
+
+      $("heroConfetti").onclick = () => confetti();
+      $("loadBtn").onclick = (e) => {
+        e.currentTarget.classList.add("is-loading");
+        setTimeout(() => e.currentTarget.classList.remove("is-loading"), 1400);
+      };
+
+      // الفرق
+      $("plusA").onclick = () => { $("scoreA").textContent = +$("scoreA").textContent + 1; bump($("scoreA")); };
+      $("plusB").onclick = () => { $("scoreB").textContent = +$("scoreB").textContent + 1; bump($("scoreB")); };
+      $("swapTurn").onclick = () => {
+        for (const t of [$("teamA"), $("teamB")]) { t.classList.toggle("is-turn"); t.classList.toggle("is-waiting"); }
+      };
+
+      // العدّاد
+      const r1 = ring($("ring1"));
+      r1.set(10, 10);
+      $("ringStart").onclick = () => r1.start(10, () => toast("⏰ انتهى الوقت"));
+
+      // التنبيهات
+      $("toastBtn").onclick = () => toast("✅ صح +1، الكلمة التالية");
+      $("shakeBtn").onclick = () => replay($("foulBanner"), "ds-shake");
+      $("modalBtn").onclick = () => $("modal").classList.add("is-open");
+      $("modal").addEventListener("click", (e) => {
+        if (e.target === $("modal") || e.target.closest("[data-close]")) $("modal").classList.remove("is-open");
+      });
+      document.addEventListener("keydown", (e) => { if (e.key === "Escape") $("modal").classList.remove("is-open"); });
+
+      // اللاعبون
+      [["سامر", "a"], ["ليلى", "b"], ["أحمد", "a"], ["نور", "b"], ["يوسف", "a", true]].forEach(([n, t, off], i) => {
+        const p = document.createElement("span");
+        p.className = "ds-player" + (off ? " is-offline" : "");
+        p.style.setProperty("--team", `var(--team-${t})`);
+        p.style.setProperty("--team-ink", "var(--paper)");
+        p.style.animationDelay = `${i * 70}ms`;
+        p.innerHTML = `<span class="ds-avatar">${n[0]}</span>${n}`;
+        $("players").appendChild(p);
+      });
+
+      // الحقول
+      $("joinDemo").onclick = () => {
+        const ok = $("nameIn").value.trim().length > 0;
+        $("nameIn").classList.toggle("is-invalid", !ok);
+        if (!ok) replay($("nameIn"), "ds-shake");
+        $("nameHint").textContent = ok ? "أهلاً! 👋" : "اكتب اسمك أولاً";
+        $("nameHint").classList.toggle("ds-hint--error", !ok);
+        if (ok) toast(`👋 أهلاً ${$("nameIn").value.trim()}`);
+      };
+      segmented($("demoSeg"));
+      let steps = 2;
+      const showSteps = () => { $("stepVal").textContent = steps < 0 ? "∞" : String(steps); replay($("stepVal"), "ds-squash"); };
+      $("stepPlus").onclick = () => { steps = steps < 0 ? -1 : steps >= 10 ? -1 : steps + 1; showSteps(); };
+      $("stepMinus").onclick = () => { steps = steps < 0 ? 10 : Math.max(0, steps - 1); showSteps(); };
+
+      // رموز QR
+      drawQR(`${location.origin}/play?room=main`, $("qrNet"));
+      drawQR(`${location.origin}/play?room=main&lan=1`, $("qrLan"));
+
+      // الحركة
+      const MOTION = [
+        ["ds-pop-in", "🎈", "ظهور"], ["ds-rise-in", "⬆️", "صعود"], ["ds-squash", "🟡", "ضغط"],
+        ["ds-wiggle", "🔔", "اهتزاز"], ["ds-shake", "🚫", "مخالفة"], ["ds-flip-in", "🃏", "قلب البطاقة"],
+        ["is-bump", "7", "نقطة"],
+      ];
+      for (const [cls, icon, name] of MOTION) {
+        const c = document.createElement("button");
+        c.type = "button";
+        c.className = "ds-card";
+        c.style.cursor = "pointer";
+        c.style.font = "inherit";
+        c.innerHTML = `<div class="dz-motion-demo ${cls === "is-bump" ? "ds-score" : ""}" style="${cls === "is-bump" ? "font-size: 2rem" : ""}">${icon}</div><b>${name}</b><code dir="ltr">${cls}</code>`;
+        c.onclick = () => (cls === "is-bump" ? bump(c.firstElementChild) : replay(c.firstElementChild, cls));
+        $("motionGrid").appendChild(c);
+      }
+
+      // شرائح القوانين (٣ في كل شريحة، تتبدّل وحدها)
+      const RULES = [
+        ["🗣️", "لا تقل الكلمة"], ["🚫", "لا الممنوعة"], ["🔤", "لا حروف"],
+        ["🔢", "لا أعداد"], ["🎵", "لا قافية"], ["🌐", "لا ترجمة"],
+        ["🤚", "لا إشارات"], ["🐱", "لا أصوات"], ["✍️", "لا كتابة"],
+        ["📱", "لا تُرِ جوالك"], ["⚠️", "المخالفة: ⁦-1⁩ وينتهي الدور", true], ["⏭", "تخطّيات محدودة"],
+      ];
+      const pages = Math.ceil(RULES.length / 3);
+      let page = 0;
+      for (let i = 0; i < pages; i++) $("rulesDots").appendChild(document.createElement("span"));
+      const showRules = () => {
+        $("rulesSlide").replaceChildren();
+        RULES.slice(page * 3, page * 3 + 3).forEach(([ic, tx, foul], i) => {
+          const d = document.createElement("div");
+          d.className = "dz-rule ds-pop-in" + (foul ? " dz-rule-foul" : "");
+          d.style.setProperty("--i", i);
+          d.innerHTML = `<span class="dz-rule-icon">${ic}</span><span class="dz-rule-text">${tx}</span>`;
+          $("rulesSlide").appendChild(d);
+        });
+        [...$("rulesDots").children].forEach((s, i) => s.classList.toggle("on", i === page));
+        page = (page + 1) % pages;
+      };
+      showRules();
+      setInterval(showRules, 3800);
+
+      $("winReplay").onclick = () => {
+        replay(document.querySelector(".dz-winner"), "ds-pop-in");
+        confetti();
+      };
+    </script>
+  </body>
+</html>
