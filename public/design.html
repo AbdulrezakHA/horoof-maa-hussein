@@ -1145,7 +1145,8 @@
       const cells = [];
       function layoutBoard() {
         const hw = parseFloat(getComputedStyle(boardEl).getPropertyValue("--hw")) || 74;
-        const hh = hw * 1.1547, g = 4, step = hh * 0.75 + g;
+        // متلاصقة: تداخل بسماكة الحدّ فيظهر خط واحد بين كل خليتين
+        const hh = hw * 1.1547, g = -hw * 0.035, step = hh * 0.75 + g;
         grid.style.width = `${COLS * (hw + g) + (hw + g) / 2}px`;
         grid.style.height = `${(ROWS - 1) * step + hh}px`;
         for (const c of cells) {

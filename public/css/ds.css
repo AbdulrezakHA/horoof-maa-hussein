@@ -24,11 +24,13 @@
   --paper-side: #d8c6a2;
   --paper-2: #f3e9d4;
 
-  /* خلايا الحروف الفارغة (كريمي اللوحة الأصلية) */
-  --cream: #efe6bf;
-  --cream-hi: #fffbe6;
+  /* خلايا الحروف الفارغة (كريمي اللوحة الأصلية: فاتح في الأعلى، أغمق في الأسفل) */
+  --cream: #cfc694;
+  --cream-hi: #efeacb;
   --cream-side: #b7a96c;
   --cream-ink: #5f5840;
+  /* شكل الخلية: سداسي بزوايا مستديرة (قناع يتمدّد مع حجم الخلية) */
+  --hex-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 115.47' preserveAspectRatio='none'%3E%3Cpath d='M40.47 5.50Q50 0.00 59.53 5.50L90.47 23.37Q100 28.87 100.00 39.87L100.00 75.60Q100 86.60 90.47 92.10L59.53 109.97Q50 115.47 40.47 109.97L9.53 92.10Q0 86.60 0.00 75.60L0.00 39.87Q0 28.87 9.53 23.37Z'/%3E%3C/svg%3E");
   --white: #ffffff;
 
   /* ---------- المسرح (خلفيات التلفاز والجوال) ---------- */
@@ -111,6 +113,7 @@
 
   /* شفافيات (لمعة، ظلال، ستارة) */
   --shine: rgba(255, 255, 255, 0.55);
+  --shine-strong: rgba(255, 255, 255, 0.9);
   --ink-35: rgba(29, 18, 53, 0.35);
   --ink-12: rgba(29, 18, 53, 0.12);
   --scrim: rgba(20, 10, 40, 0.6);
@@ -1153,7 +1156,8 @@
      <div class="ds-hex [is-a|is-b|is-selected|is-win|is-claim]">
        <div class="ds-hex-in"><div class="ds-hex-face"><span class="ds-hex-letter">ب</span></div></div>
      </div>
-   الخلية «ملصق» سداسي: حدّ حبر + وجه لامع + جدار سفلي (drop-shadow لأن clip-path يقصّ الظلال).
+   الخلية سداسية بزوايا مستديرة (قناع SVG)، حدّ حبر رفيع، تدرّج من الأعلى للأسفل،
+   ولمعتان بيضاوان في الزاوية العليا — كاللوحة الأصلية. في اللوحة تلتصق الخلايا بلا فراغات.
    ================================================================ */
 .ds-hex {
   --hw: 92px; /* عرض الخلية */
@@ -1161,11 +1165,11 @@
   --hx-hi: var(--cream-hi);
   --hx-side: var(--cream-side);
   --hx-ink: var(--cream-ink);
-  --hx-d: 6px;
+  --hx-d: calc(var(--hw) * 0.045);
   position: relative;
   width: var(--hw);
   height: calc(var(--hw) * 1.1547);
-  filter: drop-shadow(0 var(--hx-d) 0 var(--hx-side)) drop-shadow(0 3px 0 var(--ink));
+  filter: drop-shadow(0 var(--hx-d) 0 var(--ink));
   transition:
     transform var(--dur-2) var(--ease-pop),
     filter var(--dur-2) var(--ease-out);
@@ -1173,27 +1177,49 @@
 .ds-hex-in,
 .ds-hex-face {
   position: absolute;
-  clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+  -webkit-mask: var(--hex-mask) center / 100% 100% no-repeat;
+  mask: var(--hex-mask) center / 100% 100% no-repeat;
 }
 .ds-hex-in {
   inset: 0;
   background: var(--ink);
 }
 .ds-hex-face {
-  inset: calc(var(--hw) * 0.05);
+  inset: calc(var(--hw) * 0.035);
   display: grid;
   place-items: center;
-  background:
-    radial-gradient(ellipse 34% 14% at 34% 20%, var(--shine) 0 70%, transparent 72%),
-    linear-gradient(180deg, var(--hx-hi) 0%, var(--hx-face) 55%);
-  transition: background-color var(--dur-3) var(--ease-out);
+  background: linear-gradient(180deg, var(--hx-hi) 0%, var(--hx-face) 100%);
+}
+/* اللمعتان: بيضاوي طويل ونقطة صغيرة، مائلتان في الزاوية العليا */
+.ds-hex-face::before,
+.ds-hex-face::after {
+  content: "";
+  position: absolute;
+  background: var(--shine-strong);
+  border-radius: 50%;
+  transform: rotate(-28deg);
+  pointer-events: none;
+}
+.ds-hex-face::before {
+  /* اللمعة دائماً أعلى اليسار (مصدر الضوء ثابت مهما كان اتجاه الصفحة) */
+  top: 15%;
+  left: 13%;
+  width: 27%;
+  height: 7.5%;
+}
+.ds-hex-face::after {
+  top: 9%;
+  left: 40%;
+  width: 9%;
+  height: 5.5%;
 }
 .ds-hex-letter {
   font-family: var(--font-display);
   font-weight: 800;
-  font-size: calc(var(--hw) * 0.46);
+  font-size: calc(var(--hw) * 0.5);
   line-height: 1;
   color: var(--hx-ink);
+  text-shadow: 0 calc(var(--hw) * 0.02) 0 var(--ink-35);
   transform: translateY(4%);
   user-select: none;
 }
@@ -1266,9 +1292,7 @@
   animation-delay: calc(var(--k, 0) * 110ms);
 }
 .ds-hex.is-win .ds-hex-face {
-  background:
-    radial-gradient(ellipse 34% 14% at 34% 20%, var(--shine) 0 70%, transparent 72%),
-    radial-gradient(circle at 50% 50%, var(--hx-hi) 0%, var(--hx-face) 70%);
+  background: radial-gradient(circle at 50% 45%, var(--hx-hi) 0%, var(--hx-face) 75%);
 }
 @keyframes dsWinHop {
   0%,
@@ -1292,43 +1316,41 @@ button.ds-hex:hover {
   transform: translateY(-3px);
 }
 button.ds-hex:active {
-  transform: translateY(3px);
-  --hx-d: 2px;
+  transform: translateY(2px) scale(0.97);
 }
 button.ds-hex:focus-visible {
   outline: 4px solid var(--focus);
   outline-offset: 2px;
 }
 
-/* اللوحة: إطار ألوانه أهداف الفريقين (أعلى/أسفل للفريق أ، يمين/يسار للفريق ب).
-   حدود CSS بألوان مختلفة تلتقي بزوايا مائلة فتصنع شبه المنحرف تلقائياً. */
+/* اللوحة: خلفية مقسومة على شكل X كاللوحة الأصلية —
+   المثلّثان الأعلى والأسفل هدف الفريق الأول، والجانبان هدف الفريق الثاني. */
 .ds-board {
   --hw: 74px;
-  --gap: 3px;
   position: relative;
+  isolation: isolate;
   display: inline-block;
-  padding: calc(var(--hw) * 0.35) calc(var(--hw) * 0.3);
-  background: var(--stage-2);
-  border-style: solid;
-  border-width: calc(var(--hw) * 0.32);
-  border-color: var(--team-a) var(--team-b);
+  padding: calc(var(--hw) * 0.55) calc(var(--hw) * 0.6);
+  background: var(--team-b);
+  border: var(--line) solid var(--ink);
   border-radius: var(--r-lg);
-  box-shadow: 0 0 0 var(--line) var(--ink), 0 calc(var(--lift) * 1.6) 0 var(--line) var(--ink);
+  box-shadow: 0 calc(var(--lift) * 1.4) 0 var(--ink);
+  overflow: hidden;
+}
+.ds-board::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: var(--team-a);
+  clip-path: polygon(0 0, 100% 0, 50% 50%, 100% 100%, 0 100%, 50% 50%);
 }
 .ds-board-grid {
   position: relative;
 }
 .ds-board .ds-hex {
-  --hw: inherit;
+  --hw: inherit; /* حجم خلايا اللوحة من .ds-board */
   position: absolute;
-}
-.ds-board-goal {
-  position: absolute;
-  font-family: var(--font-display);
-  font-weight: 800;
-  font-size: calc(var(--hw) * 0.2);
-  color: var(--paper);
-  white-space: nowrap;
 }
 
 /* شارة الحرف الحالي (سداسية كبيرة) */
