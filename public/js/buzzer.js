@@ -17,6 +17,8 @@ import { sfx } from "/js/sfx.js";
 import { inkFor } from "/shared/colors.js";
 import { initTabooPhone, renderTabooPhone } from "/js/phone-taboo.js";
 
+window.__appStarted = true; // انظر /js/diag.js
+
 const params = new URLSearchParams(location.search);
 const room = params.get("room") || "main";
 const PLAYER_MODE = location.pathname.startsWith("/play");

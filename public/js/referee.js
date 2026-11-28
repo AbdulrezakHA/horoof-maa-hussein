@@ -8,6 +8,8 @@ import { sfx } from "/js/sfx.js";
 import { inkFor, findClashes, autoFixColors, COLOR_THEMES, COLOR_LABELS } from "/shared/colors.js";
 import { initTaboo, renderTaboo } from "/js/referee-taboo.js";
 
+window.__appStarted = true; // انظر /js/diag.js
+
 /** بطاقات قائمة الألعاب (المفتاح ← الوصف). */
 const HUB_GAMES = [
   { id: "huroof", icon: "🔤", name: "حروف مع حسين", desc: "لوحة الحروف والأجراس — صِل طرفي اللوحة" },

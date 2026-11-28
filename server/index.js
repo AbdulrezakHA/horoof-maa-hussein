@@ -735,6 +735,27 @@ const server = http.createServer((req, res) => {
     return res.end(JSON.stringify({ ok: true, app: "horoof-maa-hussein", port: ACTIVE_PORT, rooms: rooms.size, uptime: process.uptime() }));
   }
 
+  // تشخيص الأجهزة: public/js/diag.js يبلّغ هنا عند فتح الصفحة وعند أي خطأ
+  if (pathname === "/api/client-log" && req.method === "POST") {
+    let raw = "";
+    req.on("data", (c) => {
+      if (raw.length < 4096) raw += c;
+    });
+    req.on("end", () => {
+      try {
+        const m = JSON.parse(raw);
+        const ip = (req.socket.remoteAddress || "").replace(/^::ffff:/, "");
+        const dev = shortDevice(String(m.ua || ""));
+        const page = String(m.page || "").slice(0, 40);
+        if (m.kind === "open") console.log(`  📱 فتح ${page} — ${dev} (${ip})`);
+        else console.log(`  \x1b[31m⚠️  ${m.kind === "stuck" ? "لم تعمل اللعبة" : "خطأ"} على ${dev} (${ip}) ${page}: ${String(m.msg || "").slice(0, 600)}\x1b[0m`);
+      } catch {}
+      res.writeHead(204);
+      res.end();
+    });
+    return;
+  }
+
   if (pathname === "/api/network") {
     res.writeHead(200, { "Content-Type": MIME[".json"] });
     return res.end(
@@ -906,6 +927,21 @@ wss.onconnection = (conn) => {
  * ومحوّلات WSL وHyper-V وVirtualBox وVMware وVPN، ونقدّم الواي فاي ثم الإيثرنت.
  */
 const VIRTUAL_NIC = /vEthernet|WSL|Hyper-V|VirtualBox|VMware|VMnet|Loopback|Bluetooth|Tailscale|ZeroTier|Hamachi|Radmin|OpenVPN|WireGuard|TAP-|Tun|VPN|Docker|Npcap/i;
+/** وصف قصير للجهاز من User-Agent: «iPhone iOS 15.4 Safari» أو «Android 10 Chrome 90». */
+function shortDevice(ua) {
+  let os = "جهاز";
+  let m;
+  if ((m = ua.match(/(iPhone|iPad|iPod).*? OS (\d+)[_.](\d+)/))) os = `${m[1]} iOS ${m[2]}.${m[3]}`;
+  else if ((m = ua.match(/Android ([\d.]+)/))) os = `Android ${m[1]}`;
+  else if (/Windows/.test(ua)) os = "Windows";
+  else if (/Mac OS X/.test(ua)) os = "Mac";
+  let br = "";
+  if ((m = ua.match(/(CriOS|Chrome|FxiOS|Firefox|SamsungBrowser|EdgiOS|Edg|OPR)\/(\d+)/))) br = `${m[1]} ${m[2]}`;
+  else if ((m = ua.match(/Version\/(\d+(\.\d+)?).*Safari/))) br = `Safari ${m[1]}`;
+  if (/FBAN|FBAV|Instagram|WhatsApp|Snapchat|Line\//.test(ua)) br += " (داخل تطبيق)";
+  return `${os} ${br}`.trim();
+}
+
 function lanAddresses() {
   const out = [];
   const nets = os.networkInterfaces();
