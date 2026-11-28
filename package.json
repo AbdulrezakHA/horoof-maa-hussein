@@ -7,7 +7,9 @@
   "scripts": {
     "start": "node server/index.js",
     "dev": "node server/index.js",
-    "build:questions": "node scripts/build-questions.mjs"
+    "build:questions": "node scripts/build-questions.mjs",
+    "ds:theme": "node scripts/gen-ds-theme.mjs",
+    "ds:check": "node scripts/check-ds.mjs && node scripts/gen-ds-theme.mjs --check"
   },
   "engines": {
     "node": ">=18"

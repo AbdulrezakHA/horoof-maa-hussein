@@ -139,3 +139,15 @@ export const iconHTML = (name, cls = "") =>
 export function hydrateIcons(root = document) {
   for (const el of root.querySelectorAll("[data-i]:not(svg)")) el.replaceWith(icon(el.dataset.i, el.className));
 }
+
+/**
+ * يجعل حاوية .ds-scaled تعرض محتواها كأنه على شاشة عرضها `base` بكسل
+ * (مثلاً معاينة شاشة التلفاز داخل صفحة). يتبع عرض الحاوية تلقائياً.
+ */
+export function fitScale(el, base = 1920, tvScale = 1.45) {
+  if (!el) return;
+  const apply = () => el.style.setProperty("--scale", ((el.clientWidth / base) * tvScale).toFixed(3));
+  apply();
+  if ("ResizeObserver" in window) new ResizeObserver(apply).observe(el);
+  else addEventListener("resize", apply);
+}

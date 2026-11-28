@@ -16,65 +16,142 @@
    ================================================================== */
 
 :root {
-  /* ---------- الحبر والورق ---------- */
+  /* ============ الألوان ============
+     لا تُعدَّل يدوياً: تُولَّد من shared/ds-theme.js (node scripts/gen-ds-theme.mjs)
+     وفي اللعبة يغيّرها applyTheme() / applyTeams() لكل الشاشات معاً. */
+  /* @theme:start */
+  --stage: #241a3f;
+  --stage-2: #332950;
+  --stage-3: #473e66;
+  --sun: #ffd23f;
+  --sun-hi: #fff595;
+  --sun-side: #c99a00;
+  --sun-ink: #1d1235;
+  --sun-glow: rgba(255, 255, 255, 0.55);
+  --mint: #2fd49f;
+  --mint-hi: #88eec5;
+  --mint-side: #009e6b;
+  --mint-ink: #1d1235;
+  --mint-glow: rgba(255, 255, 255, 0.55);
+  --coral: #ff6b57;
+  --coral-hi: #ff9c8a;
+  --coral-side: #c62a1b;
+  --coral-ink: #fff8ea;
+  --coral-glow: rgba(29, 18, 53, 0.35);
+  --sky: #4cc9f0;
+  --sky-hi: #92e6ff;
+  --sky-side: #0093bb;
+  --sky-ink: #1d1235;
+  --sky-glow: rgba(255, 255, 255, 0.55);
+  --grape: #a86cf0;
+  --grape-hi: #c197fb;
+  --grape-side: #7731bb;
+  --grape-ink: #fff8ea;
+  --grape-glow: rgba(29, 18, 53, 0.35);
+  --bubble: #ff8fc8;
+  --bubble-hi: #ffbbe5;
+  --bubble-side: #c75793;
+  --bubble-ink: #1d1235;
+  --bubble-glow: rgba(255, 255, 255, 0.55);
+  --cream: #cfc694;
+  --cream-hi: #f4edc7;
+  --cream-side: #a9a06f;
+  --cream-ink: #504920;
+  --team-a: #19a974;
+  --team-a-hi: #6dc399;
+  --team-a-side: #007542;
+  --team-a-ink: #fff8ea;
+  --team-a-glow: rgba(29, 18, 53, 0.35);
+  --team-b: #e0453a;
+  --team-b-hi: #ef7b6d;
+  --team-b-side: #a70000;
+  --team-b-ink: #fff8ea;
+  --team-b-glow: rgba(29, 18, 53, 0.35);
+  /* @theme:end */
+
+  /* ثوابت لا تتغيّر مع الثيم */
   --ink: #1d1235; /* الحدود والظلال والنص على الفاتح */
   --ink-soft: #4a3f66;
-  --paper: #fff8ea; /* البطاقات الفاتحة */
+  --paper: #fff8ea; /* الورق: البطاقات والنص على الداكن */
   --paper-hi: #ffffff;
   --paper-side: #d8c6a2;
   --paper-2: #f3e9d4;
+  --white: #ffffff; /* لإطار QR فقط (يحتاج أبيض صافياً للمسح) */
+  --on-stage: var(--paper);
+  --on-stage-dim: rgba(255, 248, 234, 0.72);
+  --focus: var(--sky);
 
-  /* خلايا الحروف الفارغة (كريمي اللوحة الأصلية: فاتح في الأعلى، أغمق في الأسفل) */
-  --cream: #cfc694;
-  --cream-hi: #efeacb;
-  --cream-side: #b7a96c;
-  --cream-ink: #5f5840;
+  /* شفافيات */
+  --shine: rgba(255, 255, 255, 0.55);
+  --shine-strong: rgba(255, 255, 255, 0.9);
+  --ink-35: rgba(29, 18, 53, 0.35);
+  --ink-12: rgba(29, 18, 53, 0.12);
+  --scrim: rgba(20, 10, 40, 0.6);
+  --paper-08: rgba(255, 248, 234, 0.08);
+  --paper-07: rgba(255, 248, 234, 0.07);
+  --glow-dark: rgba(10, 4, 30, 0.35);
+
+  /* الفريق الحالي لعنصر (تضبطه .ds-team-a / .ds-team-b) */
+  --team: var(--sun);
+  --team-hi: var(--sun-hi);
+  --team-side: var(--sun-side);
+  --team-ink: var(--sun-ink);
+  --team-glow: var(--sun-glow);
+
   /* شكل الخلية: سداسي بزوايا مستديرة (قناع يتمدّد مع حجم الخلية) */
   --hex-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 115.47' preserveAspectRatio='none'%3E%3Cpath d='M40.47 5.50Q50 0.00 59.53 5.50L90.47 23.37Q100 28.87 100.00 39.87L100.00 75.60Q100 86.60 90.47 92.10L59.53 109.97Q50 115.47 40.47 109.97L9.53 92.10Q0 86.60 0.00 75.60L0.00 39.87Q0 28.87 9.53 23.37Z'/%3E%3C/svg%3E");
-  --white: #ffffff;
 
-  /* ---------- المسرح (خلفيات التلفاز والجوال) ---------- */
-  --stage: #241a3f;
-  --stage-2: #322556;
-  --stage-3: #45357a;
-  --on-stage: #fff8ea;
-  --on-stage-dim: rgba(255, 248, 234, 0.72);
-
-  /* ---------- ألوان اللعب ---------- */
-  --sun: #ffd23f; /* الإجراء الأساسي */
-  --sun-deep: #f5b700;
-  --coral: #ff6b57; /* خطر / مخالفة */
-  --coral-deep: #c2311c; /* نص أحمر على الأبيض (تباين كافٍ) */
-  --mint: #2fd49f; /* صح / نجاح */
-  --sky: #4cc9f0; /* معلومة */
-  --grape: #a86cf0;
-  --bubble: #ff8fc8;
-  --ink-on-color: #1d1235;
-
-  /* درجات الأزرار ثلاثية الأبعاد: -hi أعلى الوجه، -side الجدار السفلي */
-  --sun-hi: #ffe98a;
-  --sun-side: #d99a00;
-  --mint-hi: #8ef3cf;
-  --mint-side: #14966c;
-  --coral-hi: #ffa293;
-  --coral-side: #c2311c;
-  --sky-hi: #a6e8fa;
-  --sky-side: #1d8ab0;
-  --grape-hi: #caa2f7;
-  --grape-side: #7440bd;
-
-  /* ألوان الفريقين — تُستبدل من حالة اللعبة */
-  --team-a: #19a974;
-  --team-b: #e0453a;
-  --team: var(--sun);
-  --team-ink: var(--ink);
-
-  /* ---------- الخطوط ---------- */
+  /* ============ الخطوط ============ */
   --font-display: "Baloo Bhaijaan 2", "Lalezar", "Tajawal", system-ui, sans-serif;
   --font-body: "Tajawal", "Cairo", system-ui, sans-serif;
 
-  /* سلّم الأحجام (الجوال) — التلفاز يكبّره عبر --scale */
-  --scale: 1;
+  /* ============ الحركة ============ */
+  --dur-1: 120ms; /* ضغط */
+  --dur-2: 220ms; /* انتقال */
+  --dur-3: 420ms; /* دخول */
+  --ease-pop: cubic-bezier(0.34, 1.56, 0.64, 1); /* ارتداد مرن */
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --stagger: 70ms;
+
+  /* ============ المقاسات ============ */
+  --scale: 1; /* التلفاز: 1.45 */
+  --line: 3px; /* سماكة الحدود */
+  --line-thin: 2px;
+  --lift: 5px; /* عمق الظل الصلب */
+  --lift-sm: 3px;
+  --r-sm: 12px;
+  --r-md: 16px;
+  --r-lg: 24px;
+  --r-xl: 36px;
+  --r-pill: 999px;
+  --tap: 48px; /* أصغر هدف لمس على الجوال */
+  --focus-w: 4px; /* حلقة التركيز (لوحة المفاتيح) */
+  --focus-gap: 3px;
+  --content-max: 1180px; /* أعرض محتوى في صفحة */
+  --phone-max: 480px; /* أعرض محتوى على الجوال */
+  --pattern: 28px; /* نقاط خلفية المسرح */
+}
+
+/* القيم التي تكبر مع --scale تُعرَّف هنا (على :root و .ds-tv و .ds-scaled)
+   كي تُحسب من جديد داخلها — المتغيّر المحسوب في :root لا يتغيّر بالوراثة.
+   .ds-scaled: حاوية تصغّر/تكبّر كل ما فيها، مثل معاينة شاشة التلفاز داخل صفحة
+   (اضبط --scale عليها، أو استعمل fitScale() من ds.js لتتبع عرضها تلقائياً). */
+:root,
+.ds-tv,
+.ds-scaled {
+  /* سلّم المسافات: مضاعفات 4px فقط */
+  --sp-1: calc(4px * var(--scale));
+  --sp-2: calc(8px * var(--scale));
+  --sp-3: calc(12px * var(--scale));
+  --sp-4: calc(16px * var(--scale));
+  --sp-5: calc(20px * var(--scale));
+  --sp-6: calc(24px * var(--scale));
+  --sp-8: calc(32px * var(--scale));
+  --sp-10: calc(40px * var(--scale));
+  --sp-12: calc(48px * var(--scale));
+  --sp-16: calc(64px * var(--scale));
+
+  /* سلّم الخطوط */
   --fs-xs: calc(0.8rem * var(--scale));
   --fs-sm: calc(0.92rem * var(--scale));
   --fs-md: calc(1.05rem * var(--scale));
@@ -84,49 +161,45 @@
   --fs-3xl: calc(3.8rem * var(--scale));
   --fs-hero: calc(5.2rem * var(--scale));
 
-  /* ---------- الشكل ---------- */
-  --line: 3px; /* سماكة الحدود */
-  --lift: 5px; /* إزاحة الظل الصلب */
-  --r-sm: 12px;
-  --r-md: 18px;
-  --r-lg: 26px;
-  --r-xl: 36px;
-  --r-pill: 999px;
-  --gap-1: 0.35rem;
-  --gap-2: 0.6rem;
-  --gap-3: 1rem;
-  --gap-4: 1.6rem;
-  --gap-5: 2.6rem;
+  /* الأيقونات (نسبةً لحجم النص المحيط) */
+  --icon-sm: 1em;
+  --icon-md: 1.25em;
+  --icon-lg: 1.7em;
+
+  /* الظلال الجاهزة */
   --shadow: 0 var(--lift) 0 var(--ink);
   --shadow-lg: 0 calc(var(--lift) * 1.6) 0 var(--ink);
-  --glow-soft: 0 18px 40px var(--glow-dark);
+  --glow-soft: 0 var(--sp-5) var(--sp-10) var(--glow-dark);
 
-  /* ---------- الحركة ---------- */
-  --dur-1: 120ms; /* ضغط */
-  --dur-2: 220ms; /* انتقال */
-  --dur-3: 420ms; /* دخول */
-  --ease-pop: cubic-bezier(0.34, 1.56, 0.64, 1); /* ارتداد مرن */
-  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
-  --stagger: 70ms;
+  /* هامش الأمان على التلفاز (أطراف الشاشة قد تُقصّ) */
+  --safe: clamp(16px, 4vw, 72px);
+}
 
-  --focus: #4cc9f0;
 
-  /* شفافيات (لمعة، ظلال، ستارة) */
-  --shine: rgba(255, 255, 255, 0.55);
-  --shine-strong: rgba(255, 255, 255, 0.9);
-  --ink-35: rgba(29, 18, 53, 0.35);
-  --ink-12: rgba(29, 18, 53, 0.12);
-  --scrim: rgba(20, 10, 40, 0.6);
-  --paper-08: rgba(255, 248, 234, 0.08);
-  --paper-07: rgba(255, 248, 234, 0.07);
-  --glow-dark: rgba(10, 4, 30, 0.35);
+/* الفريق: ضع .ds-team-a أو .ds-team-b على أي عنصر (أو أحد آبائه)
+   فتأخذ كل المكوّنات داخله لون الفريق ودرجاته. لا تُكتب ألوان الفريق يدوياً أبداً. */
+.ds-team-a {
+  --team: var(--team-a);
+  --team-hi: var(--team-a-hi);
+  --team-side: var(--team-a-side);
+  --team-ink: var(--team-a-ink);
+  --team-glow: var(--team-a-glow);
+}
+.ds-team-b {
+  --team: var(--team-b);
+  --team-hi: var(--team-b-hi);
+  --team-side: var(--team-b-side);
+  --team-ink: var(--team-b-ink);
+  --team-glow: var(--team-b-glow);
 }
 
 /* التلفاز: كل شيء أكبر وحدود أسمك */
 .ds-tv {
   --scale: 1.45;
   --line: 4px;
+  --line-thin: 3px;
   --lift: 7px;
+  --lift-sm: 4px;
 }
 
 /* ================================================================
@@ -171,11 +244,11 @@
 .ds-page::before {
   content: "";
   position: absolute;
-  inset: -56px;
+  inset: calc(var(--pattern) * -2);
   z-index: -1;
   pointer-events: none;
   background-image: radial-gradient(var(--paper-07) 2px, transparent 2.5px);
-  background-size: 28px 28px;
+  background-size: var(--pattern) var(--pattern);
   animation: dsDrift 30s linear infinite;
 }
 .ds-page::before {
@@ -183,7 +256,7 @@
 }
 @keyframes dsDrift {
   to {
-    transform: translate(28px, 56px);
+    transform: translate(var(--pattern), calc(var(--pattern) * 2));
   }
 }
 
@@ -201,9 +274,25 @@
   stroke-linejoin: round;
   vertical-align: -0.22em;
 }
+.ds-icon--sm {
+  width: var(--icon-sm);
+  height: var(--icon-sm);
+}
 .ds-icon--lg {
-  width: 1.7em;
-  height: 1.7em;
+  width: var(--icon-lg);
+  height: var(--icon-lg);
+}
+.ds-icon--xl {
+  width: 2.2em;
+  height: 2.2em;
+}
+/* داخل الشارات والرقائق: أصغر وأسمك قليلاً */
+.ds-pill .ds-icon,
+.ds-chip .ds-icon,
+.ds-team-meta .ds-icon {
+  width: 1.05em;
+  height: 1.05em;
+  stroke-width: 2.8;
 }
 /* أيقونة داخل «ملصق» دائري */
 .ds-badge-icon {
@@ -216,7 +305,15 @@
   background: var(--paper);
   color: var(--ink);
   border: var(--line) solid var(--ink);
-  box-shadow: inset 0 2px 0 var(--shine), 0 3px 0 var(--ink);
+  box-shadow: inset 0 var(--line-thin) 0 var(--shine), 0 var(--lift-sm) 0 var(--ink);
+}
+.ds-badge-icon--lg {
+  width: 3.4em;
+  height: 3.4em;
+}
+.ds-badge-icon--lg .ds-icon {
+  width: 1.8em;
+  height: 1.8em;
 }
 
 /* ================================================================
@@ -238,7 +335,7 @@
   align-items: center;
   justify-content: center;
   gap: 0.5em;
-  min-height: 2.9em;
+  min-height: max(2.9em, var(--tap));
   padding: 0.5em 1.3em 0.6em;
   font-family: var(--font-display);
   font-weight: 800;
@@ -255,7 +352,7 @@
      فيظهر الحدّ حول الجدار من الجانبين والأسفل بلا أي «حافة» زائدة. */
   --d: var(--depth);
   box-shadow:
-    inset 0 2px 0 var(--shine),
+    inset 0 var(--line-thin) 0 var(--shine),
     0 var(--d) 0 calc(var(--line) * -1) var(--btn-side),
     0 var(--d) 0 0 var(--ink),
     0 calc(var(--d) + 5px) 6px -3px var(--ink-35);
@@ -312,8 +409,8 @@
   filter: brightness(0.96);
 }
 .ds-btn:focus-visible {
-  outline: 4px solid var(--focus);
-  outline-offset: 4px;
+  outline: var(--focus-w) solid var(--focus);
+  outline-offset: var(--focus-gap);
 }
 .ds-btn .ds-icon {
   width: 1.3em;
@@ -370,42 +467,44 @@
   --btn-hi: var(--sun-hi);
   --btn-bg: var(--sun);
   --btn-side: var(--sun-side);
+  --btn-ink: var(--sun-ink);
+  --btn-text-shine: var(--sun-glow);
 }
 .ds-btn--success {
   --btn-hi: var(--mint-hi);
   --btn-bg: var(--mint);
   --btn-side: var(--mint-side);
+  --btn-ink: var(--mint-ink);
+  --btn-text-shine: var(--mint-glow);
 }
 .ds-btn--danger {
   --btn-hi: var(--coral-hi);
   --btn-bg: var(--coral);
   --btn-side: var(--coral-side);
+  --btn-ink: var(--coral-ink);
+  --btn-text-shine: var(--coral-glow);
 }
 .ds-btn--info {
   --btn-hi: var(--sky-hi);
   --btn-bg: var(--sky);
   --btn-side: var(--sky-side);
+  --btn-ink: var(--sky-ink);
+  --btn-text-shine: var(--sky-glow);
 }
 .ds-btn--grape {
   --btn-hi: var(--grape-hi);
   --btn-bg: var(--grape);
   --btn-side: var(--grape-side);
-  --btn-ink: var(--paper);
-  --btn-text-shine: var(--ink-35);
+  --btn-ink: var(--grape-ink);
+  --btn-text-shine: var(--grape-glow);
 }
-/* زر الفريق: الدرجات تُشتقّ من لون الفريق (المتصفحات القديمة: لون واحد) */
+/* زر الفريق: يأخذ درجات الفريق من .ds-team-a / .ds-team-b (يحسبها محرّك الثيم) */
 .ds-btn--team {
-  --btn-hi: var(--team);
+  --btn-hi: var(--team-hi);
   --btn-bg: var(--team);
-  --btn-side: var(--team-side, var(--ink-soft));
+  --btn-side: var(--team-side);
   --btn-ink: var(--team-ink);
-  --btn-text-shine: var(--ink-35);
-}
-@supports (color: color-mix(in srgb, red 50%, blue)) {
-  .ds-btn--team {
-    --btn-hi: color-mix(in srgb, var(--team) 70%, white);
-    --btn-side: color-mix(in srgb, var(--team) 62%, black);
-  }
+  --btn-text-shine: var(--team-glow);
 }
 /* شفاف: على المسرح (إلغاء، رجوع) */
 .ds-btn--ghost {
@@ -463,9 +562,7 @@
 
 /* الجرس الكبير (أجراس اللاعبين): كرة لامعة على قاعدة */
 .ds-buzzer {
-  --size: min(62vw, 280px);
-  --b-hi: var(--team);
-  --b-side: var(--ink-soft);
+  --size: min(62vw, calc(280px * var(--scale)));
   position: relative;
   width: var(--size);
   height: var(--size);
@@ -473,7 +570,7 @@
   border: calc(var(--line) + 2px) solid var(--ink);
   background:
     radial-gradient(ellipse 42% 26% at 50% 20%, var(--shine) 0 60%, transparent 62%),
-    radial-gradient(circle at 50% 30%, var(--b-hi) 0%, var(--team) 55%, var(--team) 100%);
+    radial-gradient(circle at 50% 30%, var(--team-hi) 0%, var(--team) 55%, var(--team) 100%);
   color: var(--team-ink);
   font-family: var(--font-display);
   font-weight: 800;
@@ -482,7 +579,7 @@
   --d: 14px;
   box-shadow:
     inset 0 -0.35em 0 var(--ink-12),
-    0 var(--d) 0 calc((var(--line) + 2px) * -1) var(--b-side),
+    0 var(--d) 0 calc((var(--line) + 2px) * -1) var(--team-side),
     0 var(--d) 0 0 var(--ink),
     0 calc(var(--d) + 10px) 14px -6px var(--ink-35);
   margin-bottom: 14px;
@@ -492,20 +589,14 @@
     box-shadow var(--dur-1) var(--ease-out);
   animation: dsBreathe 2.6s ease-in-out infinite;
 }
-@supports (color: color-mix(in srgb, red 50%, blue)) {
-  .ds-buzzer {
-    --b-hi: color-mix(in srgb, var(--team) 60%, white);
-    --b-side: color-mix(in srgb, var(--team) 58%, black);
-  }
-}
 .ds-buzzer:active {
   --d: 1px;
   transform: translateY(13px);
   animation: none;
 }
 .ds-buzzer:focus-visible {
-  outline: 5px solid var(--focus);
-  outline-offset: 6px;
+  outline: var(--focus-w) solid var(--focus);
+  outline-offset: var(--focus-gap);
 }
 @keyframes dsBreathe {
   50% {
@@ -522,7 +613,7 @@
   border: var(--line) solid var(--ink);
   border-radius: var(--r-lg);
   box-shadow: var(--shadow-lg);
-  padding: var(--gap-4);
+  padding: var(--sp-6);
 }
 .ds-card--stage {
   background: var(--stage-2);
@@ -536,7 +627,7 @@
   font-family: var(--font-display);
   font-size: var(--fs-lg);
   font-weight: 800;
-  margin: 0 0 var(--gap-2);
+  margin: 0 0 var(--sp-3);
 }
 
 /* بطاقة لعبة في القائمة الرئيسية: تتمايل بلطف، وتقفز عند التمرير */
@@ -549,9 +640,9 @@
   display: grid;
   justify-items: center;
   align-content: center;
-  gap: var(--gap-2);
+  gap: var(--sp-3);
   aspect-ratio: 4 / 3.4;
-  padding: var(--gap-3) var(--gap-3) calc(var(--gap-3) + 0.6em);
+  padding: var(--sp-4) var(--sp-4) calc(var(--sp-4) + 0.6em);
   background:
     radial-gradient(ellipse 70% 45% at 50% 0%, var(--shine) 0%, transparent 70%),
     var(--tile);
@@ -560,7 +651,7 @@
   border-radius: var(--r-xl);
   --d: calc(var(--lift) * 1.6);
   box-shadow:
-    inset 0 3px 0 var(--shine),
+    inset 0 var(--lift-sm) 0 var(--shine),
     0 var(--d) 0 calc(var(--line) * -1) var(--tile-side),
     0 var(--d) 0 0 var(--ink),
     0 calc(var(--d) + 8px) 10px -4px var(--ink-35);
@@ -596,8 +687,8 @@
   transform: translateY(calc(var(--lift) * 1.6)) scale(0.99);
 }
 .ds-game-tile:focus-visible {
-  outline: 5px solid var(--focus);
-  outline-offset: 5px;
+  outline: var(--focus-w) solid var(--focus);
+  outline-offset: var(--focus-gap);
 }
 /* الأيقونة داخل دائرة ورقية */
 .ds-game-tile-art {
@@ -609,7 +700,7 @@
   border-radius: 50%;
   background: var(--paper);
   border: var(--line) solid var(--ink);
-  box-shadow: inset 0 2px 0 var(--shine), 0 4px 0 var(--ink);
+  box-shadow: inset 0 var(--line-thin) 0 var(--shine), 0 var(--lift-sm) 0 var(--ink);
 }
 .ds-game-tile-art .ds-icon {
   width: 1.15em;
@@ -639,8 +730,8 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: var(--gap-3);
-  padding: var(--gap-3) var(--gap-4);
+  gap: var(--sp-4);
+  padding: var(--sp-4) var(--sp-6);
   background: var(--team);
   color: var(--team-ink);
   border: var(--line) solid var(--ink);
@@ -729,7 +820,7 @@
   border-radius: var(--r-pill);
   font-weight: 800;
   font-size: var(--fs-sm);
-  box-shadow: 0 3px 0 var(--ink);
+  box-shadow: 0 var(--lift-sm) 0 var(--ink);
 }
 .ds-pill--team {
   background: var(--team);
@@ -749,7 +840,7 @@
   width: 0.75em;
   height: 0.75em;
   border-radius: 50%;
-  border: 2px solid currentColor;
+  border: var(--line-thin) solid currentColor;
   background: currentColor;
   transition: transform var(--dur-2) var(--ease-pop), background-color var(--dur-2);
 }
@@ -820,7 +911,7 @@
   gap: 0.35em;
   padding: 0.25em 0.8em;
   border-radius: var(--r-pill);
-  border: 2px solid var(--ink);
+  border: var(--line-thin) solid var(--ink);
   background: var(--paper);
   color: var(--ink);
   font-weight: 800;
@@ -841,7 +932,7 @@
 .ds-chip--forbidden {
   background: var(--white);
   border-color: var(--coral);
-  color: var(--coral-deep);
+  color: var(--coral-side);
   text-decoration: line-through 2px;
 }
 
@@ -854,7 +945,7 @@
   padding-inline: 0.25em 0.85em;
   background: var(--paper);
   color: var(--ink);
-  border: 2px solid var(--ink);
+  border: var(--line-thin) solid var(--ink);
   border-radius: var(--r-pill);
   font-weight: 800;
   font-size: var(--fs-sm);
@@ -866,7 +957,7 @@
   display: grid;
   place-items: center;
   border-radius: 50%;
-  border: 2px solid var(--ink);
+  border: var(--line-thin) solid var(--ink);
   background: var(--team);
   color: var(--team-ink);
   font-family: var(--font-display);
@@ -884,8 +975,8 @@
   --banner: var(--sun);
   display: flex;
   align-items: center;
-  gap: var(--gap-3);
-  padding: var(--gap-3) var(--gap-4);
+  gap: var(--sp-4);
+  padding: var(--sp-4) var(--sp-6);
   background: var(--banner);
   color: var(--ink);
   border: var(--line) solid var(--ink);
@@ -905,7 +996,7 @@
   background: var(--paper);
   color: var(--ink);
   border: var(--line) solid var(--ink);
-  box-shadow: 0 3px 0 var(--ink);
+  box-shadow: 0 var(--lift-sm) 0 var(--ink);
 }
 .ds-banner-icon .ds-icon {
   width: 1.15em;
@@ -929,10 +1020,10 @@
 .ds-toasts {
   position: fixed;
   inset-inline: 0;
-  bottom: 18px;
+  bottom: var(--sp-5);
   display: grid;
   justify-items: center;
-  gap: 8px;
+  gap: var(--sp-2);
   pointer-events: none;
   z-index: 200;
 }
@@ -971,7 +1062,7 @@
    ================================================================ */
 .ds-field {
   display: grid;
-  gap: var(--gap-1);
+  gap: var(--sp-2);
 }
 .ds-label {
   font-weight: 800;
@@ -994,7 +1085,7 @@
 }
 .ds-input:focus-visible {
   outline: none;
-  box-shadow: 0 0 0 4px var(--focus);
+  box-shadow: 0 0 0 var(--focus-w) var(--focus);
   transform: scale(1.01);
 }
 .ds-input.is-invalid {
@@ -1035,7 +1126,7 @@
   height: 1.3em;
   border-radius: 50%;
   background: var(--white);
-  border: 2px solid var(--ink);
+  border: var(--line-thin) solid var(--ink);
   transform: translateY(-50%);
   transition: transform var(--dur-2) var(--ease-pop);
 }
@@ -1046,8 +1137,8 @@
   transform: translate(calc((var(--w) - 1.95em) * -1), -50%);
 }
 .ds-switch:focus-visible {
-  outline: 4px solid var(--focus);
-  outline-offset: 3px;
+  outline: var(--focus-w) solid var(--focus);
+  outline-offset: var(--focus-gap);
 }
 
 /* أزرار مقسّمة (اختيار واحد) */
@@ -1055,8 +1146,8 @@
   display: inline-flex;
   flex-wrap: wrap;
   max-width: 100%;
-  padding: 4px 4px 8px;
-  gap: 4px;
+  padding: var(--sp-1) var(--sp-1) var(--sp-2);
+  gap: var(--sp-1);
   background: var(--paper-2);
   border: var(--line) solid var(--ink);
   border-radius: var(--r-pill);
@@ -1067,7 +1158,7 @@
   font: 800 var(--fs-sm) var(--font-body);
   color: var(--ink);
   background: transparent;
-  border: 2px solid transparent;
+  border: var(--line-thin) solid transparent;
   border-radius: var(--r-pill);
   cursor: pointer;
   transition: background-color var(--dur-2) var(--ease-out), transform var(--dur-2) var(--ease-out);
@@ -1075,22 +1166,22 @@
 .ds-seg button[aria-pressed="true"] {
   background: linear-gradient(180deg, var(--sun-hi), var(--sun) 55%);
   border-color: var(--ink);
-  box-shadow: inset 0 2px 0 var(--shine), 0 3px 0 -2px var(--sun-side), 0 3px 0 0 var(--ink);
+  box-shadow: inset 0 var(--line-thin) 0 var(--shine), 0 3px 0 -2px var(--sun-side), 0 3px 0 0 var(--ink);
   transform: translateY(-2px);
 }
 .ds-seg button .ds-icon {
   margin-inline-end: 0.3em;
 }
 .ds-seg button:focus-visible {
-  outline: 3px solid var(--focus);
-  outline-offset: 1px;
+  outline: var(--focus-w) solid var(--focus);
+  outline-offset: var(--focus-gap);
 }
 
 /* عدّاد +/− */
 .ds-stepper {
   display: inline-flex;
   align-items: center;
-  gap: var(--gap-2);
+  gap: var(--sp-3);
 }
 .ds-stepper-value {
   min-width: 2.2em;
@@ -1106,10 +1197,10 @@
 .ds-qr {
   display: grid;
   justify-items: center;
-  gap: var(--gap-2);
+  gap: var(--sp-3);
 }
 .ds-qr-frame {
-  padding: 12px;
+  padding: var(--sp-3);
   background: var(--white);
   border: var(--line) solid var(--ink);
   border-radius: var(--r-lg);
@@ -1118,8 +1209,8 @@
 }
 .ds-qr-frame canvas,
 .ds-qr-frame svg {
-  width: calc(170px * var(--scale));
-  height: calc(170px * var(--scale));
+  width: calc(var(--qr, 170px) * var(--scale));
+  height: calc(var(--qr, 170px) * var(--scale));
 }
 
 /* ================================================================
@@ -1131,7 +1222,7 @@
   z-index: 150;
   display: grid;
   place-items: center;
-  padding: var(--gap-4);
+  padding: var(--sp-6);
   background: var(--scrim);
   opacity: 0;
   visibility: hidden;
@@ -1160,7 +1251,7 @@
    ولمعتان بيضاوان في الزاوية العليا — كاللوحة الأصلية. في اللوحة تلتصق الخلايا بلا فراغات.
    ================================================================ */
 .ds-hex {
-  --hw: 92px; /* عرض الخلية */
+  --hw: calc(92px * var(--scale)); /* عرض الخلية */
   --hx-face: var(--cream);
   --hx-hi: var(--cream-hi);
   --hx-side: var(--cream-side);
@@ -1223,28 +1314,18 @@
   transform: translateY(4%);
   user-select: none;
 }
-/* ألوان الفريقين — تُشتقّ من لون الفريق (المتصفحات القديمة: لون واحد) */
-.ds-hex.is-a,
-.ds-hex.is-b {
-  --hx-face: var(--team);
-  --hx-hi: var(--team);
-  --hx-side: var(--ink-soft);
-  --hx-ink: var(--team-ink);
-}
+/* خلايا الفريقين: درجاتها من محرّك الثيم */
 .ds-hex.is-a {
-  --team: var(--team-a);
-  --team-ink: var(--paper);
+  --hx-face: var(--team-a);
+  --hx-hi: var(--team-a-hi);
+  --hx-side: var(--team-a-side);
+  --hx-ink: var(--team-a-ink);
 }
 .ds-hex.is-b {
-  --team: var(--team-b);
-  --team-ink: var(--paper);
-}
-@supports (color: color-mix(in srgb, red 50%, blue)) {
-  .ds-hex.is-a,
-  .ds-hex.is-b {
-    --hx-hi: color-mix(in srgb, var(--team) 72%, white);
-    --hx-side: color-mix(in srgb, var(--team) 60%, black);
-  }
+  --hx-face: var(--team-b);
+  --hx-hi: var(--team-b-hi);
+  --hx-side: var(--team-b-side);
+  --hx-ink: var(--team-b-ink);
 }
 /* الخلية المختارة: ترتفع، تتوهّج، ودائرة نابضة خلفها */
 .ds-hex.is-selected {
@@ -1319,14 +1400,14 @@ button.ds-hex:active {
   transform: translateY(2px) scale(0.97);
 }
 button.ds-hex:focus-visible {
-  outline: 4px solid var(--focus);
-  outline-offset: 2px;
+  outline: var(--focus-w) solid var(--focus);
+  outline-offset: var(--focus-gap);
 }
 
 /* اللوحة: خلفية مقسومة على شكل X كاللوحة الأصلية —
    المثلّثان الأعلى والأسفل هدف الفريق الأول، والجانبان هدف الفريق الثاني. */
 .ds-board {
-  --hw: 74px;
+  --hw: calc(74px * var(--scale));
   position: relative;
   isolation: isolate;
   display: inline-block;
@@ -1355,20 +1436,25 @@ button.ds-hex:focus-visible {
 
 /* شارة الحرف الحالي (سداسية كبيرة) */
 .ds-letter-badge {
-  --hw: 120px;
+  --hw: calc(120px * var(--scale));
+}
+@media (max-width: 640px) {
+  .ds-board {
+    --hw: calc(50px * var(--scale));
+  }
 }
 
 /* لوحة السؤال على التلفاز */
 .ds-qpanel {
   display: flex;
   align-items: center;
-  gap: var(--gap-4);
-  padding: var(--gap-4);
+  gap: var(--sp-6);
+  padding: var(--sp-6);
   background: var(--paper);
   color: var(--ink);
   border: var(--line) solid var(--ink);
   border-radius: var(--r-xl);
-  box-shadow: inset 0 3px 0 var(--shine), 0 calc(var(--lift) * 1.6) 0 var(--ink);
+  box-shadow: inset 0 var(--lift-sm) 0 var(--shine), 0 calc(var(--lift) * 1.6) 0 var(--ink);
 }
 .ds-qpanel-text {
   flex: 1;
@@ -1383,13 +1469,13 @@ button.ds-hex:focus-visible {
   display: inline-flex;
   align-items: center;
   gap: 0.5em;
-  margin-top: var(--gap-2);
+  margin-top: var(--sp-3);
   padding: 0.35em 1em;
   background: var(--mint);
   border: var(--line) solid var(--ink);
   border-radius: var(--r-pill);
   font-size: var(--fs-lg);
-  box-shadow: 0 4px 0 var(--ink);
+  box-shadow: 0 var(--lift-sm) 0 var(--ink);
 }
 .ds-answer[hidden] {
   display: none;
@@ -1420,7 +1506,7 @@ button.ds-hex:focus-visible {
 /* مراحل الجرس: ١ أول من يضغط · ٢ الفريق الآخر · ٣ مفتوح للجميع */
 .ds-steps {
   display: flex;
-  gap: var(--gap-2);
+  gap: var(--sp-3);
   align-items: center;
 }
 .ds-step {
@@ -1431,7 +1517,7 @@ button.ds-hex:focus-visible {
   padding-inline: 0.35em 0.9em;
   background: var(--stage-3);
   color: var(--on-stage-dim);
-  border: 2px solid var(--ink);
+  border: var(--line-thin) solid var(--ink);
   border-radius: var(--r-pill);
   font-weight: 800;
   font-size: var(--fs-sm);
@@ -1447,14 +1533,14 @@ button.ds-hex:focus-visible {
   border-radius: 50%;
   background: var(--paper);
   color: var(--ink);
-  border: 2px solid var(--ink);
+  border: var(--line-thin) solid var(--ink);
   font-family: var(--font-display);
 }
 .ds-step.is-on {
   background: var(--sun);
   color: var(--ink);
   transform: scale(1.08);
-  box-shadow: 0 3px 0 var(--ink);
+  box-shadow: 0 var(--lift-sm) 0 var(--ink);
 }
 .ds-step.is-done {
   opacity: 0.5;
@@ -1468,7 +1554,7 @@ button.ds-hex:focus-visible {
   justify-items: center;
 }
 .ds-hexkeys .ds-hex {
-  --hw: 50px;
+  --hw: calc(50px * var(--scale));
   --hx-d: 4px;
 }
 
@@ -1477,19 +1563,203 @@ button.ds-hex:focus-visible {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: var(--gap-2);
+  gap: var(--sp-3);
   padding: 0.4em 1em;
   background: var(--paper);
   color: var(--ink);
   border: var(--line) solid var(--ink);
   border-radius: var(--r-pill);
-  box-shadow: 0 4px 0 var(--ink);
+  box-shadow: 0 var(--lift-sm) 0 var(--ink);
   font-weight: 800;
 }
 .ds-letterbar b {
   font-family: var(--font-display);
   font-size: var(--fs-xl);
   line-height: 1;
+}
+
+/* ================================================================
+   مكوّنات الشاشات
+   ================================================================ */
+/* عنوان شاشة على المسرح */
+.ds-title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: var(--fs-2xl);
+  line-height: 1.15;
+  color: var(--on-stage);
+  text-shadow: 0 var(--lift-sm) 0 var(--ink);
+  text-wrap: balance;
+}
+.ds-title .ds-icon {
+  vertical-align: -0.12em;
+}
+/* عنوان كبير ملوّن بحدّ حبر (الفوز، شعار السهرة) */
+.ds-winner {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: var(--fs-hero);
+  line-height: 1.1;
+  color: var(--sun);
+  -webkit-text-stroke: var(--line) var(--ink);
+  paint-order: stroke fill;
+  text-shadow: 0 var(--lift) 0 var(--ink);
+  text-wrap: balance;
+}
+/* الكأس الكبيرة: <svg class="ds-icon ds-trophy"> */
+.ds-trophy {
+  width: calc(var(--fs-hero) * 1.5);
+  height: calc(var(--fs-hero) * 1.5);
+  color: var(--sun);
+  stroke-width: 2;
+  filter: drop-shadow(0 var(--lift) 0 var(--ink));
+}
+/* القوانين على التلفاز: ٣ بطاقات في كل شريحة، أيقونة كبيرة وكلمتان */
+.ds-rules {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--sp-6);
+  width: 100%;
+}
+.ds-rule {
+  display: grid;
+  justify-items: center;
+  align-content: center;
+  gap: var(--sp-3);
+  padding: var(--sp-6) var(--sp-4);
+  background: var(--paper);
+  color: var(--ink);
+  border: var(--line) solid var(--ink);
+  border-radius: var(--r-lg);
+  box-shadow: inset 0 var(--lift-sm) 0 var(--shine), 0 var(--lift) 0 var(--ink);
+  text-align: center;
+}
+.ds-rule-icon {
+  display: grid;
+  place-items: center;
+  width: calc(var(--fs-3xl) * 1.5);
+  height: calc(var(--fs-3xl) * 1.5);
+  border-radius: 50%;
+  background: var(--sun);
+  color: var(--sun-ink);
+  border: var(--line) solid var(--ink);
+  box-shadow: 0 var(--lift-sm) 0 var(--ink);
+}
+.ds-rule-icon .ds-icon {
+  width: 55%;
+  height: 55%;
+}
+.ds-rule-text {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: var(--fs-xl);
+  line-height: 1.2;
+}
+.ds-rule--foul {
+  background: var(--coral);
+  color: var(--coral-ink);
+}
+.ds-rule--foul .ds-rule-icon {
+  background: var(--paper);
+  color: var(--ink);
+}
+/* مؤشّر الشرائح */
+.ds-pager {
+  display: flex;
+  gap: var(--sp-2);
+  justify-content: center;
+}
+.ds-pager > span {
+  width: var(--sp-3);
+  height: var(--sp-3);
+  border-radius: 50%;
+  border: var(--line-thin) solid var(--ink);
+  background: var(--stage-3);
+  transition:
+    transform var(--dur-2) var(--ease-pop),
+    background-color var(--dur-2) var(--ease-out);
+}
+.ds-pager > span.is-on {
+  background: var(--sun);
+  transform: scale(1.3);
+}
+
+/* ================================================================
+   التخطيط — الألعاب ترتّب شاشاتها بهذه الأصناف فقط (لا CSS تخطيط داخل اللعبة)
+   ================================================================ */
+/* شاشة التلفاز: هامش أمان، وثلاثة صفوف (أعلى: النتيجة · وسط: اللعب · أسفل: الحالة) */
+.ds-screen {
+  min-height: 100vh;
+  box-sizing: border-box;
+  padding: var(--safe);
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  gap: var(--sp-6);
+}
+.ds-screen-main {
+  display: grid;
+  place-items: center;
+  min-height: 0;
+}
+/* شاشة الجوال: عمود واحد بعرض مريح */
+.ds-phone {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: var(--phone-max);
+  min-height: 100vh;
+  margin-inline: auto;
+  padding: var(--sp-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+}
+/* حاوية صفحة عريضة */
+.ds-container {
+  width: min(var(--content-max), 100% - 2 * var(--sp-5));
+  margin-inline: auto;
+}
+/* عمود بمسافات ثابتة */
+.ds-stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+}
+.ds-stack--tight {
+  gap: var(--sp-2);
+}
+.ds-stack--loose {
+  gap: var(--sp-8);
+}
+/* صف يلتفّ (أزرار، شارات) */
+.ds-cluster {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-4);
+}
+.ds-cluster--tight {
+  gap: var(--sp-2);
+}
+.ds-cluster--center {
+  justify-content: center;
+}
+.ds-cluster--between {
+  justify-content: space-between;
+}
+/* شبكة بطاقات تتكيّف مع العرض */
+.ds-grid {
+  display: grid;
+  gap: var(--sp-6);
+  grid-template-columns: repeat(auto-fill, minmax(min(var(--min, 260px), 100%), 1fr));
+}
+/* محتوى في المنتصف */
+.ds-center {
+  display: grid;
+  justify-items: center;
+  text-align: center;
+  gap: var(--sp-3);
 }
 
 /* ================================================================
@@ -1592,7 +1862,7 @@ button.ds-hex:focus-visible {
   top: -20px;
   width: 12px;
   height: 18px;
-  border: 2px solid var(--ink);
+  border: var(--line-thin) solid var(--ink);
   border-radius: 3px;
   pointer-events: none;
   z-index: 300;

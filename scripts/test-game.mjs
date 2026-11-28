@@ -3,6 +3,8 @@
  *   node scripts/test-game.mjs [port]
  */
 import { shuffleBoardLetters, normalizeBoardLetters, randomBoardLetters } from "../shared/engine.js";
+import { spawnSync } from "node:child_process";
+import { fileURLToPath } from "node:url";
 
 const PORT = process.argv[2] || 3111;
 const BASE = `http://127.0.0.1:${PORT}`;
@@ -42,6 +44,17 @@ async function main() {
   log("\n\x1b[35m▸ اختبار حروف مع حسين\x1b[0m\n");
 
   // --- الصفحات والملفات الثابتة ---
+  // قواعد نظام التصميم (DESIGN.md): لا إيموجي، لا ألوان/خطوط مكتوبة، لا مكوّنات خارج المكتبة
+  log("\x1b[36m▸ نظام التصميم\x1b[0m");
+  {
+    const run = (script, args = []) =>
+      spawnSync(process.execPath, [fileURLToPath(new URL(script, import.meta.url)), ...args], { encoding: "utf8" });
+    const ds = run("./check-ds.mjs");
+    check("قواعد نظام التصميم: لا مخالفات خارج الشاشات القديمة", ds.status === 0, (ds.stdout || "").trim().split("\n").slice(-3).join(" | "));
+    const th = run("./gen-ds-theme.mjs", ["--check"]);
+    check("ألوان ds.css تطابق محرّك الثيم (shared/ds-theme.js)", th.status === 0, (th.stdout + th.stderr).trim());
+  }
+
   log("\x1b[36m▸ الصفحات\x1b[0m");
   for (const [path, needle] of [
     ["/", "<html"],
