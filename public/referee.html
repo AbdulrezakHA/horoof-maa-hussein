@@ -3,413 +3,343 @@
   <head>
     <meta charset="utf-8" />
     <script src="/js/diag.js"></script>
-    <meta
-      name="viewport"
-      content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover"
-    />
-    <meta name="theme-color" content="#2c0f4d" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="" />
     <meta name="mobile-web-app-capable" content="yes" />
     <title>حروف مع حسين — لوحة الحكم</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap"
-      rel="stylesheet" media="print" onload="this.media='all'"
-    />
-    <link rel="stylesheet" href="/css/base.css" />
-    <link rel="stylesheet" href="/css/presets.css" />
-    <link rel="stylesheet" href="/css/referee.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Baloo+Bhaijaan+2:wght@500;700;800&family=Tajawal:wght@500;700;800&display=swap"
+          rel="stylesheet" media="print" onload="this.media='all'" />
+    <link rel="stylesheet" href="/css/ds.css" />
     <script src="/js/vendor/qrcode.js"></script>
   </head>
-  <body class="ref-body" data-game="none">
-    <div class="pairing-gate show" id="pairingGate">
-      <form class="pairing-card" id="pairingForm">
-        <div class="pairing-icon">🔐</div>
-        <h1>تحقق من لوحة الحكم</h1>
-        <p>أدخل رمز الأمان الظاهر على شاشة اللعبة.</p>
-        <input id="pairCodeInput" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" maxlength="6" placeholder="000000" aria-label="رمز الأمان" />
-        <p class="pairing-note" id="pairingNote">بانتظار الرمز…</p>
-        <button class="btn btn-yellow btn-lg" type="submit">اتصال آمن</button>
+  <body class="ds ds-page" data-game="none">
+    <!-- بوابة الرمز: رمز الأمان الظاهر على شاشة اللعبة -->
+    <div class="ds-modal is-open" id="pairingGate" role="dialog" aria-modal="true" aria-labelledby="pairingTitle">
+      <form class="ds-card ds-stack" id="pairingForm">
+        <div class="ds-center">
+          <span class="ds-badge-icon ds-badge-icon--lg"><span data-i="lock"></span></span>
+          <h1 class="ds-card-title" id="pairingTitle">تحقق من لوحة الحكم</h1>
+          <p class="ds-text">أدخل رمز الأمان الظاهر على شاشة اللعبة.</p>
+        </div>
+        <input class="ds-input ds-code" id="pairCodeInput" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" maxlength="6" placeholder="000000" aria-label="رمز الأمان" />
+        <p class="ds-hint ds-hint--error" id="pairingNote">بانتظار الرمز…</p>
+        <button class="ds-btn ds-btn--primary ds-btn--lg ds-btn--block" type="submit"><span data-i="lock"></span>اتصال آمن</button>
       </form>
     </div>
-    <header class="ref-header">
-      <div class="ref-brand">
-        <span class="ref-logo">🐝</span>
-        <div>
-          <div class="ref-title">لوحة الحكم</div>
-          <div class="ref-sub" id="roomLabel">الجولة — </div>
+
+    <div class="ds-container ds-stack">
+      <div class="ds-sticky ds-stack ds-stack--tight">
+        <header class="ds-cluster ds-cluster--between">
+          <div class="ds-cluster ds-cluster--tight">
+            <span class="ds-badge-icon"><span data-i="judge"></span></span>
+            <div class="ds-stack ds-stack--tight">
+              <h1 class="ds-title ds-title--xs">لوحة الحكم</h1>
+              <span class="ds-hint" id="roomLabel">الجولة</span>
+            </div>
+          </div>
+          <div class="ds-cluster ds-cluster--tight">
+            <button class="ds-btn ds-btn--icon" id="undoBtn" type="button" title="تراجع عن آخر قرار (Ctrl+Z)" aria-label="تراجع عن آخر قرار" disabled><span data-i="undo"></span></button>
+            <button class="ds-btn ds-btn--icon" id="sfxBtn" data-sfx-toggle type="button" title="تشغيل/إيقاف المؤثرات الصوتية" aria-label="المؤثرات الصوتية"><span data-i="volume"></span></button>
+            <span class="ds-pill ds-pill--dark" id="connChip">
+              <svg class="ds-icon" id="connIcon" aria-hidden="true"><use href="/icons.svg#timer" /></svg>
+              <span id="connText">جارٍ الاتصال…</span>
+            </span>
+          </div>
+        </header>
+
+        <!-- لافتة الضغط القديمة: مخفية دائماً — لوحة الحكم أدناه تعرض كل شيء -->
+        <div class="ds-banner" id="buzzBanner" hidden>
+          <span class="ds-banner-icon"><svg class="ds-icon" id="buzzBannerIco" aria-hidden="true"><use href="/icons.svg#bell" /></svg></span>
+          <span class="ds-banner-text" id="buzzBannerText"></span>
         </div>
+
+        <!-- لوحة الحكم أثناء السؤال: تظهر تلقائياً عند فتح الأجراس ولا تحجب اللوحة -->
+        <section class="ds-card ds-card--sm ds-stack ds-stack--tight" id="judgePanel" data-game="huroof" hidden>
+          <div class="ds-cluster ds-cluster--between">
+            <div class="ds-steps" id="judgeSteps">
+              <span class="ds-step" data-stage="1"><span class="ds-step-num">1</span>الأجراس</span>
+              <span class="ds-step" data-stage="2"><span class="ds-step-num">2</span>الآخر</span>
+              <span class="ds-step" data-stage="3"><span class="ds-step-num">3</span>الجميع</span>
+            </div>
+            <span class="ds-pill ds-pill--dark" id="judgeTimer" hidden><span data-i="timer"></span><span id="judgeTimerNum">3</span></span>
+          </div>
+          <div class="ds-banner ds-banner--sm ds-banner--info" id="judgeWhoBanner">
+            <span class="ds-banner-icon"><svg class="ds-icon" id="judgeWhoIcon" aria-hidden="true"><use href="/icons.svg#bell" /></svg></span>
+            <span class="ds-banner-text"><span id="judgeWho">بانتظار أول ضغطة…</span><span class="ds-banner-sub" id="judgeStage">الجولة ١</span></span>
+          </div>
+          <div class="ds-cluster" id="judgeHistory"></div>
+          <div class="ds-duo">
+            <button class="ds-btn ds-btn--success ds-btn--block" id="judgeRight" type="button"></button>
+            <button class="ds-btn ds-btn--danger ds-btn--block" id="judgeWrong" type="button"></button>
+            <button class="ds-btn ds-btn--block" id="judgeLock" type="button"></button>
+            <button class="ds-btn ds-btn--block" id="judgeNewQ" type="button"><span data-i="swap"></span>سؤال آخر <kbd class="ds-kbd">4</kbd></button>
+          </div>
+        </section>
       </div>
-      <div class="ref-head-tools">
-      <button class="undo-btn" id="undoBtn" type="button" title="تراجع عن آخر قرار (Ctrl+Z)" disabled>↩️</button>
-      <button class="sfx-toggle" id="sfxBtn" data-sfx-toggle type="button" title="تشغيل/إيقاف المؤثرات الصوتية" aria-label="المؤثرات الصوتية"><span class="sfx-ico">🔊</span></button>
-      <div class="conn" id="connChip">
-        <span class="conn-dot"></span><span id="connText">جارٍ الاتصال…</span>
-      </div>
-      </div>
-      <div class="buzz-banner" id="buzzBanner" hidden>
-        <span class="buzz-banner-ico" id="buzzBannerIco">🔔</span>
-        <span class="buzz-banner-text" id="buzzBannerText"></span>
-      </div>
 
-      <!-- لوحة الحكم أثناء السؤال: تظهر تلقائياً عند فتح الأجراس ولا تحجب اللوحة -->
-      <section class="judge" id="judgePanel" data-game="huroof" hidden>
-        <div class="judge-top">
-          <span class="judge-stage" id="judgeStage">الجولة ١</span>
-          <span class="judge-who" id="judgeWho">بانتظار أول ضغطة…</span>
-          <span class="judge-timer" id="judgeTimer" hidden>3</span>
-        </div>
-        <div class="judge-history" id="judgeHistory"></div>
-        <div class="judge-actions">
-          <button class="btn judge-btn judge-right" id="judgeRight" type="button">✅ صح <kbd>1</kbd></button>
-          <button class="btn judge-btn judge-wrong" id="judgeWrong" type="button">❌ خطأ <kbd>2</kbd></button>
-          <button class="btn judge-btn" id="judgeLock" type="button">🔒 إغلاق <kbd>3</kbd></button>
-          <button class="btn judge-btn" id="judgeNewQ" type="button">🔄 سؤال آخر <kbd>4</kbd></button>
-        </div>
-      </section>
-    </header>
+      <main class="ds-grid">
+        <!-- ============ قائمة الألعاب (أول ما يراه الحكم) ============ -->
+        <section class="ds-card ds-stack" id="hubCard" data-game="none">
+          <div class="ds-card-title ds-cluster ds-cluster--between"><span><span data-i="gamepad"></span> اختر اللعبة</span></div>
+          <div class="ds-cluster" id="nightBoardHub"></div>
+          <div class="ds-grid" id="hubGames"></div>
+          <p class="ds-hint">اللاعبون والفرق يبقون كما هم بين الألعاب — ولا حاجة لمسح أي رمز من جديد.</p>
+        </section>
 
-    <main class="ref-main">
-      <!-- ============ قائمة الألعاب (أول ما يراه الحكم) ============ -->
-      <section class="card hub-card" id="hubCard" data-game="none">
-        <div class="hub-title">🎮 اختر اللعبة</div>
-        <div class="night-board" id="nightBoardHub"></div>
-        <div class="hub-games" id="hubGames"></div>
-        <p class="tiny">اللاعبون والفرق يبقون كما هم بين الألعاب — ولا حاجة لمسح أي رمز من جديد.</p>
-      </section>
+        <!-- ============ الكلمة الممنوعة ============ -->
+        <section class="ds-card ds-stack" id="tabooCard" data-game="taboo"></section>
 
-      <!-- ============ الكلمة الممنوعة ============ -->
-      <section class="card taboo-card" id="tabooCard" data-game="taboo"></section>
-
-      <details class="card" id="tabooSettings" data-game="taboo">
-        <summary class="section-title">⚙️ إعدادات «الكلمة الممنوعة» والمواضيع</summary>
-        <div class="setting-row">
-          <label for="tabooTarget">حدّ الفوز (نقاط)</label>
-          <input id="tabooTarget" type="number" class="setting-number" min="3" max="50" step="1" value="10" />
-        </div>
-        <div class="setting-row">
-          <label for="tabooSeconds">مدة الدور (ثوانٍ)</label>
-          <input id="tabooSeconds" type="number" class="setting-number" min="20" max="180" step="5" value="60" />
-        </div>
-        <div class="setting-row">
-          <label for="tabooSkips">التخطّيات لكل فريق (طوال اللعبة)</label>
-          <select id="tabooSkips" class="setting-number">
-            <option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option>
-            <option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option>
-            <option value="8">8</option><option value="9">9</option><option value="10">10</option>
-            <option value="-1">∞ بلا حدّ</option>
-          </select>
-        </div>
-        <div class="section-title section-sub">📚 المواضيع</div>
-        <div class="pst-list" id="tabooPacks"></div>
-        <p class="tiny" id="tabooPacksReadout"></p>
-        <div class="btn-row" style="margin-top: 0.6rem">
-          <a class="btn" href="/taboo-packs" target="_blank" rel="noopener">✏️ إدارة وتعديل المواضيع</a>
-          <button class="btn btn-danger" id="tabooNewBtn" type="button">🔁 لعبة جديدة</button>
-        </div>
-      </details>
-
-      <!-- ============ اللوحة المصغّرة ============ -->
-      <section class="card board-card" data-game="huroof">
-        <div class="section-title">
-          🎯 لوحة الخلية
-          <span class="section-hint">اضغط على أي حرف لتحديده</span>
-        </div>
-        <div class="mini-board" id="board"></div>
-        <div class="score-row">
-          <div class="score-chip chip-a">
-            <span class="chip-name" id="scoreNameA">الفريق الأول</span>
-            <span class="chip-score" id="scoreA">0</span>
+        <details class="ds-card ds-collapse ds-stack" id="tabooSettings" data-game="taboo">
+          <summary class="ds-card-title"><span data-i="sliders"></span> إعدادات «الكلمة الممنوعة» والمواضيع</summary>
+          <div class="ds-cluster ds-cluster--between"><label class="ds-label" for="tabooTarget">حدّ الفوز (نقاط)</label><input id="tabooTarget" type="number" class="ds-input ds-input--num" min="3" max="50" step="1" value="10" /></div>
+          <div class="ds-cluster ds-cluster--between"><label class="ds-label" for="tabooSeconds">مدة الدور (ثوانٍ)</label><input id="tabooSeconds" type="number" class="ds-input ds-input--num" min="20" max="180" step="5" value="60" /></div>
+          <div class="ds-cluster ds-cluster--between"><label class="ds-label" for="tabooSkips">التخطّيات لكل فريق (طوال اللعبة)</label><select id="tabooSkips" class="ds-select"><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option><option value="9">9</option><option value="10">10</option><option value="-1">∞ بلا حدّ</option></select></div>
+          <div class="ds-card-title"><span data-i="scroll"></span> المواضيع</div>
+          <div class="ds-list" id="tabooPacks"></div>
+          <p class="ds-hint" id="tabooPacksReadout"></p>
+          <div class="ds-cluster">
+            <a class="ds-btn" href="/taboo-packs" target="_blank" rel="noopener"><span data-i="pen"></span>إدارة وتعديل المواضيع</a>
+            <button class="ds-btn ds-btn--danger" id="tabooNewBtn" type="button"><span data-i="undo"></span>لعبة جديدة</button>
           </div>
-          <div class="score-chip chip-b">
-            <span class="chip-name" id="scoreNameB">الفريق الثاني</span>
-            <span class="chip-score" id="scoreB">0</span>
+        </details>
+
+        <!-- ============ اللوحة المصغّرة ============ -->
+        <section class="ds-card ds-stack" data-game="huroof">
+          <div class="ds-card-title ds-cluster ds-cluster--between"><span><span data-i="target"></span> لوحة الخلية</span><span class="ds-hint">اضغط على أي حرف لتحديده</span></div>
+          <div class="ds-center"><div id="board"></div></div>
+          <div class="ds-duo">
+            <div class="ds-team ds-team-a"><div class="ds-team-name" id="scoreNameA">الفريق الأول</div><div class="ds-score" id="scoreA">0</div></div>
+            <div class="ds-team ds-team-b"><div class="ds-team-name" id="scoreNameB">الفريق الثاني</div><div class="ds-score" id="scoreB">0</div></div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      <!-- ============ التحكم بالشاشة الكبيرة ============ -->
-      <section class="card screen-card" id="screenCard">
-        <div class="section-title">
-          📺 الشاشة الكبيرة
-          <span class="section-hint" id="screenHint">—</span>
-        </div>
-        <div class="btn-row">
-          <button class="btn btn-lg btn-yellow" id="lobbyToggleBtn" type="button">▶️ ابدأ اللعب</button>
-          <button class="btn" id="screenSoundBtn" type="button">🔊 صوت الشاشة</button>
-        </div>
-        <div class="btn-row">
-          <button class="btn" id="screenFullBtn" type="button">⛶ ملء الشاشة على التلفاز</button>
-        </div>
-        <div class="section-title section-sub">🔗 رموز الدخول على التلفاز</div>
-        <div class="seg" id="qrRouteSeg">
-          <button class="btn" type="button" data-qr="both">🌐 + 📶 الاثنان</button>
-          <button class="btn" type="button" data-qr="net">🌐 الإنترنت فقط</button>
-          <button class="btn" type="button" data-qr="lan">📶 الواي فاي فقط</button>
-        </div>
-        <p class="tiny" id="netStatusLine">—</p>
-      </section>
-
-      <!-- ============ السؤال ============ -->
-      <section class="card q-card" id="qCard" data-game="huroof">
-        <div class="q-head">
-          <div class="q-letter-big" id="qLetter">؟</div>
-          <div class="q-head-text">
-            <div class="q-status" id="qStatus">لم يتم اختيار أي حرف بعد</div>
-            <div class="q-owner" id="qOwner"></div>
+        <!-- ============ التحكم بالشاشة الكبيرة ============ -->
+        <section class="ds-card ds-stack" id="screenCard">
+          <div class="ds-card-title ds-cluster ds-cluster--between"><span><span data-i="tv"></span> الشاشة الكبيرة</span><span class="ds-hint" id="screenHint">—</span></div>
+          <div class="ds-cluster">
+            <button class="ds-btn ds-btn--primary ds-btn--lg" id="lobbyToggleBtn" type="button"><span data-i="play"></span>ابدأ اللعب</button>
+            <button class="ds-btn " id="screenSoundBtn" type="button"><span data-i="volume"></span>صوت الشاشة</button>
+            <button class="ds-btn " id="screenFullBtn" type="button"><span data-i="fullscreen"></span>ملء الشاشة على التلفاز</button>
           </div>
-        </div>
-
-        <div class="q-category" id="qCategory" hidden></div>
-        <div class="q-text" id="qText">—</div>
-        <div class="q-hint" id="qHint" hidden>
-          <span id="qHintText"></span>
-          <button class="btn btn-sm" id="hintBtn" type="button">💡 اعرض التلميح على الشاشة</button>
-        </div>
-
-        <div class="answer-box" id="answerBox">
-          <div class="answer-top">
-            <span class="answer-label">🔑 الجواب</span>
-            <button class="btn btn-sm btn-ghost" id="peekBtn" type="button">إخفاء الجواب</button>
+          <div class="ds-card-title"><span data-i="qr"></span> رموز الدخول على التلفاز</div>
+          <div class="ds-seg" id="qrRouteSeg">
+            <button type="button" data-value="both" aria-pressed="true">الاثنان</button>
+            <button type="button" data-value="net" aria-pressed="false"><span data-i="globe"></span>الإنترنت فقط</button>
+            <button type="button" data-value="lan" aria-pressed="false"><span data-i="wifi"></span>الواي فاي فقط</button>
           </div>
-          <div class="answer-text" id="answerText">—</div>
-        </div>
+          <p class="ds-hint" id="netStatusLine">—</p>
+        </section>
 
-        <div class="btn-row">
-          <button class="btn btn-yellow" id="revealBtn" type="button">📺 عرض السؤال</button>
-          <button class="btn" id="hideBtn" type="button">🙈 إخفاء السؤال</button>
-        </div>
-        <div class="btn-row">
-          <button class="btn btn-green" id="revealAnswerBtn" type="button">💡 عرض الجواب على الشاشة</button>
-          <button class="btn" id="hideAnswerBtn" type="button">🔒 إخفاء الجواب</button>
-        </div>
-        <div class="btn-row">
-          <button class="btn" id="newQBtn" type="button">🔄 سؤال آخر لنفس الحرف</button>
-          <button class="btn" id="letterBtn" type="button">🔤 تغيير الحرف</button>
-        </div>
-      </section>
-
-      <!-- ============ النقاط ============ -->
-      <section class="card" data-game="huroof">
-        <div class="section-title">🏅 تسجيل النقاط</div>
-        <div class="btn-row">
-          <button class="btn btn-lg btn-green" id="awardA" type="button">
-            ✅ <span id="awardALabel">نقطة للفريق الأول</span>
-          </button>
-          <button class="btn btn-lg btn-orange" id="awardB" type="button">
-            ✅ <span id="awardBLabel">نقطة للفريق الثاني</span>
-          </button>
-        </div>
-        <div class="btn-row">
-          <button class="btn" id="noPointBtn" type="button">🤷 لم يُجب أحد — اكشف الجواب</button>
-        </div>
-        <div class="btn-row">
-          <button class="btn btn-danger" id="unclaimBtn" type="button">🗑 إزالة من الفريق</button>
-          <button class="btn" id="clearBtn" type="button">✖ إلغاء الاختيار</button>
-        </div>
-        <p class="tiny">عند منح النقطة (أو «لم يُجب أحد») يظهر الجواب الصحيح على الشاشة تلقائياً.</p>
-      </section>
-
-      <!-- ============ الدور والمؤقّت ============ -->
-      <section class="card" data-game="huroof">
-        <div class="section-title">⏱️ الدور والمؤقّت</div>
-        <div class="btn-row">
-          <button class="btn btn-green" id="turnA" type="button">⏱️ <span id="turnALabel">الفريق الأول</span></button>
-          <button class="btn btn-orange" id="turnB" type="button">⏱️ <span id="turnBLabel">الفريق الثاني</span></button>
-        </div>
-        <div class="btn-row">
-          <button class="btn btn-yellow" id="turnOpen" type="button">🔓 مفتوح للجميع · ١٥ ث</button>
-          <button class="btn btn-danger" id="stopTimer" type="button">⏹ إيقاف</button>
-        </div>
-        <div class="timer-readout" id="timerReadout">المؤقّت متوقف</div>
-      </section>
-
-      <!-- ============ الجولة ============ -->
-      <section class="card" data-game="huroof">
-        <div class="section-title">🎲 الجولة</div>
-        <div class="btn-row">
-          <button class="btn" id="randomBtn" type="button">🎯 حرف عشوائي</button>
-          <button class="btn" id="shuffleBtn" type="button">🔀 اخلط الحروف الحرّة</button>
-        </div>
-        <div class="btn-row">
-          <button class="btn btn-danger" id="resetBtn" type="button">♻️ جولة جديدة</button>
-        </div>
-        <p class="tiny">«اخلط» يغيّر حروف الخلايا الحرّة فقط — النقاط والخلايا الملوّنة تبقى.</p>
-      </section>
-
-      <!-- ============ أجراس اللاعبين ============ -->
-      <section class="card" id="buzzCard" data-game="huroof">
-        <div class="section-title">
-          🔔 أجراس اللاعبين
-          <span class="section-hint">أول ضغطة تفوز</span>
-        </div>
-
-        <div class="setting-row">
-          <label for="buzzEnabled">تفعيل أجراس الجوال</label>
-          <input id="buzzEnabled" type="checkbox" class="setting-toggle" />
-        </div>
-        <div class="setting-row">
-          <label for="buzzAuto">فتح تلقائي عند عرض السؤال</label>
-          <input id="buzzAuto" type="checkbox" class="setting-toggle" checked />
-        </div>
-        <div class="setting-row">
-          <label for="buzzSeconds">زمن إجابة أول ضاغط — الجولة ١ (ثوانٍ)</label>
-          <input id="buzzSeconds" type="number" class="setting-number" min="3" max="120" step="1" value="3" />
-        </div>
-        <div class="setting-row">
-          <label for="buzzOtherSeconds">زمن دور الفريق الآخر — الجولة ٢ (ثوانٍ)</label>
-          <input id="buzzOtherSeconds" type="number" class="setting-number" min="3" max="120" step="1" value="10" />
-        </div>
-        <div class="setting-row">
-          <label for="buzzNoRepeat">نفس اللاعب لا يضغط أولاً في سؤالين متتاليين</label>
-          <input id="buzzNoRepeat" type="checkbox" class="setting-toggle" />
-        </div>
-        <p class="tiny">
-          ١) الجميع يفكّر بلا وقت — أول من يضغط الجرس يجيب ←
-          ٢) خطأ أو انتهى وقته: الفريق الآخر يجيب بصوت عالٍ (محاولات بلا حدّ) حتى ينتهي وقته ←
-          ٣) مفتوح للجميع بلا وقت — تختار أنت الفريق الذي أجاب.
-          نقاط اللاعبين تُحسب من الجولة ١ فقط.
-        </p>
-
-        <div class="btn-row">
-          <button class="btn btn-lg btn-green" id="buzzOpenBtn" type="button">🔔 افتح الإجابة الآن</button>
-          <button class="btn" id="buzzResetBtn" type="button">↺ إعادة الأجراس</button>
-        </div>
-        <div class="timer-readout" id="buzzReadout">الأجراس متوقفة</div>
-
-      </section>
-
-      <!-- ============ اللاعبون ============ -->
-      <section class="card" id="playersCard">
-        <div class="section-title">
-          👥 اللاعبون
-          <span class="section-hint" id="playersHint">—</span>
-        </div>
-        <div class="players-cols" id="playersCols"></div>
-        <div class="buzz-qr-row">
-          <div class="buzz-qr-item">
-            <div class="buzz-qr-label">رمز اللاعبين — واحد للجميع</div>
-            <canvas id="playQr" class="buzz-qr-canvas"></canvas>
+        <!-- ============ السؤال ============ -->
+        <section class="ds-card ds-stack" id="qCard" data-game="huroof">
+          <div class="ds-cluster">
+            <div class="ds-hex ds-letter-badge" id="qHex"><div class="ds-hex-in"><div class="ds-hex-face"><span class="ds-hex-letter" id="qLetter">؟</span></div></div></div>
+            <div class="ds-stack ds-stack--tight">
+              <div class="ds-card-title" id="qStatus">لم يتم اختيار أي حرف بعد</div>
+              <div class="ds-hint" id="qOwner"></div>
+            </div>
           </div>
-        </div>
-        <p class="tiny">
-          كل لاعب يمسح الرمز (يظهر أيضاً على الشاشة الكبيرة)، يكتب اسمه ويختار فريقه.
-          «↔» ينقل اللاعب للفريق الآخر · «✖» يخرجه.
-        </p>
-      </section>
 
-      <!-- ============ الإعدادات ============ -->
-      <details class="card" id="settingsCard">
-        <summary class="section-title">⚙️ الإعدادات وتخصيص الألوان</summary>
-
-        <div class="section-title section-sub">🎨 قوالب ألوان جاهزة</div>
-        <div class="theme-chips" id="themeChips"></div>
-        <p class="tiny">كل القوالب مُختبرة: ألوان مميّزة وكتابة واضحة. يمكنك بعدها تعديل أي لون.</p>
-
-        <div class="setting-row">
-          <label for="nameA">اسم الفريق الأول</label>
-          <input id="nameA" type="text" maxlength="30" />
-        </div>
-        <div class="setting-row">
-          <label for="nameB">اسم الفريق الثاني</label>
-          <input id="nameB" type="text" maxlength="30" />
-        </div>
-        <div class="setting-row">
-          <label for="colorA">لون الفريق الأول <span class="tiny">(أعلى وأسفل اللوحة)</span></label>
-          <input id="colorA" type="color" />
-        </div>
-        <div class="setting-row">
-          <label for="colorB">لون الفريق الثاني <span class="tiny">(يمين ويسار اللوحة)</span></label>
-          <input id="colorB" type="color" />
-        </div>
-        <div class="setting-row">
-          <label for="cellColor">لون الخلايا الحرّة</label>
-          <input id="cellColor" type="color" />
-        </div>
-        <div class="setting-row">
-          <label for="selectedColor">لون الحرف المختار حالياً</label>
-          <input id="selectedColor" type="color" />
-        </div>
-        <div class="setting-row">
-          <label for="bgColor">خلفية لوحة السؤال <span class="tiny">(يمين الشاشة)</span></label>
-          <input id="bgColor" type="color" />
-        </div>
-        <p class="tiny">لون كتابة الحروف يتغيّر تلقائياً (أبيض أو داكن) حسب كل لون حتى تبقى واضحة دائماً.</p>
-
-        <div class="color-warn" id="colorWarn" hidden>
-          <div class="color-warn-title">⚠️ ألوان متقاربة جداً</div>
-          <ul class="color-warn-list" id="colorWarnList"></ul>
-          <button class="btn btn-yellow" id="colorFixBtn" type="button">✨ اصلحها تلقائياً</button>
-        </div>
-
-        <div data-game="huroof">
-          <div class="section-title" style="margin-top: 1rem">✏️ تعديل حروف اللوحة</div>
-          <div class="board-editor" id="boardEditor"></div>
-          <p class="tiny">اضغط على أي حرف لتغييره — يُطبّق على الشاشة فوراً.</p>
-
-          <div class="section-title" style="margin-top: 1rem">🏆 إعلان فائز</div>
-          <div class="btn-row">
-            <button class="btn btn-green" id="declareA" type="button"><span id="declareALabel">الفريق الأول</span></button>
-            <button class="btn btn-orange" id="declareB" type="button"><span id="declareBLabel">الفريق الثاني</span></button>
-            <button class="btn" id="declareNone" type="button">إلغاء</button>
+          <span class="ds-chip" id="qCategory" hidden></span>
+          <p class="ds-text" id="qText">—</p>
+          <div class="ds-cluster" id="qHint" hidden>
+            <span class="ds-chip"><span data-i="sparkle"></span><span id="qHintText"></span></span>
+            <button class="ds-btn ds-btn--sm" id="hintBtn" type="button" aria-pressed="false"><span data-i="sparkle"></span>اعرض التلميح على الشاشة</button>
           </div>
-        </div>
-      </details>
 
-      <!-- ============ مجموعات الأسئلة ============ -->
-      <details class="card" id="presetsCard" data-game="huroof">
-        <summary class="section-title">📚 مجموعات الأسئلة</summary>
-        <p class="tiny">
-          اختر مجموعة واحدة أو أكثر — تُسحب الأسئلة عشوائياً من كل المفعّل منها.
-          «تلقائي» = كل المجموعات الموجودة.
-        </p>
-        <div class="pst-list" id="presetList"></div>
-        <div class="btn-row" style="margin-top: 0.6rem">
-          <a class="btn" id="managePresets" href="/presets" target="_blank" rel="noopener">✏️ إدارة وتعديل المجموعات</a>
-          <button class="btn btn-ghost" id="reloadPresets" type="button">↻ تحديث القائمة</button>
-        </div>
-        <p class="tiny" id="presetReadout"></p>
-      </details>
+          <div class="ds-stack ds-stack--tight" id="answerBox">
+            <div class="ds-cluster ds-cluster--between">
+              <span class="ds-label"><span data-i="eye"></span> الجواب (لك وحدك)</span>
+              <button class="ds-btn ds-btn--sm" id="peekBtn" type="button">إخفاء الجواب</button>
+            </div>
+            <span class="ds-answer"><span id="answerText">—</span></span>
+          </div>
 
-      <!-- ============ سجل الجولة ============ -->
-      <details class="card" id="logCard">
-        <summary class="section-title">📋 سجل الحركات</summary>
-        <ul class="log-list" id="logList"></ul>
-      </details>
+          <div class="ds-cluster">
+            <button class="ds-btn ds-btn--primary" id="revealBtn" type="button" aria-pressed="false"><span data-i="tv"></span>عرض السؤال</button>
+            <button class="ds-btn " id="hideBtn" type="button"><span data-i="close"></span>إخفاء السؤال</button>
+          </div>
+          <div class="ds-cluster">
+            <button class="ds-btn ds-btn--success" id="revealAnswerBtn" type="button" aria-pressed="false"><span data-i="eye"></span>عرض الجواب على الشاشة</button>
+            <button class="ds-btn " id="hideAnswerBtn" type="button"><span data-i="lock"></span>إخفاء الجواب</button>
+          </div>
+          <div class="ds-cluster">
+            <button class="ds-btn " id="newQBtn" type="button"><span data-i="swap"></span>سؤال آخر لنفس الحرف</button>
+            <button class="ds-btn " id="letterBtn" type="button"><span data-i="type"></span>تغيير الحرف</button>
+          </div>
+        </section>
 
-      <details class="card" id="helpCard" data-game="huroof">
-        <summary class="section-title">❓ كيفية اللعب</summary>
-        <ol class="help-list">
-          <li>اضغط على حرف في اللوحة ← يظهر لك السؤال والجواب (لا يظهر الحاجب للاعبين).</li>
-          <li>اضغط «عرض على الشاشة» لإظهار السؤال على الشاشة الكبيرة.</li>
-          <li>إن كان السؤال غير مناسب اضغط «سؤال آخر» لغيره لنفس الحرف.</li>
-          <li>عند رنين الجرس: «الفريق الأول — ٣ ثوانٍ» ثم «الفريق الثاني — ١٠ ثوانٍ» ثم «مفتوح للجميع».</li>
-          <li>🔔 مع «أجراس اللاعبين»: يمسح كل فريق رمز الجرس من هاتفه — أول ضغطة تُشغّل المؤقّت تلقائياً، وباقي الضغطات بلا أثر.</li>
-          <li>عند الإجابة الصحيحة اضغط زر الفريق → تُلوّن الخلية ويزيد النقاط.</li>
-          <li>للتعديل: اضغط الخلية الملوّنة ثم اختر الفريق الآخر أو «إزالة من الفريق».</li>
-          <li>الفريق الذي يربط طرفيه (أعلى↔أسفل للفريق الأول، يمين↔يسار للفريق الثاني) يفوز.</li>
-        </ol>
-      </details>
-      <!-- ============ تغيير اللعبة (آخر الصفحة) ============ -->
-      <section class="change-game" data-game="ingame">
-        <div class="night-board" id="nightBoardFoot"></div>
-        <button class="btn btn-lg" id="changeGameBtn" type="button">🎮 تغيير اللعبة</button>
-      </section>
-    </main>
+        <!-- ============ النقاط ============ -->
+        <section class="ds-card ds-stack" data-game="huroof">
+          <div class="ds-card-title ds-cluster ds-cluster--between"><span><span data-i="trophy"></span> تسجيل النقاط</span></div>
+          <div class="ds-cluster">
+            <button class="ds-btn ds-btn--team ds-team-a ds-btn--lg" id="awardA" type="button"><span data-i="check"></span><span id="awardALabel">نقطة للفريق الأول</span></button>
+            <button class="ds-btn ds-btn--team ds-team-b ds-btn--lg" id="awardB" type="button"><span data-i="check"></span><span id="awardBLabel">نقطة للفريق الثاني</span></button>
+          </div>
+          <div class="ds-cluster">
+            <button class="ds-btn " id="noPointBtn" type="button"><span data-i="question"></span>لم يُجب أحد — اكشف الجواب</button>
+          </div>
+          <div class="ds-cluster">
+            <button class="ds-btn ds-btn--danger" id="unclaimBtn" type="button"><span data-i="ban"></span>إزالة من الفريق</button>
+            <button class="ds-btn " id="clearBtn" type="button"><span data-i="close"></span>إلغاء الاختيار</button>
+          </div>
+          <p class="ds-hint">عند منح النقطة (أو «لم يُجب أحد») يظهر الجواب الصحيح على الشاشة تلقائياً.</p>
+        </section>
 
-    <!-- ============ نافذة اختيار الحرف ============ -->
-    <div class="modal" id="letterModal">
-      <div class="modal-box">
-        <div class="modal-head">
-          <h3 id="letterModalTitle">اختر الحرف</h3>
-          <button class="btn btn-sm btn-ghost" id="letterModalClose" type="button">✕</button>
-        </div>
-        <div class="letter-grid" id="letterGrid"></div>
-        <p class="tiny" id="letterModalNote"></p>
-      </div>
+        <!-- ============ الدور والمؤقّت ============ -->
+        <section class="ds-card ds-stack" data-game="huroof">
+          <div class="ds-card-title ds-cluster ds-cluster--between"><span><span data-i="timer"></span> الدور والمؤقّت</span></div>
+          <div class="ds-cluster">
+            <button class="ds-btn ds-btn--team ds-team-a" id="turnA" type="button"><span data-i="timer"></span><span id="turnALabel">الفريق الأول</span></button>
+            <button class="ds-btn ds-btn--team ds-team-b" id="turnB" type="button"><span data-i="timer"></span><span id="turnBLabel">الفريق الثاني</span></button>
+          </div>
+          <div class="ds-cluster">
+            <button class="ds-btn ds-btn--primary" id="turnOpen" type="button"><span data-i="megaphone"></span>مفتوح للجميع · ١٥ ث</button>
+            <button class="ds-btn ds-btn--danger" id="stopTimer" type="button"><span data-i="pause"></span>إيقاف</button>
+          </div>
+          <span class="ds-pill ds-pill--dark" id="timerReadout"><span data-i="timer"></span><span id="timerReadoutText">المؤقّت متوقف</span></span>
+        </section>
+
+        <!-- ============ الجولة ============ -->
+        <section class="ds-card ds-stack" data-game="huroof">
+          <div class="ds-card-title ds-cluster ds-cluster--between"><span><span data-i="dice"></span> الجولة</span></div>
+          <div class="ds-cluster">
+            <button class="ds-btn " id="randomBtn" type="button"><span data-i="dice"></span>حرف عشوائي</button>
+            <button class="ds-btn " id="shuffleBtn" type="button"><span data-i="swap"></span>اخلط الحروف الحرّة</button>
+          </div>
+          <div class="ds-cluster">
+            <button class="ds-btn ds-btn--danger" id="resetBtn" type="button"><span data-i="undo"></span>جولة جديدة</button>
+          </div>
+          <p class="ds-hint">«اخلط» يغيّر حروف الخلايا الحرّة فقط — النقاط والخلايا الملوّنة تبقى.</p>
+        </section>
+
+        <!-- ============ أجراس اللاعبين ============ -->
+        <section class="ds-card ds-stack" id="buzzCard" data-game="huroof">
+          <div class="ds-card-title ds-cluster ds-cluster--between"><span><span data-i="bell"></span> أجراس اللاعبين</span><span class="ds-hint">أول ضغطة تفوز</span></div>
+          <div class="ds-cluster ds-cluster--between"><label class="ds-label" for="buzzEnabled">تفعيل أجراس الجوال</label><input id="buzzEnabled" type="checkbox" class="ds-switch" /></div>
+          <div class="ds-cluster ds-cluster--between"><label class="ds-label" for="buzzAuto">فتح تلقائي عند عرض السؤال</label><input id="buzzAuto" type="checkbox" class="ds-switch" checked /></div>
+          <div class="ds-cluster ds-cluster--between"><label class="ds-label" for="buzzSeconds">زمن إجابة أول ضاغط — الجولة ١ (ثوانٍ)</label><input id="buzzSeconds" type="number" class="ds-input ds-input--num" min="3" max="120" step="1" value="3" /></div>
+          <div class="ds-cluster ds-cluster--between"><label class="ds-label" for="buzzOtherSeconds">زمن دور الفريق الآخر — الجولة ٢ (ثوانٍ)</label><input id="buzzOtherSeconds" type="number" class="ds-input ds-input--num" min="3" max="120" step="1" value="10" /></div>
+          <div class="ds-cluster ds-cluster--between"><label class="ds-label" for="buzzNoRepeat">نفس اللاعب لا يضغط أولاً في سؤالين متتاليين</label><input id="buzzNoRepeat" type="checkbox" class="ds-switch" /></div>
+          <p class="ds-hint">
+            ١) الجميع يفكّر بلا وقت — أول من يضغط الجرس يجيب ثم
+            ٢) خطأ أو انتهى وقته: الفريق الآخر يجيب بصوت عالٍ (محاولات بلا حدّ) حتى ينتهي وقته ثم
+            ٣) مفتوح للجميع بلا وقت — تختار أنت الفريق الذي أجاب.
+            نقاط اللاعبين تُحسب من الجولة ١ فقط.
+          </p>
+          <div class="ds-cluster">
+            <button class="ds-btn ds-btn--success ds-btn--lg" id="buzzOpenBtn" type="button" aria-pressed="false"><span data-i="bell"></span>افتح الإجابة الآن</button>
+            <button class="ds-btn " id="buzzResetBtn" type="button"><span data-i="undo"></span>إعادة الأجراس</button>
+          </div>
+          <div class="ds-banner ds-banner--info" id="buzzReadout">
+            <span class="ds-banner-icon"><svg class="ds-icon" id="buzzReadoutIcon" aria-hidden="true"><use href="/icons.svg#volume-off" /></svg></span>
+            <span class="ds-banner-text" id="buzzReadoutText">الأجراس متوقفة</span>
+          </div>
+        </section>
+
+        <!-- ============ اللاعبون ============ -->
+        <section class="ds-card ds-stack" id="playersCard">
+          <div class="ds-card-title ds-cluster ds-cluster--between"><span><span data-i="users"></span> اللاعبون</span><span class="ds-hint" id="playersHint">—</span></div>
+          <div class="ds-duo" id="playersCols"></div>
+          <div class="ds-cluster ds-cluster--center" id="playQr"></div>
+          <p class="ds-hint">
+            كل لاعب يمسح الرمز (يظهر أيضاً على الشاشة الكبيرة)، يكتب اسمه ويختار فريقه.
+            زر التبديل ينقل اللاعب للفريق الآخر، وزر الإغلاق يخرجه.
+          </p>
+        </section>
+
+        <!-- ============ الإعدادات ============ -->
+        <details class="ds-card ds-collapse ds-stack" id="settingsCard">
+          <summary class="ds-card-title"><span data-i="palette"></span> الإعدادات وتخصيص الألوان</summary>
+          <div class="ds-card-title">قوالب ألوان جاهزة</div>
+          <div class="ds-cluster" id="themeChips"></div>
+          <p class="ds-hint">كل القوالب مُختبرة: ألوان مميّزة وكتابة واضحة. يمكنك بعدها تعديل أي لون.</p>
+
+          <div class="ds-cluster ds-cluster--between"><label class="ds-label" for="nameA">اسم الفريق الأول</label><input class="ds-input" id="nameA" type="text" maxlength="30" /></div>
+          <div class="ds-cluster ds-cluster--between"><label class="ds-label" for="nameB">اسم الفريق الثاني</label><input class="ds-input" id="nameB" type="text" maxlength="30" /></div>
+          <div class="ds-cluster ds-cluster--between"><label class="ds-label" for="colorA">لون الفريق الأول <span class="ds-hint">(أعلى وأسفل اللوحة)</span></label><input class="ds-color" id="colorA" type="color" /></div>
+          <div class="ds-cluster ds-cluster--between"><label class="ds-label" for="colorB">لون الفريق الثاني <span class="ds-hint">(يمين ويسار اللوحة)</span></label><input class="ds-color" id="colorB" type="color" /></div>
+          <div class="ds-cluster ds-cluster--between"><label class="ds-label" for="cellColor">لون الخلايا الحرّة</label><input class="ds-color" id="cellColor" type="color" /></div>
+          <div class="ds-cluster ds-cluster--between"><label class="ds-label" for="selectedColor">لون الحرف المختار حالياً</label><input class="ds-color" id="selectedColor" type="color" /></div>
+          <div class="ds-cluster ds-cluster--between"><label class="ds-label" for="bgColor">خلفية لوحة السؤال <span class="ds-hint">(يمين الشاشة)</span></label><input class="ds-color" id="bgColor" type="color" /></div>
+          <p class="ds-hint">لون كتابة الحروف يتغيّر تلقائياً (أبيض أو داكن) حسب كل لون حتى تبقى واضحة دائماً.</p>
+
+          <div class="ds-banner ds-banner--danger ds-stack ds-stack--tight" id="colorWarn" hidden>
+            <div class="ds-cluster ds-cluster--tight"><span class="ds-banner-icon"><span data-i="warning"></span></span><span>ألوان متقاربة جداً</span></div>
+            <div class="ds-stack ds-stack--tight" id="colorWarnList"></div>
+            <button class="ds-btn ds-btn--primary ds-btn--sm" id="colorFixBtn" type="button"><span data-i="sparkle"></span>اصلحها تلقائياً</button>
+          </div>
+
+          <div class="ds-stack" data-game="huroof">
+            <div class="ds-card-title"><span data-i="pen"></span> تعديل حروف اللوحة</div>
+            <div class="ds-hexkeys" id="boardEditor"></div>
+            <p class="ds-hint">اضغط على أي حرف لتغييره — يُطبّق على الشاشة فوراً.</p>
+
+            <div class="ds-card-title"><span data-i="trophy"></span> إعلان فائز</div>
+            <div class="ds-cluster">
+              <button class="ds-btn ds-btn--team ds-team-a" id="declareA" type="button"><span id="declareALabel">الفريق الأول</span></button>
+              <button class="ds-btn ds-btn--team ds-team-b" id="declareB" type="button"><span id="declareBLabel">الفريق الثاني</span></button>
+              <button class="ds-btn " id="declareNone" type="button"><span data-i="close"></span>إلغاء</button>
+            </div>
+          </div>
+        </details>
+
+        <!-- ============ مجموعات الأسئلة ============ -->
+        <details class="ds-card ds-collapse ds-stack" id="presetsCard" data-game="huroof">
+          <summary class="ds-card-title"><span data-i="scroll"></span> مجموعات الأسئلة</summary>
+          <p class="ds-hint">
+            اختر مجموعة واحدة أو أكثر — تُسحب الأسئلة عشوائياً من كل المفعّل منها.
+            «تلقائي» = كل المجموعات الموجودة.
+          </p>
+          <div class="ds-list" id="presetList"></div>
+          <div class="ds-cluster">
+            <a class="ds-btn" id="managePresets" href="/presets" target="_blank" rel="noopener"><span data-i="pen"></span>إدارة وتعديل المجموعات</a>
+            <button class="ds-btn " id="reloadPresets" type="button"><span data-i="undo"></span>تحديث القائمة</button>
+          </div>
+          <p class="ds-hint" id="presetReadout"></p>
+        </details>
+
+        <!-- ============ سجل الجولة ============ -->
+        <details class="ds-card ds-collapse ds-stack" id="logCard">
+          <summary class="ds-card-title"><span data-i="scroll"></span> سجل الحركات</summary>
+          <div class="ds-list" id="logList"></div>
+        </details>
+
+        <details class="ds-card ds-collapse ds-stack" id="helpCard" data-game="huroof">
+          <summary class="ds-card-title"><span data-i="question"></span> كيفية اللعب</summary>
+          <div class="ds-list">
+            <div class="ds-list-item"><span class="ds-step-num">1</span><span class="ds-text">اضغط على حرف في اللوحة ثم يظهر لك السؤال والجواب (لا يظهر الجواب للاعبين).</span></div>
+            <div class="ds-list-item"><span class="ds-step-num">2</span><span class="ds-text">اضغط «عرض السؤال» لإظهاره على الشاشة الكبيرة.</span></div>
+            <div class="ds-list-item"><span class="ds-step-num">3</span><span class="ds-text">إن كان السؤال غير مناسب اضغط «سؤال آخر» لغيره لنفس الحرف.</span></div>
+            <div class="ds-list-item"><span class="ds-step-num">4</span><span class="ds-text">مع «أجراس اللاعبين»: يمسح كل لاعب الرمز من جواله ويكتب اسمه ويختار فريقه — أول ضغطة تُشغّل المؤقّت تلقائياً.</span></div>
+            <div class="ds-list-item"><span class="ds-step-num">5</span><span class="ds-text">الجولة ١: أول من يضغط يجيب. الجولة ٢: الفريق الآخر يجيب بصوت عالٍ. الجولة ٣: مفتوح للجميع وتختار أنت الفريق.</span></div>
+            <div class="ds-list-item"><span class="ds-step-num">6</span><span class="ds-text">عند الإجابة الصحيحة اضغط «صح» أو زر الفريق ثم تُلوّن الخلية وتزيد النقاط.</span></div>
+            <div class="ds-list-item"><span class="ds-step-num">7</span><span class="ds-text">للتعديل: اضغط الخلية الملوّنة ثم اختر الفريق الآخر أو «إزالة من الفريق».</span></div>
+            <div class="ds-list-item"><span class="ds-step-num">8</span><span class="ds-text">الفريق الذي يربط طرفيه (أعلى وأسفل للفريق الأول، يمين ويسار للفريق الثاني) يفوز.</span></div>
+          </div>
+        </details>
+
+        <!-- ============ تغيير اللعبة (آخر الصفحة) ============ -->
+        <section class="ds-stack" data-game="ingame">
+          <div class="ds-cluster ds-cluster--center" id="nightBoardFoot"></div>
+          <button class="ds-btn ds-btn--lg ds-btn--block" id="changeGameBtn" type="button"><span data-i="gamepad"></span>تغيير اللعبة</button>
+        </section>
+      </main>
     </div>
 
-    <div class="toast" id="toast"></div>
+    <!-- ============ نافذة اختيار الحرف ============ -->
+    <div class="ds-modal" id="letterModal" role="dialog" aria-modal="true" aria-labelledby="letterModalTitle">
+      <div class="ds-card ds-stack">
+        <div class="ds-cluster ds-cluster--between">
+          <h3 class="ds-card-title" id="letterModalTitle">اختر الحرف</h3>
+          <button class="ds-btn ds-btn--icon ds-btn--sm" id="letterModalClose" type="button" aria-label="إغلاق"><span data-i="close"></span></button>
+        </div>
+        <div class="ds-hexkeys" id="letterGrid"></div>
+        <p class="ds-hint" id="letterModalNote"></p>
+      </div>
+    </div>
 
     <script type="module" src="/js/referee.js"></script>
   </body>

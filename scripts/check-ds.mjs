@@ -29,15 +29,10 @@ const LEGACY = new Set([
   "public/_mobile-preview.html",
   "public/index.html",
   "public/presets.html",
-  "public/referee.html",
   "public/taboo-packs.html",
   "public/css/base.css",
   "public/css/presets.css",
-  "public/css/referee.css",
-  "public/js/board.js",
   "public/js/presets.js",
-  "public/js/referee-taboo.js",
-  "public/js/referee.js",
 ]);
 
 const EMOJI = /[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}\u{2B00}-\u{2BFF}\u{23E9}-\u{23FA}\u{231A}\u{231B}\u{2190}-\u{21FF}\u{FE0F}]/u;

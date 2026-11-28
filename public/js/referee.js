@@ -3,20 +3,21 @@
    ================================================================== */
 import { createBoard } from "/js/board.js";
 import { Transport, remainingMs } from "/js/transport.js";
-import { drawQR, getPlayUrls } from "/js/qr.js";
+import { drawQR, getRoutes } from "/js/qr.js";
 import { sfx } from "/js/sfx.js";
-import { inkFor, findClashes, autoFixColors, COLOR_LABELS } from "/shared/colors.js";
-import { DS_THEMES, PAPER } from "/shared/ds-theme.js";
+import { findClashes, autoFixColors, COLOR_LABELS } from "/shared/colors.js";
+import { DS_THEMES, PAPER, applyGameColors } from "/shared/ds-theme.js";
+import { icon, hydrateIcons, toast as dsToast, replay } from "/js/ds.js";
 import { initTaboo, renderTaboo } from "/js/referee-taboo.js";
 
 window.__appStarted = true; // انظر /js/diag.js
 
 /** بطاقات قائمة الألعاب (المفتاح ← الوصف). */
 const HUB_GAMES = [
-  { id: "huroof", icon: "🔤", name: "حروف مع حسين", desc: "لوحة الحروف والأجراس — صِل طرفي اللوحة" },
-  { id: "taboo", icon: "🚫", name: "الكلمة الممنوعة", desc: "اشرح الكلمة لفريقك دون الكلمات الممنوعة" },
-  { id: null, icon: "🖼️", name: "تحدّي الصور", desc: "قريباً", soon: true },
-  { id: null, icon: "😀", name: "إيموجي", desc: "قريباً", soon: true },
+  { id: "huroof", icon: "hexagon", name: "حروف مع حسين", desc: "لوحة الحروف والأجراس" },
+  { id: "taboo", icon: "hush", name: "الكلمة الممنوعة", desc: "اشرح دون الكلمات الممنوعة", tone: "coral" },
+  { id: null, icon: "shapes", name: "تحدّي الصور", desc: "قريباً", tone: "sky", soon: true },
+  { id: null, icon: "sparkle", name: "إيموجي", desc: "قريباً", tone: "mint", soon: true },
 ];
 
 const params = new URLSearchParams(location.search);
@@ -24,11 +25,33 @@ const room = params.get("room") || "main";
 
 const el = (id) => document.getElementById(id);
 
+/** يغيّر رمز <svg><use/></svg> إلى رمز آخر من /icons.svg. */
+function setIcon(svg, name) {
+  svg?.querySelector("use")?.setAttribute("href", `/icons.svg#${name}`);
+}
+/** يضبط محتوى زر: رمز ثم نص. */
+function setBtn(btn, iconName, text) {
+  btn?.replaceChildren(icon(iconName), document.createTextNode(text));
+}
+/** رسالة قصيرة مع رمز اختياري. */
+const toast = (msg, iconName = null) => dsToast(msg, iconName);
+
+hydrateIcons();
+
 const ui = {
   board: el("board"),
   roomLabel: el("roomLabel"),
   connChip: el("connChip"),
   connText: el("connText"),
+  connIcon: el("connIcon"),
+  qHex: el("qHex"),
+  timerReadoutText: el("timerReadoutText"),
+  buzzReadoutText: el("buzzReadoutText"),
+  buzzReadoutIcon: el("buzzReadoutIcon"),
+  judgeSteps: el("judgeSteps"),
+  judgeWhoBanner: el("judgeWhoBanner"),
+  judgeWhoIcon: el("judgeWhoIcon"),
+  judgeTimerNum: el("judgeTimerNum"),
   scoreNameA: el("scoreNameA"),
   scoreNameB: el("scoreNameB"),
   scoreA: el("scoreA"),
@@ -89,7 +112,6 @@ const ui = {
   letterModalTitle: el("letterModalTitle"),
   letterModalNote: el("letterModalNote"),
   letterModalClose: el("letterModalClose"),
-  toast: el("toast"),
   pairingGate: el("pairingGate"),
   pairingForm: el("pairingForm"),
   pairCodeInput: el("pairCodeInput"),
@@ -146,19 +168,24 @@ let buzzQrDrawn = false;
 let letterStats = {}; // { letter: count }
 let letterTarget = null; // { cellId } عند فتح نافذة الحروف
 let answerVisible = true;
-let toastTimer = null;
 
 const savedPairCode = sessionStorage.getItem(`hive-pair-${room}`) || "";
 const transport = new Transport("referee", room, savedPairCode);
 
+const CONN = {
+  online: ["ds-pill--mint", "wifi", "متصل"],
+  offline: ["ds-pill--coral", "warning", "منقطع — إعادة المحاولة…"],
+  other: ["ds-pill--dark", "timer", "جارٍ الاتصال…"],
+};
 transport.onStatus = (s) => {
-  ui.connChip.className = `conn ${s === "online" ? "online" : s === "offline" ? "offline" : ""}`;
-  ui.connText.textContent =
-    s === "online" ? "متصل" : s === "offline" ? "منقطع — إعادة المحاولة…" : "جارٍ الاتصال…";
+  const [cls, ic, text] = CONN[s] || CONN.other;
+  ui.connChip.className = `ds-pill ${cls}`;
+  setIcon(ui.connIcon, ic);
+  ui.connText.textContent = text;
 };
 
 transport.onPairing = (msg) => {
-  ui.pairingGate.classList.add("show");
+  ui.pairingGate.classList.add("is-open");
   ui.pairingNote.textContent = msg.status === "invalid"
     ? "الرمز غير صحيح — راجعه من شاشة اللعبة."
     : "أدخل رمز الأمان الظاهر على الشاشة.";
@@ -168,12 +195,10 @@ transport.onState = (msg) => {
   state = msg.state;
   boardCfg = msg.board;
   peers = msg.peers || null;
-  ui.pairingGate.classList.remove("show");
+  ui.pairingGate.classList.remove("is-open");
 
   if (!board) {
     board = createBoard(ui.board, boardCfg, {
-      width: 62,
-      padding: 4,
       interactive: true,
       onSelect: onCellTap,
     });
@@ -277,24 +302,12 @@ function onCellTap(cellId) {
   transport.send({ type: "select", payload: { cellId } });
 
   if (cell.owner) {
-    toast(`الخلية "${cell.letter}" مملوكة — اختر الفريق أو أزلها`);
+    toast(`الخلية "${cell.letter}" مملوكة — اختر الفريق أو أزلها`, "info");
   }
 }
 
 function act(type, payload = {}) {
   transport.send({ type, payload });
-}
-
-/* ---------------- ألوان الفرق ---------------- */
-
-/** لون نص مقروء (أبيض/داكن) فوق خلفية بلون معطى — نفس منطق الشاشة الكبيرة. */
-const inkOn = inkFor;
-
-/** يصبغ زراً بلون الفريق مع لون نص مقروء. */
-function paintTeamButton(btn, color) {
-  if (!btn || !color) return;
-  btn.style.background = color;
-  btn.style.color = inkOn(color);
 }
 
 /* ---------------- العرض ---------------- */
@@ -304,22 +317,12 @@ function paintTeamButton(btn, color) {
 function nightBoard(container) {
   if (!container || !state) return;
   container.replaceChildren();
-  const title = document.createElement("div");
-  title.className = "night-title";
-  title.textContent = "🏆 نقاط السهرة";
-  container.appendChild(title);
-  const row = document.createElement("div");
-  row.className = "night-row";
   for (const k of ["a", "b"]) {
-    const team = state.teams[k];
-    const chip = document.createElement("div");
-    chip.className = "night-chip";
-    chip.style.background = team.color;
-    chip.style.color = inkFor(team.color);
-    chip.textContent = `${team.name}: ${state.night?.[k] || 0}`;
-    row.appendChild(chip);
+    const pill = document.createElement("span");
+    pill.className = `ds-pill ds-pill--team ds-team-${k}`;
+    pill.append(icon("trophy"), document.createTextNode(`${state.teams[k].name}: ${state.night?.[k] || 0}`));
+    container.appendChild(pill);
   }
-  container.appendChild(row);
 }
 
 let hubKey = "";
@@ -332,39 +335,48 @@ function renderHub() {
   if (key === hubKey && wrap.childElementCount) return;
   hubKey = key;
   wrap.replaceChildren();
-  for (const g of HUB_GAMES) {
+  HUB_GAMES.forEach((g, i) => {
     const b = document.createElement("button");
     b.type = "button";
-    b.className = "hub-game";
+    b.className = `ds-game-tile ds-game-tile--sm${g.tone ? ` ds-game-tile--${g.tone}` : ""}`;
+    b.style.setProperty("--i", i);
     b.disabled = !!g.soon;
-    b.innerHTML = "";
-    const icon = document.createElement("span");
-    icon.className = "hub-game-icon";
-    icon.textContent = g.icon;
+    const art = document.createElement("span");
+    art.className = "ds-game-tile-art";
+    art.appendChild(icon(g.icon));
     const name = document.createElement("span");
-    name.className = "hub-game-name";
+    name.className = "ds-game-tile-name";
     name.textContent = g.name;
     const desc = document.createElement("span");
-    desc.className = "hub-game-desc";
+    desc.className = "ds-game-tile-tag";
     desc.textContent = g.desc;
-    b.append(icon, name, desc);
+    b.append(art, name, desc);
     if (!g.soon) {
       b.addEventListener("click", () => {
         act("setGame", { game: g.id });
-        toast(`🎮 ${g.name}`);
+        toast(g.name, g.icon);
         window.scrollTo({ top: 0, behavior: "smooth" });
       });
     }
     wrap.appendChild(b);
-  }
+  });
   const reset = document.createElement("button");
   reset.type = "button";
-  reset.className = "btn btn-sm btn-ghost hub-reset";
-  reset.textContent = "↺ تصفير نقاط السهرة";
+  reset.className = "ds-btn ds-btn--sm";
+  reset.append(icon("undo"), document.createTextNode("تصفير نقاط السهرة"));
   reset.addEventListener("click", () => {
     if (confirm("تصفير نقاط السهرة للفريقين؟")) act("nightReset");
   });
   wrap.appendChild(reset);
+}
+
+/** الأقسام الظاهرة حسب اللعبة: data-game = none | huroof | taboo | ingame (داخل أي لعبة). */
+function applyGameVisibility(game) {
+  for (const n of document.querySelectorAll("[data-game]")) {
+    if (n === document.body || n.id === "judgePanel") continue; // لوحة الحكم تديرها renderJudge
+    const g = n.dataset.game;
+    n.hidden = !(g === game || (g === "ingame" && game !== "none"));
+  }
 }
 
 function render() {
@@ -372,16 +384,20 @@ function render() {
 
   // اللعبة الحالية تحدّد الأقسام الظاهرة (data-game في الصفحة)
   document.body.dataset.game = state.game || "none";
+  applyGameVisibility(state.game || "none");
+  applyGameColors(state);
+  const stageColor = getComputedStyle(document.documentElement).getPropertyValue("--stage").trim();
+  if (stageColor) document.querySelector('meta[name="theme-color"]')?.setAttribute("content", stageColor);
   renderHub();
   renderTaboo();
 
   syncPresetsFromState();
 
   ui.roomLabel.textContent = state.game === "taboo"
-    ? "🚫 الكلمة الممنوعة"
+    ? "الكلمة الممنوعة"
     : state.game === "huroof"
-      ? `🔤 حروف مع حسين · ${boardCfg.cells.length} خلية`
-      : "🎮 قائمة الألعاب";
+      ? `حروف مع حسين · ${boardCfg.cells.length} خلية`
+      : "قائمة الألعاب";
 
   // النقاط
   ui.scoreNameA.textContent = state.teams.a.name;
@@ -398,7 +414,9 @@ function render() {
   const displayCell = cell || (resolvedId ? state.cells[resolvedId] : null);
 
   ui.qLetter.textContent = displayCell ? displayCell.letter : "؟";
-  ui.qLetter.classList.toggle("idle", !displayCell);
+  ui.qHex.classList.toggle("is-a", displayCell?.owner === "a");
+  ui.qHex.classList.toggle("is-b", displayCell?.owner === "b");
+  ui.qHex.classList.toggle("is-selected", !!displayCell && !displayCell.owner);
 
   if (!displayCell) {
     ui.qStatus.textContent = "لم يتم اختيار أي حرف بعد";
@@ -408,7 +426,7 @@ function render() {
   } else {
     let statusText = state.current.revealed ? "السؤال ظاهر على الشاشة" : "السؤال مخفي عن اللاعبين";
     if (state.current.answerRevealed) {
-      statusText += " · [الجواب ظاهر]";
+      statusText += " · الجواب ظاهر";
     }
     ui.qStatus.textContent = statusText;
     ui.qOwner.textContent = displayCell.owner
@@ -435,12 +453,6 @@ function render() {
   if (ui.turnBLabel) ui.turnBLabel.textContent = `${tB.name} — ${buzzOtherSecs} ث`;
   if (ui.declareALabel) ui.declareALabel.textContent = tA.name;
   if (ui.declareBLabel) ui.declareBLabel.textContent = tB.name;
-  paintTeamButton(ui.turnA, tA.color);
-  paintTeamButton(ui.turnB, tB.color);
-  paintTeamButton(ui.awardA, tA.color);
-  paintTeamButton(ui.awardB, tB.color);
-  paintTeamButton(ui.declareA, tA.color);
-  paintTeamButton(ui.declareB, tB.color);
 
   // الأزرار المعطّلة
   ui.revealBtn.disabled = !displayCell || !q;
@@ -461,24 +473,24 @@ function render() {
   // الفئة والتلميح (من ملف المجموعة)
   if (ui.qCategory) {
     ui.qCategory.hidden = !q?.category;
-    ui.qCategory.textContent = q?.category ? `📂 ${q.category}` : "";
+    if (q?.category) ui.qCategory.replaceChildren(icon("shapes"), document.createTextNode(q.category));
   }
   if (ui.qHint) {
     ui.qHint.hidden = !q?.hint;
-    if (ui.qHintText) ui.qHintText.textContent = q?.hint ? `💡 ${q.hint}` : "";
+    if (ui.qHintText) ui.qHintText.textContent = q?.hint || "";
     if (ui.hintBtn) {
-      ui.hintBtn.textContent = state.current.hintRevealed ? "🙈 إخفاء التلميح" : "💡 اعرض التلميح على الشاشة";
-      ui.hintBtn.classList.toggle("active-screen", !!state.current.hintRevealed);
+      setBtn(ui.hintBtn, state.current.hintRevealed ? "eye" : "sparkle", state.current.hintRevealed ? "إخفاء التلميح" : "اعرض التلميح على الشاشة");
+      ui.hintBtn.setAttribute("aria-pressed", String(!!state.current.hintRevealed));
     }
   }
 
-  // تمييز أزرار الشاشة
-  ui.revealBtn.classList.toggle("active-screen", !!state.current.revealed);
-  ui.revealAnswerBtn.classList.toggle("active-screen", !!state.current.answerRevealed);
+  // تمييز أزرار الشاشة (مضغوط = ظاهر على التلفاز)
+  ui.revealBtn.setAttribute("aria-pressed", String(!!state.current.revealed));
+  ui.revealAnswerBtn.setAttribute("aria-pressed", String(!!state.current.answerRevealed));
 
   // زر إظهار الجواب للحكم
   ui.peekBtn.textContent = answerVisible ? "إخفاء الجواب" : "إظهار الجواب";
-  ui.answerBox.classList.toggle("hidden-answer", !answerVisible);
+  ui.answerText.closest(".ds-answer").hidden = !answerVisible;
 
   // الإعدادات
   if (document.activeElement !== ui.nameA) ui.nameA.value = state.teams.a.name;
@@ -486,17 +498,11 @@ function render() {
   ui.colorA.value = state.teams.a.color;
   ui.colorB.value = state.teams.b.color;
   if (state.theme) {
-    if (ui.bgColor) ui.bgColor.value = state.theme.bgColor || "#2f6f9e";
-    if (ui.cellColor) ui.cellColor.value = state.theme.cellColor || "#ede5bb";
-    if (ui.selectedColor) ui.selectedColor.value = state.theme.selectedColor || "#fcb017";
-    document.documentElement.style.setProperty("--bg-color", state.theme.bgColor || "#2f6f9e");
-    document.documentElement.style.setProperty("--cell-color", state.theme.cellColor || "#ede5bb");
-    document.documentElement.style.setProperty("--selected-color", state.theme.selectedColor || "#fcb017");
+    const base = DS_THEMES[state.theme.ds] || DS_THEMES.hussein;
+    if (ui.bgColor) ui.bgColor.value = state.theme.bgColor || PAPER;
+    if (ui.cellColor) ui.cellColor.value = state.theme.cellColor || base.cream;
+    if (ui.selectedColor) ui.selectedColor.value = state.theme.selectedColor || base.sun;
   }
-  document.documentElement.style.setProperty("--team-a-color", state.teams.a.color);
-  document.documentElement.style.setProperty("--team-b-color", state.teams.b.color);
-  document.documentElement.style.setProperty("--team-a-ink", inkFor(state.teams.a.color));
-  document.documentElement.style.setProperty("--team-b-ink", inkFor(state.teams.b.color));
 
   renderThemeChips();
   renderColorWarnings();
@@ -516,25 +522,25 @@ function renderScreenControls() {
   const screens = peers?.screen || 0;
 
   if (ui.lobbyToggleBtn) {
-    ui.lobbyToggleBtn.textContent = lobbyOn ? "▶️ ابدأ اللعب (إخفاء الرموز)" : "🔳 اعرض رموز QR على الشاشة";
-    ui.lobbyToggleBtn.classList.toggle("btn-yellow", lobbyOn);
+    setBtn(ui.lobbyToggleBtn, lobbyOn ? "play" : "qr", lobbyOn ? "ابدأ اللعب (إخفاء الرموز)" : "اعرض رموز QR على الشاشة");
+    ui.lobbyToggleBtn.classList.toggle("ds-btn--primary", lobbyOn);
   }
   if (ui.screenSoundBtn) {
-    ui.screenSoundBtn.textContent = soundOn ? "🔊 صوت الشاشة: يعمل" : "🔇 صوت الشاشة: مكتوم";
-    ui.screenSoundBtn.classList.toggle("active-screen", soundOn);
+    setBtn(ui.screenSoundBtn, soundOn ? "volume" : "volume-off", soundOn ? "صوت الشاشة: يعمل" : "صوت الشاشة: مكتوم");
+    ui.screenSoundBtn.setAttribute("aria-pressed", String(soundOn));
   }
-  for (const b of document.querySelectorAll("#qrRouteSeg [data-qr]")) {
-    b.classList.toggle("active-screen", (scr.qr || "both") === b.dataset.qr);
+  for (const b of document.querySelectorAll("#qrRouteSeg [data-value]")) {
+    b.setAttribute("aria-pressed", String((scr.qr || "both") === b.dataset.value));
   }
   if (ui.screenFullBtn) {
     const full = !!peers?.screenFullscreen;
-    ui.screenFullBtn.textContent = full ? "🗗 الخروج من ملء الشاشة" : "⛶ ملء الشاشة على التلفاز";
-    ui.screenFullBtn.classList.toggle("active-screen", full);
+    setBtn(ui.screenFullBtn, "fullscreen", full ? "الخروج من ملء الشاشة" : "ملء الشاشة على التلفاز");
+    ui.screenFullBtn.setAttribute("aria-pressed", String(full));
     ui.screenFullBtn.disabled = !screens;
   }
   if (ui.screenHint) {
     ui.screenHint.textContent = !screens
-      ? "⚠️ الشاشة غير متصلة"
+      ? "الشاشة غير متصلة"
       : lobbyOn
         ? "تعرض رموز QR الآن"
         : "تعرض اللعبة";
@@ -564,11 +570,11 @@ function renderBuzzControls() {
   const on = !!b.enabled;
   ui.buzzOpenBtn.disabled = !on || !!b.open;
   ui.buzzResetBtn.disabled = !on;
-  ui.buzzOpenBtn.classList.toggle("active-screen", on && !!b.open && !b.winner);
+  ui.buzzOpenBtn.setAttribute("aria-pressed", String(on && !!b.open && !b.winner));
 
   updateBuzzReadout();
 
-  if (!buzzQrDrawn) drawBuzzerQRs();
+  if (!buzzQrDrawn) drawPlayQrs();
 }
 
 let readoutTick = null;
@@ -583,28 +589,37 @@ function updateBuzzReadout() {
   const conn = peers ? ` · الأجراس: ${peers.buzzerA || 0}/${peers.buzzerB || 0}` : "";
 
   let text;
+  let ic = "bell";
   const conn2 = peers ? ` · اللاعبون المتصلون: ${(peers.players || []).length}` : "";
   if (!on) {
     text = "الأجراس متوقفة — فعّلها ليضغط اللاعبون من جوالاتهم.";
+    ic = "volume-off";
   } else if (state.current.verdict) {
-    text = `✅ ${state.teams[state.current.verdict.team].name} أخذ النقطة${conn2}`;
+    text = `${state.teams[state.current.verdict.team].name} أخذ النقطة${conn2}`;
+    ic = "check";
   } else if (state.current.missed) {
-    text = `🤷 لم يُجب أحد — الجواب ظاهر على الشاشة${conn2}`;
+    text = `لم يُجب أحد — الجواب ظاهر على الشاشة${conn2}`;
+    ic = "question";
   } else if (b.phase === "answer" && b.player) {
     const secs = Math.max(0, Math.ceil(remainingMs(timer, transport.serverOffset) / 1000));
-    text = `🔔 ${b.player.name} يجيب — بقي ${secs} ث${conn2}`;
+    text = `${b.player.name} يجيب — بقي ${secs} ث${conn2}`;
+    ic = "bolt";
   } else if (b.phase === "open") {
-    text = `🔔 الأجراس مفتوحة — بانتظار أول ضغطة${conn2}`;
+    text = `الأجراس مفتوحة — بانتظار أول ضغطة${conn2}`;
   } else if (b.phase === "team") {
     const secs = Math.max(0, Math.ceil(remainingMs(timer, transport.serverOffset) / 1000));
-    text = `⏱️ دور ${state.teams[b.allowed]?.name} — بقي ${secs} ث${conn2}`;
+    text = `دور ${state.teams[b.allowed]?.name} — بقي ${secs} ث${conn2}`;
+    ic = "users";
   } else if (b.phase === "all") {
-    text = `🗣️ مفتوح للجميع — اختر الفريق الذي أجاب${conn2}`;
+    text = `مفتوح للجميع — اختر الفريق الذي أجاب${conn2}`;
+    ic = "megaphone";
   } else {
     text = `الأجراس جاهزة${b.autoArm !== false ? " — تُفتح تلقائياً عند عرض السؤال" : ""}${conn2}`;
   }
-  ui.buzzReadout.textContent = text;
-  ui.buzzReadout.classList.toggle("running", on && (!!b.open || !!b.winner || !!timer.running));
+  ui.buzzReadoutText.textContent = text;
+  setIcon(ui.buzzReadoutIcon, ic);
+  // شريط ملوّن (بلا لون إضافي) أثناء جولة جارية، وأزرق هادئ عند الخمول
+  ui.buzzReadout.classList.toggle("ds-banner--info", !(on && (!!b.open || !!b.winner || !!timer.running)));
   updateBuzzBanner();
   renderJudge();
 
@@ -618,90 +633,59 @@ function updateBuzzReadout() {
   }
 }
 
-/**
- * لوحة إشعار كبيرة في أعلى شاشة الحكم تُخبره فوراً بمن يضغط الجرس
- * (بدل أن يضطر للنظر إلى شاشة التلفاز في كل مرة).
- */
+/** لافتة الضغط القديمة تبقى مخفية: لوحة الحكم (judgePanel) تعرض كل شيء الآن. */
 function updateBuzzBanner() {
-  const banner = ui.buzzBanner;
-  if (!banner || !state) return;
-  // لوحة الحكم (judgePanel) تعرض كل هذا الآن — نُبقي الشريط القديم مخفياً
-  banner.hidden = true;
-  return;
-  const c = state.current || {};
-  const b = c.buzz || {};
-  const timer = c.timer || {};
-  const on = !!b.enabled;
-
-  let show = false;
-  let teamKey = null;
-  let icon = "🔔";
-  let text = "";
-  let accent = null;
-
-  if (on && timer.running && timer.stage === "buzz1") {
-    // الفريق الذي ضغط أولاً ويجيب الآن
-    teamKey = b.winner;
-    const secs = Math.max(0, Math.ceil(remainingMs(timer, transport.serverOffset) / 1000));
-    icon = "⚡";
-    text = `${state.teams[teamKey]?.name || "—"} ضغط أولاً! (اللاعب الأول) — بقي ${secs} ث`;
-    show = !!teamKey;
-  } else if (on && timer.running && timer.stage === "buzz2") {
-    // دور اللاعب الثاني من الفريق الآخر
-    teamKey = c.turn;
-    const secs = Math.max(0, Math.ceil(remainingMs(timer, transport.serverOffset) / 1000));
-    icon = "⏳";
-    text = `دور اللاعب الثاني: ${state.teams[teamKey]?.name || "—"} — بقي ${secs} ث`;
-    show = !!teamKey;
-  } else if (on && b.winner) {
-    teamKey = b.winner;
-    icon = "🔔";
-    text = `${state.teams[b.winner]?.name || "—"} ضغط أولاً — انتهى الوقت، احكم الآن`;
-    show = true;
-  } else if (on && b.open) {
-    icon = "🔔";
-    text = "الأجراس مفتوحة — بانتظار أول ضغطة";
-    accent = "#ffd93d";
-    show = true;
-  }
-
-  // بعد احتساب النقطة (أو «لم يُجب أحد») يختفي الإشعار
-  if (c.verdict || c.missed) show = false;
-
-  if (!show) {
-    if (!banner.hidden) {
-      banner.hidden = true;
-      banner.style.background = "";
-      banner.style.color = "";
-    }
-    return;
-  }
-
-  const team = teamKey ? state.teams[teamKey] : null;
-  if (team && team.color) {
-    banner.style.background = team.color;
-    banner.style.color = inkOn(team.color);
-  } else if (accent) {
-    banner.style.background = accent;
-    banner.style.color = inkOn(accent);
-  }
-  if (ui.buzzBannerIco) ui.buzzBannerIco.textContent = icon;
-  if (ui.buzzBannerText) ui.buzzBannerText.textContent = text;
-  banner.hidden = false;
+  if (ui.buzzBanner) ui.buzzBanner.hidden = true;
 }
 
-let buzzQrBusy = false;
-async function drawBuzzerQRs() {
-  if (buzzQrBusy) return;
-  buzzQrBusy = true;
+const NET_WAIT = {
+  starting: "جارٍ تجهيز رابط الإنترنت…",
+  downloading: "تجهيز رابط الإنترنت لأول مرة…",
+  error: "رابط الإنترنت غير متاح الآن — جارٍ المحاولة",
+  off: "رابط الإنترنت مُطفأ",
+};
+
+/** رمزا دخول اللاعبين (الإنترنت + الواي فاي) كما على التلفاز. */
+let playQrBusy = false;
+async function drawPlayQrs() {
+  if (playQrBusy || !ui.playQr) return;
+  playQrBusy = true;
   try {
-    const list = await getPlayUrls(room);
-    drawQR(list[0]?.url || "", ui.playQr);
+    const r = await getRoutes(room, "play");
+    ui.playQr.replaceChildren();
+    for (const kind of ["net", "lan"]) {
+      const target = r[kind];
+      const box = document.createElement("div");
+      box.className = `ds-qr${target ? "" : " is-pending"}`;
+      box.dataset.route = kind;
+      const frame = document.createElement("div");
+      frame.className = "ds-qr-frame";
+      const canvas = document.createElement("canvas");
+      const wait = document.createElement("div");
+      wait.className = "ds-qr-wait";
+      frame.append(canvas, wait);
+      const pill = document.createElement("span");
+      pill.className = `ds-pill ${kind === "net" ? "ds-pill--sun" : "ds-pill--sky"}`;
+      pill.append(icon(kind === "net" ? "globe" : "wifi"), document.createTextNode(kind === "net" ? "عبر الإنترنت" : "نفس الواي فاي"));
+      box.append(frame, pill);
+      ui.playQr.appendChild(box);
+      if (target) {
+        drawQR(target.url, canvas);
+        box.title = target.url;
+      } else {
+        wait.textContent = kind === "net" ? NET_WAIT[r.netStatus] || NET_WAIT.starting : "لا توجد شبكة محلية";
+      }
+    }
     buzzQrDrawn = true;
   } catch {
-    buzzQrBusy = false;
+    buzzQrDrawn = false;
+  } finally {
+    playQrBusy = false;
   }
 }
+transport.onMessage = (msg) => {
+  if (msg.t === "net") drawPlayQrs();
+};
 
 /* ---------------- اللاعبون ---------------- */
 
@@ -721,52 +705,57 @@ function renderPlayers() {
   for (const t of ["a", "b"]) {
     const team = state.teams[t];
     const col = document.createElement("div");
-    col.className = "players-col";
-    col.style.setProperty("--team", team.color);
-    col.style.setProperty("--team-ink", inkFor(team.color));
-    const head = document.createElement("div");
-    head.className = "players-col-head";
+    col.className = `ds-stack ds-stack--tight ds-team-${t}`;
     const list = players.filter((pl) => pl.team === t).sort((x, y) => y.score - x.score);
+    const head = document.createElement("span");
+    head.className = "ds-pill ds-pill--team";
     head.textContent = `${team.name} (${list.length})`;
     col.appendChild(head);
     if (!list.length) {
-      const empty = document.createElement("div");
-      empty.className = "player-row empty";
+      const empty = document.createElement("span");
+      empty.className = "ds-hint";
       empty.textContent = "لا أحد بعد";
       col.appendChild(empty);
     }
     for (const pl of list) {
-      const row = document.createElement("div");
-      row.className = "player-row";
-      row.classList.toggle("offline", !online.has(pl.id));
-      const dot = document.createElement("i");
-      dot.className = "player-dot";
-      dot.title = online.has(pl.id) ? "متصل" : "غير متصل";
-      const name = document.createElement("span");
-      name.className = "player-name";
-      name.textContent = pl.name;
+      const box = document.createElement("div");
+      box.className = "ds-stack ds-stack--tight";
+      const chip = document.createElement("span");
+      chip.className = "ds-player";
+      chip.classList.toggle("is-offline", !online.has(pl.id));
+      chip.title = online.has(pl.id) ? "متصل" : "غير متصل";
+      const av = document.createElement("span");
+      av.className = "ds-avatar";
+      av.textContent = [...(pl.name || "؟")][0];
+      chip.append(av, document.createTextNode(pl.name));
       const stats = document.createElement("span");
-      stats.className = "player-stats";
-      stats.textContent = `${pl.score} ✅${pl.fastest != null ? ` · ${(pl.fastest / 1000).toFixed(1)}ث` : ""}`;
+      stats.className = "ds-hint";
+      stats.textContent = `${pl.score} نقطة${pl.fastest != null ? ` · ${(pl.fastest / 1000).toFixed(1)}ث` : ""}`;
+      const acts = document.createElement("div");
+      acts.className = "ds-cluster ds-cluster--tight";
+      const other = state.teams[t === "a" ? "b" : "a"].name;
       const move = document.createElement("button");
       move.type = "button";
-      move.className = "player-act";
-      move.textContent = "↔";
-      move.title = `نقل إلى ${state.teams[t === "a" ? "b" : "a"].name}`;
+      move.className = "ds-btn ds-btn--icon ds-btn--sm";
+      move.append(icon("swap"));
+      move.title = `نقل إلى ${other}`;
+      move.setAttribute("aria-label", move.title);
       move.addEventListener("click", () => {
         act("playerSetTeam", { id: pl.id, team: t === "a" ? "b" : "a" });
-        toast(`نُقل ${pl.name} إلى ${state.teams[t === "a" ? "b" : "a"].name}`);
+        toast(`نُقل ${pl.name} إلى ${other}`, "swap");
       });
       const kick = document.createElement("button");
       kick.type = "button";
-      kick.className = "player-act danger";
-      kick.textContent = "✖";
+      kick.className = "ds-btn ds-btn--icon ds-btn--sm ds-btn--danger";
+      kick.append(icon("close"));
       kick.title = "إخراج من اللعبة";
+      kick.setAttribute("aria-label", kick.title);
       kick.addEventListener("click", () => {
         if (confirm(`إخراج ${pl.name} من اللعبة؟`)) act("playerRemove", { id: pl.id });
       });
-      row.append(dot, name, stats, move, kick);
-      col.appendChild(row);
+      acts.append(move, kick);
+      box.append(chip, stats, acts);
+      col.appendChild(box);
     }
     ui.playersCols.appendChild(col);
   }
@@ -774,23 +763,26 @@ function renderPlayers() {
 
 /* ---------------- لوحة الحكم أثناء السؤال ---------------- */
 
-const RESULT_ICON = { wrong: "❌", timeout: "⌛", right: "✅" };
+const RESULT_ICON = { wrong: "close", timeout: "timer", right: "check" };
+const JUDGE_BASE = { judgeRight: "ds-btn--success", judgeWrong: "ds-btn--danger", judgeLock: "" };
+const JUDGE_KEY = { judgeRight: "1", judgeWrong: "2", judgeLock: "3" };
 
-/** يضبط زراً من أزرار اللوحة: نصّه، فعله، لونه، وظهوره. */
-function judgeButton(btn, { label, action, color = null, hidden = false, disabled = false }) {
+/** يضبط زراً من أزرار اللوحة: نصّه، فعله، فريقه (لون)، وظهوره. */
+function judgeButton(btn, { iconName = null, label, action, team = null, hidden = false, disabled = false }) {
   if (!btn) return;
   btn.hidden = hidden;
   btn.disabled = disabled;
   btn.dataset.act = action || "";
-  const key = btn.querySelector("kbd")?.outerHTML || "";
-  btn.innerHTML = `${label} ${key}`;
-  if (color) {
-    btn.style.background = color;
-    btn.style.color = inkFor(color);
-  } else {
-    btn.style.background = "";
-    btn.style.color = "";
-  }
+  btn.classList.remove("ds-btn--success", "ds-btn--danger", "ds-btn--team", "ds-team-a", "ds-team-b");
+  if (team) btn.classList.add("ds-btn--team", `ds-team-${team}`);
+  else if (JUDGE_BASE[btn.id]) btn.classList.add(JUDGE_BASE[btn.id]);
+  btn.replaceChildren();
+  if (iconName) btn.appendChild(icon(iconName));
+  btn.appendChild(document.createTextNode(label + " "));
+  const key = document.createElement("kbd");
+  key.className = "ds-kbd";
+  key.textContent = JUDGE_KEY[btn.id] || "";
+  btn.appendChild(key);
 }
 
 function renderJudge() {
@@ -807,66 +799,86 @@ function renderJudge() {
   const tB = state.teams.b;
   const nameOf = (pl) => (pl?.id?.startsWith("team:") ? state.teams[pl.team]?.name : pl?.name) || "—";
   const answering = b.phase === "answer" && b.player;
-  const focusTeam = answering ? state.teams[b.player.team] : b.phase === "team" ? state.teams[b.allowed] : null;
-  panel.style.setProperty("--team", focusTeam?.color || "#ffd93d");
-  panel.style.setProperty("--team-ink", inkFor(focusTeam?.color || "#ffd93d"));
   panel.dataset.phase = b.phase;
 
   const t = c.timer || {};
   const secs = t.running ? Math.max(0, Math.ceil(remainingMs(t, transport.serverOffset) / 1000)) : null;
   ui.judgeTimer.hidden = secs == null;
-  if (secs != null) ui.judgeTimer.textContent = secs;
+  if (secs != null) ui.judgeTimerNum.textContent = secs;
+
+  // لافتة «من يجيب»: بلون الفريق عند وجود فريق، وإلا أزرق
+  const setWho = (tone, team, ic) => {
+    ui.judgeWhoBanner.className = `ds-banner ds-banner--sm${tone ? ` ds-banner--${tone}` : ""}${team ? ` ds-banner--team ds-team-${team}` : ""}`;
+    setIcon(ui.judgeWhoIcon, ic);
+  };
+  let stage = 1;
 
   if (b.phase === "open") {
     ui.judgeStage.textContent = "الجولة ١ · الأجراس";
     ui.judgeWho.textContent = "بانتظار أول ضغطة… (بلا حدّ زمني)";
-    judgeButton(ui.judgeRight, { label: "✅ صح", action: "", disabled: true });
-    judgeButton(ui.judgeWrong, { label: "❌ خطأ", action: "", disabled: true });
-    judgeButton(ui.judgeLock, { label: "🔒 إغلاق", action: "lock" });
+    setWho("info", null, "bell");
+    judgeButton(ui.judgeRight, { iconName: "check", label: "صح", action: "", disabled: true });
+    judgeButton(ui.judgeWrong, { iconName: "close", label: "خطأ", action: "", disabled: true });
+    judgeButton(ui.judgeLock, { iconName: "lock", label: "إغلاق", action: "lock" });
   } else if (answering) {
     ui.judgeStage.textContent = "الجولة ١ · الأجراس";
-    ui.judgeWho.textContent = `🔔 ${nameOf(b.player)} يجيب — ${state.teams[b.player.team].name}`;
-    judgeButton(ui.judgeRight, { label: "✅ صح", action: "correct" });
-    judgeButton(ui.judgeWrong, { label: "❌ خطأ", action: "wrong" });
-    judgeButton(ui.judgeLock, { label: "🔒 إغلاق", action: "", hidden: true });
+    ui.judgeWho.textContent = `${nameOf(b.player)} يجيب — ${state.teams[b.player.team].name}`;
+    setWho("", b.player.team, "bolt");
+    judgeButton(ui.judgeRight, { iconName: "check", label: "صح", action: "correct" });
+    judgeButton(ui.judgeWrong, { iconName: "close", label: "خطأ", action: "wrong" });
+    judgeButton(ui.judgeLock, { label: "إغلاق", action: "", hidden: true });
   } else if (b.phase === "team") {
+    stage = 2;
     const team = state.teams[b.allowed];
     ui.judgeStage.textContent = `الجولة ٢ · دور ${team.name}`;
     ui.judgeWho.textContent = `${team.name} يجيبون بصوت عالٍ — حتى ينتهي الوقت`;
-    judgeButton(ui.judgeRight, { label: `✅ نقطة لـ ${team.name}`, action: "correct", color: team.color });
+    setWho("", b.allowed, "users");
+    judgeButton(ui.judgeRight, { iconName: "check", label: `نقطة لـ ${team.name}`, action: "correct", team: b.allowed });
     judgeButton(ui.judgeWrong, { label: "", action: "", hidden: true });
     judgeButton(ui.judgeLock, { label: "", action: "", hidden: true });
   } else if (b.phase === "all") {
+    stage = 3;
     ui.judgeStage.textContent = "الجولة ٣ · مفتوح للجميع";
     ui.judgeWho.textContent = "من أجاب صح؟ اختر الفريق (بلا وقت)";
-    judgeButton(ui.judgeRight, { label: `✅ ${tA.name}`, action: "correctA", color: tA.color });
-    judgeButton(ui.judgeWrong, { label: `✅ ${tB.name}`, action: "correctB", color: tB.color });
-    judgeButton(ui.judgeLock, { label: "🤷 لم يُجب أحد", action: "noPoint" });
+    setWho("success", null, "megaphone");
+    judgeButton(ui.judgeRight, { iconName: "check", label: tA.name, action: "correctA", team: "a" });
+    judgeButton(ui.judgeWrong, { iconName: "check", label: tB.name, action: "correctB", team: "b" });
+    judgeButton(ui.judgeLock, { iconName: "question", label: "لم يُجب أحد", action: "noPoint" });
+  }
+
+  for (const s of ui.judgeSteps.querySelectorAll(".ds-step")) {
+    const n = Number(s.dataset.stage);
+    s.classList.toggle("is-on", n === stage);
+    s.classList.toggle("is-done", n < stage);
   }
 
   ui.judgeHistory.replaceChildren();
   for (const h of b.history || []) {
     const chip = document.createElement("span");
-    chip.className = "judge-chip";
-    chip.style.setProperty("--chip", state.teams[h.team]?.color || "#999");
-    chip.textContent = `${nameOf(h)} ${RESULT_ICON[h.result] || "⏳"}${h.ms != null ? ` ${(h.ms / 1000).toFixed(2)}ث` : ""}`;
+    chip.className = `ds-pill ds-pill--team ds-team-${h.team}`;
+    chip.append(icon(RESULT_ICON[h.result] || "timer"), document.createTextNode(`${nameOf(h)}${h.ms != null ? ` ${(h.ms / 1000).toFixed(2)}ث` : ""}`));
     ui.judgeHistory.appendChild(chip);
   }
 }
 
 /* ---------------- محرّر اللوحة ---------------- */
 
+function hexButton(letter, cls = "") {
+  const hex = document.createElement("button");
+  hex.type = "button";
+  hex.className = `ds-hex ${cls}`.trim();
+  hex.innerHTML = `<div class="ds-hex-in"><div class="ds-hex-face"><span class="ds-hex-letter"></span></div></div>`;
+  hex.querySelector(".ds-hex-letter").textContent = letter;
+  return hex;
+}
+
 function renderBoardEditor() {
   const wrap = ui.boardEditor;
-  wrap.innerHTML = "";
+  wrap.replaceChildren();
   for (const cell of boardCfg.cells) {
-    const btn = document.createElement("button");
-    btn.type = "button";
-    btn.textContent = state.cells[cell.id]?.letter ?? cell.letter;
-    btn.className = "";
-    if (state.cells[cell.id]?.owner === "a") btn.classList.add("owned-a");
-    if (state.cells[cell.id]?.owner === "b") btn.classList.add("owned-b");
-    if (state.current.cellId === cell.id) btn.classList.add("selected");
+    const owner = state.cells[cell.id]?.owner;
+    const selected = state.current.cellId === cell.id;
+    const btn = hexButton(state.cells[cell.id]?.letter ?? cell.letter, `${owner ? `is-${owner}` : ""} ${selected ? "is-selected" : ""}`);
     btn.addEventListener("click", () => openLetterModal(cell.id));
     wrap.appendChild(btn);
   }
@@ -874,14 +886,23 @@ function renderBoardEditor() {
 
 /* ---------------- السجل ---------------- */
 
+const TONE_ICON = { info: "info", warn: "warning", win: "trophy", a: "check", b: "check" };
+
 function renderLog() {
   const list = ui.logList;
-  list.innerHTML = "";
+  list.replaceChildren();
   for (const item of state.log || []) {
-    const li = document.createElement("li");
-    li.textContent = item.text;
-    li.className = `tone-${item.tone || "info"}`;
-    list.appendChild(li);
+    const row = document.createElement("div");
+    row.className = "ds-list-item";
+    const tone = item.tone || "info";
+    const badge = document.createElement("span");
+    badge.className = tone === "a" || tone === "b" ? `ds-avatar ds-team-${tone}` : "ds-badge-icon";
+    badge.appendChild(icon(item.icon || TONE_ICON[tone] || "info"));
+    const text = document.createElement("span");
+    text.className = "ds-text";
+    text.textContent = item.text;
+    row.append(badge, text);
+    list.appendChild(row);
   }
 }
 
@@ -896,11 +917,13 @@ function updateTimerReadout() {
       state.current.turn === "a" ? state.teams.a.name :
       state.current.turn === "b" ? state.teams.b.name :
       "مفتوح للجميع";
-    ui.timerReadout.textContent = `${turn} — ${Math.ceil(rem / 1000)} ثانية`;
-    ui.timerReadout.classList.add("running");
+    ui.timerReadoutText.textContent = `${turn} — ${Math.ceil(rem / 1000)} ثانية`;
+    ui.timerReadout.classList.add("ds-pill--sun");
+    ui.timerReadout.classList.remove("ds-pill--dark");
   } else {
-    ui.timerReadout.textContent = "المؤقّت متوقف";
-    ui.timerReadout.classList.remove("running");
+    ui.timerReadoutText.textContent = "المؤقّت متوقف";
+    ui.timerReadout.classList.remove("ds-pill--sun");
+    ui.timerReadout.classList.add("ds-pill--dark");
   }
 }
 setInterval(updateTimerReadout, 120);
@@ -916,7 +939,7 @@ function openLetterModal(cellId) {
       ? "سيُعاد اختيار السؤال تلقائياً بعد التغيير. الحروف المستخدمة في خلايا أخرى معطّلة."
       : "سيُطبّق على الشاشة فوراً. الحروف المستخدمة في خلايا أخرى معطّلة.";
 
-  ui.letterGrid.innerHTML = "";
+  ui.letterGrid.replaceChildren();
   // الحروف المستخدمة في خلايا أخرى تُعطَّل: لا نكرّر أي حرف داخل الشبكة.
   const usedElsewhere = new Set(
     Object.keys(state.cells)
@@ -924,14 +947,9 @@ function openLetterModal(cellId) {
       .map((id) => state.cells[id].letter)
   );
   for (const letter of ALL_LETTERS) {
-    const btn = document.createElement("button");
-    btn.type = "button";
-    btn.textContent = letter;
     const count = letterStats[letter];
-    if (!count) btn.classList.add("empty");
-    if (letter === cell.letter) btn.classList.add("current");
+    const btn = hexButton(letter, `${letter === cell.letter ? "is-selected" : ""} ${!count ? "is-dim" : ""}`);
     if (usedElsewhere.has(letter)) {
-      btn.classList.add("used");
       btn.disabled = true;
       btn.title = "مستخدم في خلية أخرى — الحروف لا تتكرّر في الشبكة";
     } else if (count) {
@@ -942,27 +960,18 @@ function openLetterModal(cellId) {
     btn.addEventListener("click", () => {
       act("setLetter", { cellId, letter });
       closeLetterModal();
-      toast(`تم تغيير الحرف إلى "${letter}"`);
+      toast(`تم تغيير الحرف إلى "${letter}"`, "type");
       if (cellId === state.current.cellId) setTimeout(() => act("newQuestion"), 120);
     });
     ui.letterGrid.appendChild(btn);
   }
 
-  ui.letterModal.classList.add("show");
+  ui.letterModal.classList.add("is-open");
 }
 
 function closeLetterModal() {
-  ui.letterModal.classList.remove("show");
+  ui.letterModal.classList.remove("is-open");
   letterTarget = null;
-}
-
-/* ---------------- تنبيه ---------------- */
-
-function toast(msg) {
-  ui.toast.textContent = msg;
-  ui.toast.classList.add("show");
-  clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => ui.toast.classList.remove("show"), 2400);
 }
 
 /* ---------------- ربط الأحداث ---------------- */
@@ -971,15 +980,15 @@ ui.revealBtn.addEventListener("click", () => act("reveal"));
 ui.hideBtn.addEventListener("click", () => act("hide"));
 ui.revealAnswerBtn.addEventListener("click", () => {
   act("revealAnswer");
-  toast("تم إظهار الجواب على الشاشة");
+  toast("تم إظهار الجواب على الشاشة", "eye");
 });
 ui.hideAnswerBtn.addEventListener("click", () => {
   act("hideAnswer");
-  toast("تم إخفاء الجواب عن الشاشة");
+  toast("تم إخفاء الجواب عن الشاشة", "lock");
 });
 ui.newQBtn.addEventListener("click", () => {
   act("newQuestion");
-  toast("تم اختيار سؤال جديد لنفس الحرف");
+  toast("تم اختيار سؤال جديد لنفس الحرف", "swap");
 });
 ui.letterBtn.addEventListener("click", () => {
   if (state.current.cellId) openLetterModal(state.current.cellId);
@@ -987,15 +996,15 @@ ui.letterBtn.addEventListener("click", () => {
 
 ui.awardA.addEventListener("click", () => {
   act("award", { cellId: state.current.cellId, team: "a" });
-  toast(`نقطة لـ ${state.teams.a.name}`);
+  toast(`نقطة لـ ${state.teams.a.name}`, "check");
 });
 ui.awardB.addEventListener("click", () => {
   act("award", { cellId: state.current.cellId, team: "b" });
-  toast(`نقطة لـ ${state.teams.b.name}`);
+  toast(`نقطة لـ ${state.teams.b.name}`, "check");
 });
 ui.unclaimBtn.addEventListener("click", () => {
   act("unclaim", { cellId: state.current.cellId });
-  toast("تمت الإزالة من الفريق");
+  toast("تمت الإزالة من الفريق", "ban");
 });
 ui.clearBtn.addEventListener("click", () => act("clear"));
 /* ---------------- لوحة الحكم: صح / خطأ / إغلاق / سؤال آخر ---------------- */
@@ -1009,27 +1018,27 @@ function judgeDo(btn) {
     case "correct": {
       const team = b.phase === "team" ? b.allowed : b.player?.team;
       act("buzzCorrect", { cellId });
-      toast(`✅ نقطة لـ ${team ? state.teams[team].name : "الفريق"}`);
+      toast(`نقطة لـ ${team ? state.teams[team].name : "الفريق"}`, "check");
       break;
     }
     case "correctA":
     case "correctB": {
       const team = btn.dataset.act === "correctA" ? "a" : "b";
       act("buzzCorrect", { cellId, team });
-      toast(`✅ نقطة لـ ${state.teams[team].name}`);
+      toast(`نقطة لـ ${state.teams[team].name}`, "check");
       break;
     }
     case "wrong":
       act("buzzWrong");
-      toast("❌ خطأ — دور الفريق الآخر");
+      toast("خطأ — دور الفريق الآخر", "close");
       break;
     case "lock":
       act("buzzClose");
-      toast("🔒 أُغلقت الأجراس");
+      toast("أُغلقت الأجراس", "lock");
       break;
     case "noPoint":
       act("noPoint", { cellId });
-      toast("🤷 لم يُجب أحد — الجواب ظاهر على الشاشة");
+      toast("لم يُجب أحد — الجواب ظاهر على الشاشة", "question");
       break;
   }
 }
@@ -1039,7 +1048,7 @@ const judgeLock = () => judgeDo(ui.judgeLock);
 function judgeNewQ() {
   if (!state?.current?.cellId) return;
   act("newQuestion");
-  toast("🔄 سؤال آخر لنفس الحرف");
+  toast("سؤال آخر لنفس الحرف", "swap");
 }
 ui.judgeRight?.addEventListener("click", judgeRight);
 ui.judgeWrong?.addEventListener("click", judgeWrong);
@@ -1048,12 +1057,12 @@ ui.judgeNewQ?.addEventListener("click", judgeNewQ);
 
 ui.undoBtn?.addEventListener("click", () => {
   act("undo");
-  toast("↩️ تراجع عن آخر قرار");
+  toast("تراجع عن آخر قرار", "undo");
 });
 ui.shuffleBtn?.addEventListener("click", () => {
   if (confirm("خلط حروف الخلايا الحرّة؟ النقاط والخلايا الملوّنة تبقى كما هي.")) {
     act("shuffle");
-    toast("🔀 خُلطت الحروف الحرّة");
+    toast("خُلطت الحروف الحرّة", "swap");
   }
 });
 ui.hintBtn?.addEventListener("click", () => {
@@ -1090,7 +1099,6 @@ el("changeGameBtn")?.addEventListener("click", () => {
 initTaboo({
   act,
   toast,
-  inkFor,
   getState: () => state,
   getPeers: () => peers,
   remainingMs: (t) => remainingMs(t, transport.serverOffset),
@@ -1098,20 +1106,20 @@ initTaboo({
 
 ui.noPointBtn?.addEventListener("click", () => {
   act("noPoint", { cellId: state.current.cellId });
-  toast("لم يُجب أحد — الجواب ظاهر على الشاشة");
+  toast("لم يُجب أحد — الجواب ظاهر على الشاشة", "question");
 });
 
 ui.lobbyToggleBtn?.addEventListener("click", () => {
   const lobbyOn = state?.screen?.lobby !== false;
   act("screen", { lobby: !lobbyOn });
-  toast(lobbyOn ? "بدأ اللعب — أُخفيت الرموز عن الشاشة" : "رموز QR ظاهرة على الشاشة");
+  toast(lobbyOn ? "بدأ اللعب — أُخفيت الرموز عن الشاشة" : "رموز QR ظاهرة على الشاشة", "qr");
 });
 // أي رموز QR تظهر على التلفاز (بدون حكم متصل يظهر الاثنان دائماً)
 document.getElementById("qrRouteSeg")?.addEventListener("click", (e) => {
-  const b = e.target.closest("[data-qr]");
+  const b = e.target.closest("[data-value]");
   if (!b) return;
-  act("screen", { qr: b.dataset.qr });
-  toast({ both: "يظهر الرمزان على التلفاز", net: "رمز الإنترنت فقط على التلفاز", lan: "رمز الواي فاي فقط على التلفاز" }[b.dataset.qr]);
+  act("screen", { qr: b.dataset.value });
+  toast({ both: "يظهر الرمزان على التلفاز", net: "رمز الإنترنت فقط على التلفاز", lan: "رمز الواي فاي فقط على التلفاز" }[b.dataset.value], "qr");
 });
 
 /** حالة الطريقين (يُحدَّث عند كل تغيّر في رابط الإنترنت). */
@@ -1122,11 +1130,11 @@ async function refreshNetStatus() {
     const info = await (await fetch("/api/network", { cache: "no-store" })).json();
     const t = info.tunnel || {};
     const net =
-      t.status === "ok" ? `🌐 الإنترنت: يعمل (${new URL(t.url).host})`
-      : t.status === "error" ? "🌐 الإنترنت: متعطّل — جارٍ المحاولة"
-      : t.status === "off" ? "🌐 الإنترنت: مُطفأ"
-      : "🌐 الإنترنت: جارٍ التجهيز…";
-    const lan = info.addresses?.length ? `📶 الواي فاي: ${info.addresses[0].address}:${info.port}` : "📶 الواي فاي: لا توجد شبكة";
+      t.status === "ok" ? `الإنترنت: يعمل (${new URL(t.url).host})`
+      : t.status === "error" ? "الإنترنت: متعطّل — جارٍ المحاولة"
+      : t.status === "off" ? "الإنترنت: مُطفأ"
+      : "الإنترنت: جارٍ التجهيز…";
+    const lan = info.addresses?.length ? `الواي فاي: ${info.addresses[0].address}:${info.port}` : "الواي فاي: لا توجد شبكة";
     line.textContent = `${net} · ${lan}`;
   } catch {
     line.textContent = "—";
@@ -1138,12 +1146,12 @@ setInterval(refreshNetStatus, 30000);
 ui.screenFullBtn?.addEventListener("click", () => {
   const full = !!peers?.screenFullscreen;
   act("screenFullscreen");
-  toast(full ? "جارٍ الخروج من ملء الشاشة…" : "جارٍ تكبير الشاشة…");
+  toast(full ? "جارٍ الخروج من ملء الشاشة…" : "جارٍ تكبير الشاشة…", "fullscreen");
 });
 ui.screenSoundBtn?.addEventListener("click", () => {
   const soundOn = state?.screen?.sound !== false;
   act("screen", { sound: !soundOn });
-  toast(soundOn ? "تم كتم صوت الشاشة" : "تم تشغيل صوت الشاشة");
+  toast(soundOn ? "تم كتم صوت الشاشة" : "تم تشغيل صوت الشاشة", soundOn ? "volume-off" : "volume");
 });
 
 ui.turnA.addEventListener("click", () => {
@@ -1166,20 +1174,20 @@ ui.randomBtn.addEventListener("click", () => {
   const pool = free.length ? free : cells;
   const pick = pool[Math.floor(Math.random() * pool.length)];
   act("select", { cellId: pick.id });
-  toast(`تم اختيار الحرف "${state.cells[pick.id].letter}"`);
+  toast(`تم اختيار الحرف "${state.cells[pick.id].letter}"`, "dice");
 });
 
 ui.resetBtn.addEventListener("click", () => {
   if (confirm("بدء جولة جديدة؟ سيتم مسح كل النقاط والخلايا المملوكة.")) {
     act("reset");
-    toast("جولة جديدة");
+    toast("جولة جديدة", "undo");
   }
 });
 
 ui.peekBtn.addEventListener("click", () => {
   answerVisible = !answerVisible;
   ui.peekBtn.textContent = answerVisible ? "إخفاء الجواب" : "إظهار الجواب";
-  ui.answerBox.classList.toggle("hidden-answer", !answerVisible);
+  ui.answerText.closest(".ds-answer").hidden = !answerVisible;
 });
 
 ui.nameA.addEventListener("change", () => act("setTeam", { team: "a", name: ui.nameA.value }));
@@ -1208,23 +1216,22 @@ function renderThemeChips() {
   for (const [id, t] of Object.entries(DS_THEMES)) {
     const btn = document.createElement("button");
     btn.type = "button";
-    btn.className = "theme-chip";
-    btn.classList.toggle("active", state.theme?.ds === id);
+    btn.className = "ds-btn ds-btn--sm";
+    btn.setAttribute("aria-pressed", String(state.theme?.ds === id));
     const sw = document.createElement("span");
-    sw.className = "theme-swatches";
+    sw.className = "ds-swatches";
     for (const c of [t.teams.a, t.teams.b, t.cream, t.sun, t.stage]) {
       const dot = document.createElement("i");
-      dot.style.background = c;
+      dot.className = "ds-swatch";
+      dot.style.setProperty("--sw", c);
       sw.appendChild(dot);
     }
-    const name = document.createElement("span");
-    name.textContent = t.name;
-    btn.append(sw, name);
+    btn.append(sw, document.createTextNode(t.name));
     btn.addEventListener("click", () => {
       act("setTeam", { team: "a", color: t.teams.a });
       act("setTeam", { team: "b", color: t.teams.b });
       act("setTheme", { ds: id, cellColor: t.cream, selectedColor: t.sun, bgColor: PAPER });
-      toast(`تم تطبيق قالب: ${t.name}`);
+      toast(`تم تطبيق قالب: ${t.name}`, "palette");
     });
     ui.themeChips.appendChild(btn);
   }
@@ -1237,12 +1244,14 @@ function renderColorWarnings() {
   ui.colorWarn.hidden = clashes.length === 0;
   ui.colorWarnList.textContent = "";
   for (const c of clashes) {
-    const li = document.createElement("li");
+    const li = document.createElement("div");
+    li.className = "ds-cluster ds-cluster--tight";
     const pair = document.createElement("span");
-    pair.className = "warn-pair";
+    pair.className = "ds-swatches";
     for (const col of c.colors) {
       const dot = document.createElement("i");
-      dot.style.background = col;
+      dot.className = "ds-swatch";
+      dot.style.setProperty("--sw", col);
       pair.appendChild(dot);
     }
     li.append(pair, document.createTextNode(` ${c.msg} — سيُعدَّل ${COLOR_LABELS[c.fix]}`));
@@ -1257,7 +1266,7 @@ if (ui.colorFixBtn) {
     if (fix.teams.b) act("setTeam", { team: "b", color: fix.teams.b });
     if (Object.keys(fix.theme).length) act("setTheme", fix.theme);
     const n = Object.keys(fix.teams).length + Object.keys(fix.theme).length;
-    toast(n ? `✨ تم تعديل ${n} ${n === 1 ? "لون" : "ألوان"} — الألوان الآن مميّزة بوضوح` : "لم أجد بديلاً مناسباً — جرّب قالباً جاهزاً");
+    toast(n ? `تم تعديل ${n} ${n === 1 ? "لون" : "ألوان"} — الألوان الآن مميّزة بوضوح` : "لم أجد بديلاً مناسباً — جرّب قالباً جاهزاً", "sparkle");
   });
 }
 
@@ -1265,7 +1274,7 @@ if (ui.colorFixBtn) {
 
 ui.buzzEnabled.addEventListener("change", () => {
   act("buzzConfig", { enabled: ui.buzzEnabled.checked });
-  toast(ui.buzzEnabled.checked ? "تم تفعيل الأجراس" : "تم إيقاف الأجراس");
+  toast(ui.buzzEnabled.checked ? "تم تفعيل الأجراس" : "تم إيقاف الأجراس", "bell");
 });
 
 ui.buzzAuto.addEventListener("change", () => {
@@ -1288,12 +1297,12 @@ if (ui.buzzOtherSeconds) {
 
 ui.buzzOpenBtn.addEventListener("click", () => {
   act("buzzOpen");
-  toast("الأجراس مفتوحة — اضغطوا الآن!");
+  toast("الأجراس مفتوحة — اضغطوا الآن!", "bell");
 });
 
 ui.buzzResetBtn.addEventListener("click", () => {
   act("buzzReset");
-  toast("تمت إعادة الأجراس");
+  toast("تمت إعادة الأجراس", "undo");
 });
 
 ui.declareA.addEventListener("click", () => act("declareWinner", { team: "a" }));
@@ -1372,7 +1381,7 @@ function renderPresets() {
 
   if (!presetFiles.length) {
     const d = document.createElement("div");
-    d.className = "pst-list-empty";
+    d.className = "ds-hint";
     d.textContent = "لا توجد مجموعات بعد — اضغط «إدارة وتعديل المجموعات».";
     ui.presetList.appendChild(d);
   }
@@ -1381,12 +1390,12 @@ function renderPresets() {
   const allActive = active.length === 0;
 
   for (const p of presetFiles) {
-    const row = document.createElement("div");
-    row.className = "pst-item";
+    const row = document.createElement("label");
+    row.className = "ds-list-item";
 
     const cb = document.createElement("input");
     cb.type = "checkbox";
-    cb.className = "pst-item-check";
+    cb.className = "ds-switch";
     cb.checked = allActive || active.includes(p.id);
     cb.title = "تفعيل/تعطيل هذه المجموعة";
     cb.addEventListener("change", () => {
@@ -1408,32 +1417,29 @@ function renderPresets() {
     row.appendChild(cb);
 
     const name = document.createElement("span");
-    name.className = "pst-item-name";
+    name.className = "ds-text";
     name.textContent = p.name;
     row.appendChild(name);
 
     const meta = document.createElement("span");
-    const bad = p.warnings ? `⚠${p.warnings}` : "";
-    meta.className = "pst-item-meta" + (p.warnings ? " pst-bad" : "");
-    meta.textContent = bad ? `${p.total || 0} سؤال ${bad}` : `${p.total || 0} سؤال`;
+    meta.className = "ds-hint";
+    meta.textContent = `${p.total || 0} سؤال`;
     row.appendChild(meta);
-
-    const eye = document.createElement("a");
-    eye.className = "pst-item-btn";
-    eye.href = `/presets?id=${encodeURIComponent(p.id)}`;
-    eye.target = "_blank";
-    eye.rel = "noopener";
-    eye.textContent = "👁";
-    eye.title = "معاينة وتعديل";
-    row.appendChild(eye);
+    if (p.warnings) {
+      const warn = document.createElement("span");
+      warn.className = "ds-pill ds-pill--coral";
+      warn.append(icon("warning"), document.createTextNode(String(p.warnings)));
+      row.appendChild(warn);
+    }
 
     const edit = document.createElement("a");
-    edit.className = "pst-item-btn";
+    edit.className = "ds-btn ds-btn--icon ds-btn--sm";
     edit.href = `/presets?id=${encodeURIComponent(p.id)}`;
     edit.target = "_blank";
     edit.rel = "noopener";
-    edit.textContent = "✏️";
-    edit.title = "تعديل الأسئلة";
+    edit.append(icon("pen"));
+    edit.title = "معاينة وتعديل الأسئلة";
+    edit.setAttribute("aria-label", edit.title);
     row.appendChild(edit);
 
     ui.presetList.appendChild(row);

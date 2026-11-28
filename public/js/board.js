@@ -1,212 +1,98 @@
 /* ==================================================================
-   رسم شبكة الخلية (hex grid) — مشترك بين الشاشة والحكم
+   اللوحة المصغّرة عند الحكم — خلايا مكتبة نظام التصميم (ds-hex) داخل ds-board
+   الهندسة من محرّك اللعبة (cellCenter): الصفوف الزوجية مزيحة نصف خلية، والخلايا متلاصقة.
    ================================================================== */
-
-import { cellCenter, hexMetrics, neighborsOf, cellId } from "/shared/engine.js";
-import { inkFor } from "/shared/colors.js";
+import { replay } from "/js/ds.js";
 
 /**
  * ينشئ شبكة الخلايا داخل عنصر.
- * @param {HTMLElement} root العنصر الحاوي
+ * @param {HTMLElement} root العنصر الحاوي (يصبح ds-board)
  * @param {object} board إعدادات اللوحة
  * @param {object} opts
- * @param {number} opts.width عرض الخلية المنطقي بالبكسل
- * @param {boolean} opts.interactive，允许 التفاعل بالنقر
+ * @param {boolean} opts.interactive الخلايا أزرار قابلة للنقر
  * @param {(id:string)=>void} [opts.onSelect]
- * @returns {{update:(state:object)=>void, destroy:()=>void, logicalSize:{w:number,h:number}}}
+ * @returns {{update:(state:object)=>void, animateClaim:(id:string)=>void, destroy:()=>void, fit:()=>void, cells:Map}}
  */
 export function createBoard(root, board, opts = {}) {
-  const width = opts.width || 120;
-  const { w, h, rowStep } = hexMetrics(width);
   const cols = board.cols || 5;
   const rows = board.rows || 5;
+  const maxHw = opts.maxWidth || 74; // أكبر عرض للخلية بالبكسل
 
-  const logicalW = (cols + 0.5) * w;
-  const logicalH = (rows - 1) * rowStep + h;
-
-  root.classList.add("board-root");
-  root.style.setProperty("--cell-w", `${w}px`);
-  root.style.setProperty("--cell-h", `${h}px`);
-
-  const layer = document.createElement("div");
-  layer.className = "board-layer";
-  layer.style.width = `${logicalW}px`;
-  layer.style.height = `${logicalH}px`;
-  root.appendChild(layer);
-
-  // زخرفة الخلفية: شبه منحرف علوي وسفلي للفريق أ (ربط أعلى بأسفل)، وجوانب للفريق ب (يمين بيسار)
-  const deco = document.createElement("div");
-  deco.className = "board-deco";
-  deco.innerHTML = `
-    <div class="deco-trapezoid deco-top"></div>
-    <div class="deco-trapezoid deco-bottom"></div>
-    <div class="deco-label deco-lbl-top">أعلى</div>
-    <div class="deco-label deco-lbl-bottom">أسفل</div>
-    <div class="deco-label deco-lbl-left">يمين</div>
-    <div class="deco-label deco-lbl-right">يسار</div>
-  `;
-  layer.appendChild(deco);
+  root.classList.add("ds-board");
+  const grid = document.createElement("div");
+  grid.className = "ds-board-grid";
+  root.appendChild(grid);
 
   const cells = new Map();
-
   for (const cell of board.cells) {
-    const { x, y } = cellCenter(cell.r, cell.c, width);
-
-    const halo = document.createElement("div");
-    halo.className = "hex-halo";
-    halo.style.left = `${x}px`;
-    // cellCenter يعيد مركز الخلية عمودياً، بينما العنصر يتموضع من أعلاه.
-    halo.style.top = `${y - h / 2}px`;
-    halo.style.width = `${w}px`;
-    halo.style.height = `${h}px`;
-    layer.appendChild(halo);
-
     const hex = document.createElement(opts.interactive ? "button" : "div");
-    hex.className = "hex";
+    hex.className = "ds-hex";
+    if (opts.interactive) hex.type = "button";
     hex.dataset.id = cell.id;
-    hex.type = "button";
-    hex.style.left = `${x}px`;
-    hex.style.top = `${y - h / 2}px`;
-    hex.style.width = `${w}px`;
-    hex.style.height = `${h}px`;
-
-    const fill = document.createElement("span");
-    fill.className = "hex-fill";
-
-    const shine = document.createElement("span");
-    shine.className = "hex-shine";
-    fill.appendChild(shine);
-
-    const letter = document.createElement("span");
-    letter.className = "hex-letter";
+    hex.innerHTML = `<div class="ds-hex-in"><div class="ds-hex-face"><span class="ds-hex-letter"></span></div></div>`;
+    const letter = hex.querySelector(".ds-hex-letter");
     letter.textContent = cell.letter;
-    fill.appendChild(letter);
+    if (opts.interactive && opts.onSelect) hex.addEventListener("click", () => opts.onSelect(cell.id));
+    grid.appendChild(hex);
+    cells.set(cell.id, { hex, letter, r: cell.r, c: cell.c });
+  }
 
-    hex.appendChild(fill);
-    layer.appendChild(hex);
-
-    if (opts.interactive && opts.onSelect) {
-      hex.addEventListener("click", () => opts.onSelect(cell.id));
+  /** يحسب عرض الخلية من عرض الحاوية ثم يضع الخلايا ملتصقة (تداخل بسماكة الحدّ). */
+  function fit() {
+    const host = root.parentElement || root;
+    const avail = host.clientWidth;
+    if (!avail) return;
+    // عرض اللوحة الكلي ≈ 6.51 × عرض الخلية (٥ أعمدة ونصف + حشوة جانبية) + حدّان
+    const hw = Math.max(34, Math.min(maxHw, Math.floor((avail - 12) / ((cols + 0.5) * 0.965 + 1.2))));
+    root.style.setProperty("--hw", `${hw}px`);
+    const hh = hw * 1.1547;
+    const g = -hw * 0.035;
+    const step = hh * 0.75 + g;
+    grid.style.width = `${(cols + 0.5) * (hw + g)}px`;
+    grid.style.height = `${(rows - 1) * step + hh}px`;
+    for (const c of cells.values()) {
+      c.hex.style.left = `${c.c * (hw + g) + (c.r % 2 === 0 ? (hw + g) / 2 : 0)}px`;
+      c.hex.style.top = `${c.r * step}px`;
     }
-
-    cells.set(cell.id, { hex, halo, fill, letter });
   }
 
-  let lastState = null;
-
-  /* ---------------- ضبط الحجم تلقائياً ---------------- */
-  // نعتمد على ResizeObserver ونداءات مباشرة بدل requestAnimationFrame،
-  // لأن rAF لا يعمل في التبويبات المخفية (شاشة العرض قد تكون على جهاز آخر).
-  const logical = { w: logicalW, h: logicalH };
-  const padding = opts.padding ?? 14;
-  const maxScale = opts.maxScale ?? 2.2;
-  const fit = () => fitBoard(root, layer, logical, padding, maxScale);
-
-  if (typeof ResizeObserver !== "undefined") {
-    const ro = new ResizeObserver(() => fit());
-    ro.observe(root);
-  }
+  if (typeof ResizeObserver !== "undefined") new ResizeObserver(() => fit()).observe(root.parentElement || root);
   window.addEventListener("resize", fit);
   fit();
   setTimeout(fit, 80);
   setTimeout(fit, 400);
 
+  let owners = null;
+
   function update(state) {
-    lastState = state;
-    // ألوان الفريقين والثيم تُدار من لوحة الحكم وتُحدّث فوراً
-    root.style.setProperty("--team-a-color", state.teams.a.color);
-    root.style.setProperty("--team-b-color", state.teams.b.color);
-    // ألوان الكتابة تُختار تلقائياً لتبقى واضحة فوق أي لون
-    root.style.setProperty("--team-a-ink", inkFor(state.teams.a.color));
-    root.style.setProperty("--team-b-ink", inkFor(state.teams.b.color));
-
-    if (state.theme) {
-      const cellColor = state.theme.cellColor || "#ede5bb";
-      const selectedColor = state.theme.selectedColor || "#fcb017";
-      root.style.setProperty("--bg-color", state.theme.bgColor || "#2f6f9e");
-      root.style.setProperty("--cell-color", cellColor);
-      root.style.setProperty("--cell-text-color", inkFor(cellColor));
-      root.style.setProperty("--selected-color", selectedColor);
-      root.style.setProperty("--selected-text-color", inkFor(selectedColor));
-    }
-
     for (const [id, els] of cells) {
       const cell = state.cells[id];
       if (!cell) continue;
-
       const owner = cell.owner;
       const isSelected = state.current.cellId === id;
 
-      els.hex.classList.toggle("owner-a", owner === "a");
-      els.hex.classList.toggle("owner-b", owner === "b");
+      els.hex.classList.toggle("is-a", owner === "a");
+      els.hex.classList.toggle("is-b", owner === "b");
       els.hex.classList.toggle("is-selected", isSelected);
-      els.halo.classList.toggle("is-selected", isSelected);
-      els.halo.classList.toggle("owner-a", owner === "a");
-      els.halo.classList.toggle("owner-b", owner === "b");
 
       if (els.letter.textContent !== cell.letter) {
         els.letter.textContent = cell.letter;
-        els.letter.classList.remove("anim-pop");
-        void els.letter.offsetWidth;
-        els.letter.classList.add("anim-pop");
-        clearTimeout(els.letter._animTimer);
-        els.letter._animTimer = setTimeout(() => els.letter.classList.remove("anim-pop"), 500);
+        replay(els.letter, "ds-pop-in");
       }
-
-      if (isSelected) {
-        els.halo.style.background =
-          owner === "a" ? state.teams.a.color :
-          owner === "b" ? state.teams.b.color :
-          "rgba(255, 217, 61, .8)";
-      } else {
-        // نمسح لون الهالة السابق عند الانتقال إلى خلية أخرى.
-        els.halo.style.background = "";
-      }
+      if (owners && owner && owners[id] !== owner) animateClaim(id);
     }
+    owners = Object.fromEntries(Object.entries(state.cells).map(([id, c]) => [id, c.owner]));
   }
 
-  /** تشغيل حركة التقاط الخلية. */
+  /** حركة التقاط الخلية. */
   function animateClaim(id) {
     const els = cells.get(id);
-    if (!els) return;
-    els.hex.classList.remove("just-claimed");
-    void els.hex.offsetWidth;
-    els.hex.classList.add("just-claimed");
-    clearTimeout(els.hex._animTimer);
-    els.hex._animTimer = setTimeout(() => els.hex.classList.remove("just-claimed"), 700);
+    if (els) replay(els.hex, "is-claim");
   }
 
   function destroy() {
-    layer.remove();
+    grid.remove();
   }
 
-  return { update, animateClaim, destroy, fit, logicalSize: logical, cells, maxScale };
-}
-
-/**
- * يضبط تكبير اللوحة لملاءمة الحاوية مع الحفاظ على النسب.
- * نضع الطبقة بإحداثيات بكسل صريحة بدل الاعتماد على translate + scale معاً،
- * لأن تفاعلهما مع transform-origin يسبّب إزاحة غير متوقّعة.
- */
-export function fitBoard(root, layer, logical, padding = 16, maxScale = 2.2) {
-  if (!root || !layer) return;
-  const rect = root.getBoundingClientRect();
-  if (!rect.width || !rect.height) return;
-
-  const scale = Math.min(
-    (rect.width - padding * 2) / logical.w,
-    (rect.height - padding * 2) / logical.h
-  );
-  const k = Math.max(0.15, Math.min(scale, maxScale));
-
-  layer.style.transformOrigin = "top left";
-  layer.style.transform = `scale(${k})`;
-  layer.style.left = `${Math.max(0, (rect.width - logical.w * k) / 2)}px`;
-  layer.style.top = `${Math.max(0, (rect.height - logical.h * k) / 2)}px`;
-  return k;
-}
-
-/** يُرجع المعرّفات المجاورة لخلية (مفيد لعرض Karate-chords). */
-export function neighborIds(r, c) {
-  return neighborsOf(r, c).map(([rr, cc]) => cellId(rr, cc));
+  return { update, animateClaim, destroy, fit, cells };
 }

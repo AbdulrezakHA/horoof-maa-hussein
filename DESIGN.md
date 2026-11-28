@@ -125,6 +125,8 @@
 | `ds-stack` (`--tight` / `--loose`) | عمود بمسافات ثابتة |
 | `ds-cluster` (`--tight` / `--center` / `--between`) | صف يلتفّ: أزرار، شارات |
 | `ds-tvroot` / `ds-tvstage` / `ds-tvlayer` (+ `--rows` / `--solid`) / `ds-tvside` / `ds-tvfloat` (+ `--top`) / `ds-tvmain` | **شاشة التلفاز**: مسرح 16:9 يتكيّف مع أي شاشة (`fitScale`)، وطبقات فوقه، وعمود جانبي، وعناصر عائمة |
+| `ds-duo` | عمودان متساويان (النتيجة، فريقان) |
+| `ds-sticky` | شريط علوي ثابت (رأس الحكم) |
 | `ds-row` | صف بلا التفاف: أيقونة ثم نص (`ds-text`) يأخذ الباقي |
 | `ds-grid` (+ `--min`) | شبكة بطاقات تتكيّف مع العرض |
 | `ds-center` | محتوى في المنتصف |
@@ -139,20 +141,21 @@
 |---|---|
 | زر | `ds-btn` + `--primary` / `--success` / `--danger` / `--info` / `--grape` / `--team` / `--ghost` / `aria-pressed="true"` (مختار) · `--sm` / `--lg` / `--block` / `--icon` · `is-loading` + `ds-spinner` |
 | الجرس الكبير | `ds-buzzer` (داخل `ds-team-a` / `ds-team-b`) |
-| بطاقة | `ds-card` (+ `--stage` / `--team`) · `ds-card-title` |
-| بطاقة لعبة | `ds-game-tile` (+ `--coral` / `--sky` / `--mint`) · `-art` · `-name` · `-tag` |
+| بطاقة | `ds-card` (+ `--stage` / `--team` / `--sm`) · `ds-card-title` |
+| بطاقة لعبة | `ds-game-tile` (+ `--coral` / `--sky` / `--mint` / `--sm`) · `-art` · `-name` · `-tag` |
 | الفريق والنتيجة | `ds-team` (+ `is-turn` / `is-waiting`) · `ds-score` (+ `bump()`) · `ds-dots` / `ds-dot` |
 | شارات ورقائق | `ds-pill` (+ `--team` / `--dark` / `--sun` / `--sky` / `--coral` / `--mint` / `--lg`) · `ds-chip` (+ `--right` / `--skip` / `--pass` / `--foul` / `--forbidden`) |
 | لاعب | `ds-player` · `ds-avatar` |
 | العدّاد | `ds-ring` (+ `--sm`، و`ring()`) · `ds-timebar` (`--p`) |
-| لافتة / رسالة | `ds-banner` (+ `--success` / `--danger` / `--info` / `--team`، و`-text` / `-sub`) · `toast()` |
-| حقول | `ds-field` · `ds-label` · `ds-input` · `ds-hint` · `ds-switch` · `ds-seg` (+ `segmented()`) · `ds-stepper` |
+| لافتة / رسالة | `ds-banner` (+ `--success` / `--danger` / `--info` / `--team` / `--sm`، و`-text` / `-sub`) · `toast()` |
+| قوائم | `ds-list` / `ds-list-item` · `ds-collapse` (بطاقة قابلة للطيّ) · `ds-kbd` · `ds-swatch` / `ds-swatches` · `ds-card--preview` · `ds-text--soft` |
+| حقول | `ds-field` · `ds-label` · `ds-input` (+ `--num`) · `ds-select` · `ds-color` · `ds-hint` · `ds-switch` · `ds-seg` (+ `segmented()`) · `ds-stepper` |
 | أيقونات | `ds-icon` · `ds-badge-icon` (+ `--lg`) |
 | رمز QR | `ds-qr` (+ `is-pending`) · `ds-qr-frame` · `ds-qr-wait` · `ds-card.is-compact` · `ds-code` (رمز التحقق) |
 | نافذة | `ds-modal` (+ `is-open`) · `ds-dock` (زر عائم أسفل الشاشة) |
 | نص | `ds-text` (+ `--dim`) · `ds-word` (الكلمة الكبيرة) |
-| شاشات | `ds-title` (+ `--sm`) · `ds-winner` · `ds-trophy` · `ds-rules` / `ds-rule` (+ `--foul`) · `ds-pager` |
-| لوحة التلفاز | `ds-tvboard` (SVG) · `ds-tvcell` (+ `is-a` / `is-b` / `is-selected` / `is-claim` / `is-in` / `is-win`) · `-path` / `-text` / `-shine` / `-ripple` · `ds-tvbg-left` / `ds-tvbg-right` / `ds-tvgoal` · `ds-tvside-scores` |
+| شاشات | `ds-title` (+ `--sm` / `--xs`) · `ds-winner` · `ds-trophy` · `ds-rules` / `ds-rule` (+ `--foul`) · `ds-pager` |
+| لوحة التلفاز | `ds-tvboard` (SVG) · `ds-tvcell` (+ `is-a` / `is-b` / `is-selected` / `is-claim` / `is-in` / `is-win`) · `-path` / `-text` / `-shine` / `-ripple` · `ds-tvbg-left` / `ds-tvbg-right` / `ds-tvgoal` |
 | حروف مع حسين | `ds-hex` (+ `is-selected` / `is-a` / `is-b` / `is-claim` / `is-win`) · `ds-board` · `ds-letter-badge` · `ds-qpanel` · `ds-answer` (+ `--team` / `--dark` / `--sun` / `--sky`، و`-label`) · `ds-steps` / `ds-step` · `ds-hexkeys` · `ds-letterbar` |
 
 ---

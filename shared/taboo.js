@@ -175,7 +175,7 @@ export function applyTaboo(st, type, p = {}) {
       fresh.startTeam = p.startTeam === "b" ? "b" : "a";
       fresh.phase = "rules";
       st.taboo = fresh;
-      return { text: `🚫 لعبة «الكلمة الممنوعة» جديدة — يبدأ ${teamName(fresh.startTeam)}`, tone: "info" };
+      return { text: `لعبة «الكلمة الممنوعة» جديدة — يبدأ ${teamName(fresh.startTeam)}`, tone: "info", icon: "hush" };
     }
 
     // بعد قراءة القوانين: الدور الأول للفريق البادئ مع شارح عشوائي
@@ -194,7 +194,7 @@ export function applyTaboo(st, type, p = {}) {
     case "tabooPick": {
       if (t.phase !== "ready") return null;
       setDescriber(t, p.describer);
-      return t.describer ? { text: `🎲 الشارح: ${t.describer.name}`, tone: t.describer.team } : null;
+      return t.describer ? { text: `الشارح: ${t.describer.name}`, tone: t.describer.team, icon: "dice" } : null;
     }
 
     // 🔄 الحكم يبدّل بطاقة الدور قبل بدئه (القديمة ترجع لآخر المجموعة — يتولّاها الخادم)
@@ -214,7 +214,7 @@ export function applyTaboo(st, type, p = {}) {
       t.timer = startTimer(t.turnSeconds);
       t.turn += 1;
       t.phase = "turn";
-      return { text: `▶️ ${t.describer.name} يشرح لـ ${teamName(t.turnTeam)}`, tone: t.turnTeam };
+      return { text: `${t.describer.name} يشرح لـ ${teamName(t.turnTeam)}`, tone: t.turnTeam, icon: "play" };
     }
 
     // ✅ صح: +1 والبطاقة التالية فوراً
@@ -223,7 +223,7 @@ export function applyTaboo(st, type, p = {}) {
       t.turnLog.push({ word: t.card.word, result: "right" });
       t.score[t.turnTeam] += 1;
       if (checkWin(t)) {
-        return { text: `🏆 ${teamName(t.winner)} وصل إلى ${t.target} وفاز!`, tone: "win" };
+        return { text: `${teamName(t.winner)} وصل إلى ${t.target} وفاز!`, tone: "win", icon: "trophy" };
       }
       t.card = p.card || null;
       if (!t.card) endTurn(t);
@@ -242,7 +242,7 @@ export function applyTaboo(st, type, p = {}) {
       t.card = p.card || null;
       if (!t.card) endTurn(t);
       const left = skipsLeft(t, team);
-      return { text: `⏭ تخطّي — بقي لـ ${teamName(team)} ${left === Infinity ? "∞" : left}`, tone: "warn" };
+      return { text: `تخطّي — بقي لـ ${teamName(team)} ${left === Infinity ? "∞" : left}`, tone: "warn", icon: "skip" };
     }
 
     // 🔄 تبديل مجاني من الحكم أثناء الدور (كلمة غامضة مثلاً): لا يُحسب من تخطّيات الفريق
@@ -251,7 +251,7 @@ export function applyTaboo(st, type, p = {}) {
       t.turnLog.push({ word: t.card.word, result: "pass" });
       t.card = p.card || null;
       if (!t.card) endTurn(t);
-      return { text: "🔄 الحكم بدّل الكلمة (مجاناً)", tone: "info" };
+      return { text: "الحكم بدّل الكلمة (مجاناً)", tone: "info", icon: "swap" };
     }
 
     // 🚫 مخالفة: ⁦-1⁩ (لا تحت الصفر) وينتهي الدور فوراً
@@ -261,7 +261,7 @@ export function applyTaboo(st, type, p = {}) {
       if (t.card) t.turnLog.push({ word: t.card.word, result: "foul", reason });
       t.score[t.turnTeam] = Math.max(0, t.score[t.turnTeam] - 1);
       endTurn(t, { reason, label: TABOO_FOULS[reason] });
-      return { text: `🚫 ممنوع: ${TABOO_FOULS[reason]} — ⁦-1⁩ لـ ${teamName(t.turnTeam)}`, tone: "warn" };
+      return { text: `ممنوع: ${TABOO_FOULS[reason]} — ⁦-1⁩ لـ ${teamName(t.turnTeam)}`, tone: "warn", icon: "ban" };
     }
 
     // انتهى وقت الدور
@@ -270,7 +270,7 @@ export function applyTaboo(st, type, p = {}) {
       if (t.card) t.turnLog.push({ word: t.card.word, result: "timeout" });
       endTurn(t);
       const got = t.turnLog.filter((l) => l.result === "right").length;
-      return { text: `⏰ انتهى الدور — ${teamName(t.turnTeam)} +${got}`, tone: "info" };
+      return { text: `انتهى الدور — ${teamName(t.turnTeam)} +${got}`, tone: "info", icon: "timer" };
     }
 
     // ⏸ إيقاف مؤقّت / ▶️ استئناف
@@ -306,7 +306,7 @@ export function applyTaboo(st, type, p = {}) {
       const d = Number(p.delta) > 0 ? 1 : -1;
       t.score[team] = Math.max(0, t.score[team] + d);
       if (t.phase !== "over") checkWin(t);
-      return { text: `✏️ تعديل يدوي: ${teamName(team)} ${d > 0 ? "+1" : "⁦-1⁩"}`, tone: "warn" };
+      return { text: `تعديل يدوي: ${teamName(team)} ${d > 0 ? "+1" : "⁦-1⁩"}`, tone: "warn", icon: "pen" };
     }
 
     default:

@@ -262,7 +262,7 @@ function openStage2(st, team) {
   st.current.buzz = { ...b, open: false, stage: 2, phase: "team", allowed: team, player: null, winner: team };
   st.current.turn = team;
   st.current.timer = runTimer(secs, "team");
-  pushLog(st, `⏱️ الجولة ٢: دور ${st.teams[team].name} — ${secs} ثوانٍ`, team);
+  pushLog(st, `الجولة ٢: دور ${st.teams[team].name} — ${secs} ثوانٍ`, team, "timer");
 }
 
 /** الجولة ٣: مفتوح للجميع بلا أجراس وبلا وقت — الحكم يختار الفريق الذي أجاب. */
@@ -271,7 +271,7 @@ function openStage3(st) {
   st.current.buzz = { ...b, open: false, stage: 3, phase: "all", allowed: "all", player: null, winner: null };
   st.current.turn = "open";
   st.current.timer = { ...IDLE_TIMER };
-  pushLog(st, "🔓 الجولة ٣: مفتوح للجميع", "warn");
+  pushLog(st, "الجولة ٣: مفتوح للجميع", "warn", "megaphone");
 }
 
 /** خطأ أو انتهى وقت من ضغط في الجولة ١ → الجولة ٢ للفريق الآخر. */
@@ -279,7 +279,7 @@ function afterStage1Miss(st, result) {
   const b = st.current.buzz;
   const last = markLast(st, result);
   const team = last?.team || b.player?.team;
-  pushLog(st, `${result === "wrong" ? "❌" : "⏳"} ${last?.name || "اللاعب"}: ${result === "wrong" ? "خطأ" : "انتهى الوقت"}`, "warn");
+  pushLog(st, `${last?.name || "اللاعب"}: ${result === "wrong" ? "خطأ" : "انتهى الوقت"}`, "warn", result === "wrong" ? "close" : "timer");
   openStage2(st, otherTeam(team) || "a");
 }
 
@@ -353,7 +353,7 @@ function doAward(st, board, cellId, team, creditId = null) {
     st.winner = w;
     st.phase = "over";
     st.night[w] = (st.night[w] || 0) + 1;
-    pushLog(st, `🏆 ${st.teams[w].name} ربط الطرفين! (+1 لنقاط السهرة)`, "win");
+    pushLog(st, `${st.teams[w].name} ربط الطرفين! (+1 لنقاط السهرة)`, "win", "trophy");
   }
   deselectAfterAward(st);
   return true;
@@ -366,8 +366,8 @@ function creditFor(st, team) {
   return null;
 }
 
-function pushLog(state, text, tone = "info") {
-  state.log.unshift({ at: Date.now(), text, tone });
+function pushLog(state, text, tone = "info", icon = null) {
+  state.log.unshift(icon ? { at: Date.now(), text, tone, icon } : { at: Date.now(), text, tone });
   if (state.log.length > 40) state.log.length = 40;
 }
 
@@ -478,13 +478,13 @@ export function applyAction(state, board, action) {
     if (st.game === "taboo" && (st.taboo.phase === "setup") && p.startTeam) {
       applyTaboo(st, "tabooNew", { startTeam: p.startTeam });
     }
-    pushLog(st, st.game ? `🎮 اللعبة الآن: ${GAMES[st.game]}` : "🎮 العودة إلى قائمة الألعاب", "info");
+    pushLog(st, st.game ? `اللعبة الآن: ${GAMES[st.game]}` : "العودة إلى قائمة الألعاب", "info", "gamepad");
     st.rev = state.rev + 1;
     return st;
   }
   if (type === "nightReset") {
     st.night = { a: 0, b: 0 };
-    pushLog(st, "🏆 صُفّرت نقاط السهرة", "warn");
+    pushLog(st, "صُفّرت نقاط السهرة", "warn", "trophy");
     st.rev = state.rev + 1;
     return st;
   }
@@ -493,7 +493,7 @@ export function applyAction(state, board, action) {
     const log = applyTaboo(st, type, p);
     const w = st.taboo.winner;
     if (w && w !== before) st.night[w] = (st.night[w] || 0) + 1;
-    if (log) pushLog(st, log.text, log.tone);
+    if (log) pushLog(st, log.text, log.tone, log.icon || null);
     st.rev = state.rev + 1;
     return st;
   }
@@ -590,7 +590,7 @@ export function applyAction(state, board, action) {
       st.current.cellId = null;
       if (!st.winner) st.phase = "missed";
       const ans = st.current.question?.answer;
-      pushLog(st, `🤷 ${cell.letter}: لم يُجب أحد${ans ? ` — الجواب: ${ans}` : ""}`, "warn");
+      pushLog(st, `${cell.letter}: لم يُجب أحد${ans ? ` — الجواب: ${ans}` : ""}`, "warn", "question");
       break;
     }
 
@@ -651,7 +651,7 @@ export function applyAction(state, board, action) {
       }
 
       if (t.stage === "team" && b.phase === "team") {
-        pushLog(st, `⏳ انتهى وقت ${st.teams[b.allowed]?.name || "الفريق"}`, "warn");
+        pushLog(st, `انتهى وقت ${st.teams[b.allowed]?.name || "الفريق"}`, "warn", "timer");
         openStage3(st);
         break;
       }
@@ -659,7 +659,7 @@ export function applyAction(state, board, action) {
       st.current.timer = { ...IDLE_TIMER };
       st.current.turn = null;
       if (st.phase === "question") st.phase = "timeout";
-      pushLog(st, "⏰ انتهى الوقت", "warn");
+      pushLog(st, "انتهى الوقت", "warn", "timer");
       break;
     }
 
@@ -689,7 +689,7 @@ export function applyAction(state, board, action) {
       if (!st.current.buzz.enabled) break;
       st.current.buzz = { ...st.current.buzz, wrong: [], history: [] };
       openStage1(st);
-      pushLog(st, "🔔 الأجراس مفتوحة — اضغطوا الآن!", "warn");
+      pushLog(st, "الأجراس مفتوحة — اضغطوا الآن!", "warn", "bell");
       break;
     }
 
@@ -699,7 +699,7 @@ export function applyAction(state, board, action) {
       // يغلق الأجراس فقط (في الجولة ١ قبل أي ضغطة) — لا يؤثر على دور يجري الآن
       if (b.phase !== "open") break;
       st.current.buzz = { ...b, open: false, phase: "idle", stage: 0 };
-      pushLog(st, "🔒 أُغلقت الأجراس", "warn");
+      pushLog(st, "أُغلقت الأجراس", "warn", "lock");
       break;
     }
 
@@ -709,7 +709,7 @@ export function applyAction(state, board, action) {
       st.current.timer = { ...IDLE_TIMER };
       st.current.turn = null;
       st.current.verdict = null;
-      pushLog(st, "↺ أُعيدت الأجراس", "warn");
+      pushLog(st, "أُعيدت الأجراس", "warn", "undo");
       break;
     }
 
@@ -746,7 +746,7 @@ export function applyAction(state, board, action) {
       st.current.turn = pl.team;
       st.current.verdict = null;
       st.current.timer = runTimer(Math.max(1, Math.min(120, secs)), "answer");
-      pushLog(st, `🔔 ${pl.pseudo ? st.teams[pl.team].name : pl.name} ضغط أولاً!`, pl.team);
+      pushLog(st, `${pl.pseudo ? st.teams[pl.team].name : pl.name} ضغط أولاً!`, pl.team, "bell");
       break;
     }
 
@@ -788,7 +788,7 @@ export function applyAction(state, board, action) {
       const isNew = pl.name !== name || pl.team !== team;
       pl.name = name;
       pl.team = team;
-      if (isNew) pushLog(st, `👋 ${name} انضمّ إلى ${st.teams[team].name}`, team);
+      if (isNew) pushLog(st, `${name} انضمّ إلى ${st.teams[team].name}`, team, "user");
       break;
     }
 
@@ -797,7 +797,7 @@ export function applyAction(state, board, action) {
       const pl = st.players?.[p.id];
       if (!pl || pl.pseudo) break;
       pl.team = p.team === "b" ? "b" : "a";
-      pushLog(st, `↔ ${pl.name} انتقل إلى ${st.teams[pl.team].name}`, pl.team);
+      pushLog(st, `${pl.name} انتقل إلى ${st.teams[pl.team].name}`, pl.team, "swap");
       break;
     }
 
@@ -805,7 +805,7 @@ export function applyAction(state, board, action) {
       const pl = st.players?.[p.id];
       if (!pl) break;
       delete st.players[p.id];
-      if (!pl.pseudo) pushLog(st, `🚪 أُخرج ${pl.name} من اللعبة`, "warn");
+      if (!pl.pseudo) pushLog(st, `أُخرج ${pl.name} من اللعبة`, "warn", "close");
       break;
     }
 
@@ -829,7 +829,7 @@ export function applyAction(state, board, action) {
       st.current.answerRevealed = false;
       clearRound(st);
       st.phase = st.winner ? "over" : "idle";
-      pushLog(st, "🔀 خُلطت الحروف الحرّة", "info");
+      pushLog(st, "خُلطت الحروف الحرّة", "info", "swap");
       break;
     }
 
@@ -878,8 +878,8 @@ export function applyAction(state, board, action) {
       pushLog(
         st,
         st.presets.active.length
-          ? `📚 مجموعات الأسئلة: ${st.presets.active.join(" + ")}`
-          : "📚 مجموعات الأسئلة: الكل",
+          ? `مجموعات الأسئلة: ${st.presets.active.join(" + ")}`
+        : "مجموعات الأسئلة: الكل",
         "info"
       );
       break;

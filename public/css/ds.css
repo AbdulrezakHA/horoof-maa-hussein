@@ -651,6 +651,10 @@
   background: var(--team);
   color: var(--team-ink);
 }
+.ds-card--sm {
+  padding: var(--sp-3);
+  border-radius: var(--r-md);
+}
 .ds-card-title {
   font-family: var(--font-display);
   font-size: var(--fs-lg);
@@ -1064,6 +1068,13 @@
 .ds-banner--team {
   --banner: var(--team);
   color: var(--team-ink);
+}
+/* لافتة مدمجة (لوحة الحكم) */
+.ds-banner--sm {
+  gap: var(--sp-3);
+  padding: var(--sp-2) var(--sp-3);
+  font-size: var(--fs-md);
+  border-radius: var(--r-md);
 }
 /* نص اللافتة: سطر رئيسي وسطر فرعي */
 .ds-banner-text {
@@ -1654,6 +1665,9 @@ button.ds-hex:focus-visible {
 .ds-title--sm {
   font-size: var(--fs-xl);
 }
+.ds-title--xs {
+  font-size: var(--fs-lg);
+}
 .ds-title .ds-icon {
   vertical-align: -0.12em;
 }
@@ -2024,11 +2038,6 @@ button.ds-hex:focus-visible {
   align-content: center;
   gap: var(--sp-6);
 }
-.ds-tvside-scores {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: var(--sp-4);
-}
 /* عنصر عائم فوق المسرح: شارة الاتصال (الزاوية السفلية) أو المؤقّت (أعلى الوسط) */
 .ds-tvfloat {
   position: absolute;
@@ -2234,6 +2243,169 @@ button.ds-hex:focus-visible {
 /* بطاقة مصغّرة (مثل بطاقة الحكم بعد اتصاله) */
 .ds-card.is-compact .ds-qr-frame {
   --qr: 100px;
+}
+
+/* ================================================================
+   لوحة الحكم والصفحات الإدارية: قوائم، طيّ، حقول إضافية، عيّنات ألوان
+   ================================================================ */
+/* شريط علوي ثابت (رأس الحكم ولوحة الحكم) */
+.ds-sticky {
+  position: sticky;
+  inset-block-start: 0;
+  z-index: 20;
+  padding-block: var(--sp-2);
+  background: var(--stage);
+}
+/* بطاقة قابلة للطيّ: <details class="ds-card ds-collapse"><summary class="ds-card-title"> */
+.ds-collapse > summary {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  cursor: pointer;
+  list-style: none;
+}
+.ds-collapse > summary::-webkit-details-marker {
+  display: none;
+}
+.ds-collapse > summary::after {
+  content: "";
+  margin-inline-start: auto;
+  width: 0.5em;
+  height: 0.5em;
+  border: solid currentColor;
+  border-width: 0 var(--line) var(--line) 0;
+  transform: rotate(45deg);
+  transition: transform var(--dur-2) var(--ease-out);
+}
+.ds-collapse[open] > summary::after {
+  transform: rotate(-135deg);
+}
+/* قائمة صفوف: كل صف أيقونة/خانة ثم نص يأخذ الباقي ثم أزرار */
+.ds-list {
+  display: grid;
+}
+.ds-list-item {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding-block: var(--sp-2);
+  border-bottom: var(--line-thin) solid var(--ink-12);
+}
+.ds-list-item:last-child {
+  border-bottom: 0;
+}
+.ds-list-item > .ds-text {
+  flex: 1;
+  min-width: 0;
+}
+.ds-text--soft {
+  color: var(--ink-soft);
+}
+/* حقول إضافية: قائمة منسدلة، رقم، لون */
+.ds-select {
+  min-height: 2.9em;
+  padding: 0.5em 0.9em;
+  font: 700 var(--fs-md) var(--font-body);
+  color: var(--ink);
+  background: var(--white);
+  border: var(--line) solid var(--ink);
+  border-radius: var(--r-md);
+  box-shadow: inset 0 3px 0 var(--ink-12);
+}
+.ds-select:focus-visible {
+  outline: var(--focus-w) solid var(--focus);
+  outline-offset: var(--focus-gap);
+}
+.ds-input--num {
+  width: 6em;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+.ds-color {
+  width: 3.4em;
+  height: 2.6em;
+  padding: 0;
+  background: var(--white);
+  border: var(--line) solid var(--ink);
+  border-radius: var(--r-sm);
+  cursor: pointer;
+}
+.ds-color:focus-visible {
+  outline: var(--focus-w) solid var(--focus);
+  outline-offset: var(--focus-gap);
+}
+/* عيّنات ألوان صغيرة: <i class="ds-swatch" style="--sw: …"> */
+.ds-swatches {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25em;
+}
+.ds-swatch {
+  flex: none;
+  width: 0.9em;
+  height: 0.9em;
+  border-radius: 50%;
+  border: var(--line-thin) solid var(--ink);
+  background: var(--sw, var(--paper));
+}
+/* اختصار لوحة مفاتيح بجانب نص الزر */
+.ds-kbd {
+  display: inline-grid;
+  place-items: center;
+  min-width: 1.5em;
+  padding-inline: 0.35em;
+  border: var(--line-thin) solid currentColor;
+  border-radius: var(--r-sm);
+  font-family: var(--font-display);
+  font-size: 0.75em;
+  opacity: 0.75;
+}
+/* عمودان متساويان (النتيجة، فريقان) */
+.ds-duo {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--sp-4);
+}
+/* معاينة بطاقة (يراها الحكم وحده): حدّ متقطّع بلا ظل */
+.ds-card--preview {
+  border-style: dashed;
+  box-shadow: none;
+}
+/* بطاقة لعبة مدمجة (قائمة الحكم): الأيقونة جانباً والنص بجانبها */
+.ds-game-tile--sm {
+  aspect-ratio: auto;
+  grid-template-columns: auto 1fr;
+  grid-template-areas: "art name" "art tag";
+  justify-items: start;
+  align-content: center;
+  column-gap: var(--sp-4);
+  row-gap: 0;
+  text-align: start;
+  padding: var(--sp-3) var(--sp-4);
+}
+.ds-game-tile--sm .ds-game-tile-art {
+  grid-area: art;
+  font-size: var(--fs-xl);
+}
+.ds-game-tile--sm .ds-game-tile-name {
+  grid-area: name;
+  font-size: var(--fs-lg);
+}
+.ds-game-tile--sm .ds-game-tile-tag {
+  grid-area: tag;
+}
+.ds-game-tile:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  animation: none;
+  filter: grayscale(0.5);
+}
+.ds-hexkeys .ds-hex:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+.ds-hexkeys .ds-hex.is-dim {
+  opacity: 0.65;
 }
 
 /* ================================================================

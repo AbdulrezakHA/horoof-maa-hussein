@@ -440,7 +440,7 @@ function handleAction(room, action) {
     const prev = room.undo.pop();
     if (!prev) return;
     room.state = { ...prev, players: { ...prev.players, ...room.state.players }, rev: room.state.rev + 1 };
-    room.state.log = [{ at: Date.now(), text: "↩️ تراجع عن آخر قرار", tone: "warn" }, ...(prev.log || [])].slice(0, 40);
+    room.state.log = [{ at: Date.now(), text: "تراجع عن آخر قرار", tone: "warn", icon: "undo" }, ...(prev.log || [])].slice(0, 40);
     scheduleTimer(room);
     broadcast(room);
     saveStateSoon(room);
